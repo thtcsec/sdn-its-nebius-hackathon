@@ -1,0 +1,22 @@
+# Core Deep Learning & Analytics
+torch>=2.0.0
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.2.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# SDN Controller & Web API Framework
+Flask>=2.3.0
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Networking & Simulation Helpers
+scapy>=2.5.0
+traci>=1.18.0
+
+# Experiment Environment
+jupyter>=1.0.0
+notebook>=6.5.0
+tqdm>=4.65.0
+pyyaml>=6.0
