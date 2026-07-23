@@ -34,7 +34,8 @@ def train_model(
     seq_len: int = 10,
     alpha: float = 1.0,
     k_sigma: float = 2.0,
-    save_dir: str = "models/checkpoints"
+    save_dir: str = "models/checkpoints",
+    csv_path: str = None
 ):
     print("=" * 65)
     print("  TCN-GRU MODEL TRAINING PIPELINE - SDN-ITS RESILIENCE AI")
@@ -44,9 +45,13 @@ def train_model(
     print(f"[*] Compute Device: {device}")
     
     # 1. Prepare Data
-    print("[*] Generating & loading time-series telemetry data...")
     loader = TelemetryDataLoader(seq_len=seq_len, batch_size=batch_size)
-    train_dl, val_dl, test_dl = loader.get_synthetic_loaders(num_samples=2500)
+    if csv_path and os.path.exists(csv_path):
+        print(f"[*] Loading real-world telemetry dataset from: {csv_path} ...")
+        train_dl, val_dl, test_dl = loader.get_csv_loaders(csv_path)
+    else:
+        print("[*] Generating & loading synthetic time-series telemetry data...")
+        train_dl, val_dl, test_dl = loader.get_synthetic_loaders(num_samples=2500)
     print(f"[+] Loaded Train ({len(train_dl.dataset)} samples), Val ({len(val_dl.dataset)} samples)")
     
     # 2. Instantiate Model
@@ -169,6 +174,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument("--seq_len", type=int, default=10, help="Time series sequence length")
     parser.add_argument("--k_sigma", type=float, default=2.0, help="Sigma factor for adaptive threshold \\tau")
+    parser.add_argument("--csv", type=str, default=None, help="Path to real-world CSV dataset file")
     args = parser.parse_args()
     
     train_model(
@@ -176,5 +182,6 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         lr=args.lr,
         seq_len=args.seq_len,
-        k_sigma=args.k_sigma
+        k_sigma=args.k_sigma,
+        csv_path=args.csv
     )

@@ -28,7 +28,11 @@ from data.data_loader import TelemetryDataLoader, LABEL_MAPPING
 from models.tcn_gru import TCNGRUResilienceModel
 
 
-def evaluate_checkpoint(checkpoint_path: str = "models/checkpoints/tcn_gru_best.pt", seq_len: int = 10):
+def evaluate_checkpoint(
+    checkpoint_path: str = "models/checkpoints/tcn_gru_best.pt",
+    seq_len: int = 10,
+    csv_path: str = None
+):
     print("=" * 70)
     print("  EVALUATION & BENCHMARKING PIPELINE - SDN-ITS RESILIENCE AI")
     print("=" * 70)
@@ -38,7 +42,11 @@ def evaluate_checkpoint(checkpoint_path: str = "models/checkpoints/tcn_gru_best.
     
     # 1. Load Test Data
     loader = TelemetryDataLoader(seq_len=seq_len, batch_size=32)
-    _, _, test_dl = loader.get_synthetic_loaders(num_samples=1000)
+    if csv_path and os.path.exists(csv_path):
+        print(f"[*] Loading test data split from CSV: {csv_path}")
+        _, _, test_dl = loader.get_csv_loaders(csv_path)
+    else:
+        _, _, test_dl = loader.get_synthetic_loaders(num_samples=1000)
     
     # 2. Load Checkpoint or Initialize Baseline
     model = TCNGRUResilienceModel(num_features=10, num_classes=len(LABEL_MAPPING)).to(device)
@@ -149,6 +157,7 @@ def evaluate_checkpoint(checkpoint_path: str = "models/checkpoints/tcn_gru_best.
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate TCN-GRU Model Benchmark")
     parser.add_argument("--checkpoint", type=str, default="models/checkpoints/tcn_gru_best.pt", help="Path to checkpoint")
+    parser.add_argument("--csv", type=str, default=None, help="Path to real-world CSV dataset file")
     args = parser.parse_args()
     
-    evaluate_checkpoint(checkpoint_path=args.checkpoint)
+    evaluate_checkpoint(checkpoint_path=args.checkpoint, csv_path=args.csv)
