@@ -81,7 +81,12 @@ def train_model(
             optimizer.zero_grad()
             x_hat, logits = model(batch_x)
             
-            l_mse = mse_criterion(x_hat, batch_x)
+            # Compute reconstruction loss (MSE) only for normal samples (label 0)
+            normal_mask = (batch_y == 0)
+            if normal_mask.any():
+                l_mse = mse_criterion(x_hat[normal_mask], batch_x[normal_mask])
+            else:
+                l_mse = torch.tensor(0.0, device=device)
             l_ce = ce_criterion(logits, batch_y)
             l_total = l_mse + alpha * l_ce
             
@@ -106,7 +111,12 @@ def train_model(
                 batch_x, batch_y = batch_x.to(device), batch_y.to(device)
                 x_hat, logits = model(batch_x)
                 
-                l_mse = mse_criterion(x_hat, batch_x)
+                # Compute reconstruction loss (MSE) only for normal samples (label 0)
+                normal_mask = (batch_y == 0)
+                if normal_mask.any():
+                    l_mse = mse_criterion(x_hat[normal_mask], batch_x[normal_mask])
+                else:
+                    l_mse = torch.tensor(0.0, device=device)
                 l_ce = ce_criterion(logits, batch_y)
                 l_total = l_mse + alpha * l_ce
                 
@@ -127,7 +137,7 @@ def train_model(
         if val_total < best_val_loss:
             best_val_loss = val_total
             # Calibrate threshold tau = mu_RE + k * std_re on validation normal samples
-            normal_val_x = torch.cat([bx for bx, by in val_dl if (by == 0).any()], dim=0).to(device)
+            normal_val_x = torch.cat([bx[by == 0] for bx, by in val_dl if (by == 0).any()], dim=0).to(device)
             if len(normal_val_x) > 0:
                 tau = model.calibrate_threshold(normal_val_x, k=k_sigma)
             else:

@@ -14,6 +14,13 @@ import time
 import argparse
 from flask import Flask, request, jsonify
 from typing import Dict, Any, Tuple
+import os
+import sys
+
+# Ensure project root directory is in sys.path
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 from sdn_controller.flow_rules import FlowRuleManager, FlowRule
 
