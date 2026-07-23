@@ -12,7 +12,7 @@ Features:
 
 import time
 import argparse
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from typing import Dict, Any, Tuple
 import os
 import sys
@@ -53,6 +53,10 @@ class ResilienceSDNController:
         print(f"[OpenFlow Switch Channel] {action} Rule [{rule.rule_id}] -> DPID={rule.dpid}, Match={rule.src_ip}, Action={rule.action}")
 
     def _register_routes(self):
+        @self.app.route("/", methods=["GET"])
+        def index():
+            return render_template("index.html")
+
         @self.app.route("/api/v1/status", methods=["GET"])
         def status():
             uptime_sec = time.time() - self.stats["start_time"]
