@@ -9,7 +9,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from models.tcn_gru import TCNGRUResilienceModel
-from data.data_loader import TelemetryDataLoader
+from data.data_loader import TelemetryDataLoader, FEATURE_COLUMNS
 
 class TestTCNGRUModel(unittest.TestCase):
     def setUp(self):
@@ -40,6 +40,30 @@ class TestTCNGRUModel(unittest.TestCase):
         self.assertIn("is_anomaly", pred)
         self.assertIn("predicted_class", pred)
         self.assertEqual(len(pred["is_anomaly"]), 16)
+
+    def test_csv_loaders(self):
+        # Create a temporary dummy CSV file
+        temp_csv = "temp_dummy_dataset.csv"
+        
+        import pandas as pd
+        data = {col: np.random.randn(50) for col in FEATURE_COLUMNS}
+        data["label"] = np.random.choice([0, 1], size=50)
+        df = pd.DataFrame(data)
+        df.to_csv(temp_csv, index=False)
+        
+        try:
+            loader = TelemetryDataLoader(seq_len=10, batch_size=4)
+            train_dl, val_dl, test_dl = loader.get_csv_loaders(temp_csv)
+            
+            # Check if dimensions are expected (sequence length = 10, batch size = 4)
+            for bx, by in train_dl:
+                self.assertEqual(bx.shape[1], 10)
+                self.assertEqual(bx.shape[2], len(FEATURE_COLUMNS))
+                self.assertTrue(bx.shape[0] <= 4)
+                break
+        finally:
+            if os.path.exists(temp_csv):
+                os.remove(temp_csv)
 
 if __name__ == "__main__":
     unittest.main()

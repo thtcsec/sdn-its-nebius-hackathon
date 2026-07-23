@@ -6,6 +6,7 @@ Extracts non-DPI timing and counter features (packet rates, inter-arrival time, 
 Provides synthetic telemetry generation for quick local testing when InSDN or CSE-CIC-IDS2018 datasets are absent.
 """
 
+import os
 import numpy as np
 import pandas as pd
 import torch
@@ -150,6 +151,77 @@ class TelemetryDataLoader:
         X_train, y_train = X_scaled[:n_train], y[:n_train]
         X_val, y_val = X_scaled[n_train:n_train+n_val], y[n_train:n_train+n_val]
         X_test, y_test = X_scaled[n_train+n_val:], y[n_train+n_val:]
+        
+        train_loader = DataLoader(TelemetryDataset(X_train, y_train), batch_size=self.batch_size, shuffle=True)
+        val_loader = DataLoader(TelemetryDataset(X_val, y_val), batch_size=self.batch_size, shuffle=False)
+        test_loader = DataLoader(TelemetryDataset(X_test, y_test), batch_size=self.batch_size, shuffle=False)
+        
+        return train_loader, val_loader, test_loader
+
+    def get_csv_loaders(
+        self, csv_path: str, train_ratio: float = 0.7, val_ratio: float = 0.15
+    ) -> Tuple[DataLoader, DataLoader, DataLoader]:
+        """
+        Reads flow telemetry features from a CSV file, applies standard normalization,
+        and constructs sliding window sequence tensors for PyTorch model loaders.
+        """
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"CSV dataset not found at: {csv_path}")
+            
+        df = pd.read_csv(csv_path)
+        
+        # Ensure all core features are present in the CSV, otherwise fill with defaults/zeros
+        for col in FEATURE_COLUMNS:
+            if col not in df.columns:
+                print(f"[!] Warning: Feature column '{col}' not found in CSV. Initializing with default 0.0.")
+                df[col] = 0.0
+                
+        # Retrieve target label column if present, else assume 0 (Normal)
+        label_col = "label" if "label" in df.columns else "class"
+        if label_col in df.columns:
+            if df[label_col].dtype == object:
+                # Map string labels to numeric codes
+                label_mapping = {
+                    "normal": 0, "Normal": 0,
+                    "ddos": 1, "DDoS": 1, "DDoS_PacketIn_Flood": 1,
+                    "loft": 2, "LOFT": 2, "LOFT_LowRate_Attack": 2,
+                    "fault": 3, "Fault": 3, "RSU_Link_Fault": 3,
+                    "rushhour": 4, "RushHour": 4, "RushHour_Burst": 4
+                }
+                y_raw = df[label_col].map(lambda val: label_mapping.get(val, 1)).values
+            else:
+                y_raw = df[label_col].values
+        else:
+            y_raw = np.zeros(len(df), dtype=np.int64)
+            
+        X_raw = df[FEATURE_COLUMNS].values
+        
+        # Fit-transform features
+        X_scaled_all = self.scaler.fit_transform(X_raw)
+        
+        # Form sliding window time-series sequences of length seq_len
+        X_windows = []
+        y_windows = []
+        
+        for i in range(len(df) - self.seq_len + 1):
+            window_x = X_scaled_all[i : i + self.seq_len]
+            window_y = y_raw[i + self.seq_len - 1]  # label of last step in window
+            X_windows.append(window_x)
+            y_windows.append(window_y)
+            
+        X_windows = np.array(X_windows, dtype=np.float32)
+        y_windows = np.array(y_windows, dtype=np.int64)
+        
+        num_samples = len(X_windows)
+        if num_samples == 0:
+            raise ValueError(f"Insufficient dataset rows ({len(df)}) to form sequence of length {self.seq_len}")
+            
+        n_train = int(num_samples * train_ratio)
+        n_val = int(num_samples * val_ratio)
+        
+        X_train, y_train = X_windows[:n_train], y_windows[:n_train]
+        X_val, y_val = X_windows[n_train:n_train+n_val], y_windows[n_train:n_train+n_val]
+        X_test, y_test = X_windows[n_train+n_val:], y_windows[n_train+n_val:]
         
         train_loader = DataLoader(TelemetryDataset(X_train, y_train), batch_size=self.batch_size, shuffle=True)
         val_loader = DataLoader(TelemetryDataset(X_val, y_val), batch_size=self.batch_size, shuffle=False)
