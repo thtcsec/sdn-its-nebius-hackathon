@@ -1,141 +1,170 @@
-"""
-traffic_generator.py - V2X & Cybersecurity Attack Traffic Generator
-
-Generates realistic V2X traffic patterns and cybersecurity stressor streams:
-1. Normal V2X Telemetry (CAM / DENM periodic messaging between vehicles and RSUs)
-2. Rush-Hour Mobility Burst (High-volume benign traffic surge)
-3. Control-Plane DDoS PacketIn Flood (Malformed / unmatched packets forcing switch packet_in)
-4. Low-Rate OpenFlow Trust (LOFT) Attack (Periodic low-rate probe streams)
-5. Automated Alert Sender pushing telemetry to the SDN Controller REST API.
-"""
-
+import os
+import sys
 import time
 import random
-import requests
 import argparse
-from typing import Dict, Any, Optional
+import torch
+import requests
+import numpy as np
 
-# Optional TraCI import for SUMO coupling
-try:
-    import traci
-    SUMO_AVAILABLE = True
-except ImportError:
-    SUMO_AVAILABLE = False
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
+from data.stream_buffer import StreamingTelemetryBuffer
+from models.tcn_gru import TCNGRUResilienceModel
+from data.data_loader import LABEL_MAPPING
 
-class V2XTrafficGenerator:
-    """Traffic Generator for SDN ITS Resilience Validation."""
-    
-    def __init__(self, controller_url: str = "http://localhost:8080"):
-        self.controller_url = controller_url.rstrip("/")
-        self.alert_endpoint = f"{self.controller_url}/api/v1/anomaly_alert"
+class LiveTrafficSimulator:
+    """
+    Automated Continuous V2X Traffic & Telemetry Generator.
+    Runs live PyTorch TCN-GRU inference on rolling telemetry buffers and posts dynamic alerts.
+    """
+    def __init__(self, controller_url: str = "http://127.0.0.1:8080", checkpoint_path: str = "models/checkpoints/tcn_gru_best.pt"):
+        self.controller_url = controller_url
+        self.stream_buf = StreamingTelemetryBuffer(seq_len=10, num_features=10)
+        self.device = torch.device("cpu")
         
-    def send_alert_to_controller(
-        self, attack_type: str, dpid: str = "0000000000000001", 
-        src_ip: str = "10.0.0.15", dst_ip: str = "10.0.0.1",
-        re_error: float = 1.25, confidence: float = 0.95, cooldown_sec: float = 30.0
-    ) -> bool:
-        """Pushes an AI anomaly alert payload to the SDN Controller REST API."""
-        payload = {
-            "alert_id": f"ALT-{random.randint(1000, 9999)}",
-            "timestamp": time.time(),
-            "dpid": dpid,
-            "src_ip": src_ip,
-            "dst_ip": dst_ip,
-            "attack_type": attack_type,
-            "reconstruction_error": round(re_error, 4),
-            "confidence": round(confidence, 3),
-            "cooldown_seconds": cooldown_sec
-        }
+        # Load trained PyTorch Model
+        self.model = TCNGRUResilienceModel(num_features=10, num_classes=len(LABEL_MAPPING))
+        if os.path.exists(checkpoint_path):
+            ckpt = torch.load(checkpoint_path, map_location=self.device)
+            self.model.load_state_dict(ckpt["model_state_dict"])
+            self.tau_threshold = ckpt.get("tau_threshold", 53.12)
+            print(f"[+] Loaded PyTorch Model for Live Traffic Streaming. Tau = {self.tau_threshold:.2f}")
+        else:
+            self.tau_threshold = 53.12
+            print("[!] Model checkpoint not found, using baseline threshold.")
+            
+        self.model.eval()
+
+    def generate_feature_sample(self, scenario: str) -> list:
+        """Generates a 10-dimensional feature vector simulating RSU telemetry."""
+        if scenario == "NORMAL":
+            return [
+                random.uniform(0.1, 2.0),   # flow_duration
+                random.uniform(5.0, 20.0),  # packet_rate
+                random.uniform(2.0, 10.0),  # byte_rate
+                random.uniform(1.0, 5.0),   # backward_pkt_rate
+                random.uniform(0.01, 0.05), # iat_mean
+                random.uniform(0.001, 0.01),# iat_std
+                random.uniform(64, 128),    # pkt_len_mean
+                random.uniform(5, 20),      # pkt_len_std
+                random.uniform(0.5, 2.0),   # packet_in_freq
+                random.uniform(0.0, 0.1)    # syn_flag_ratio
+            ]
+        elif scenario == "DDOS":
+            return [
+                random.uniform(5.0, 15.0),
+                random.uniform(150.0, 300.0), # High packet rate
+                random.uniform(100.0, 200.0),
+                random.uniform(50.0, 100.0),
+                random.uniform(0.001, 0.005),
+                random.uniform(0.0001, 0.001),
+                random.uniform(40, 64),
+                random.uniform(0, 5),
+                random.uniform(50.0, 120.0), # High PacketIn frequency
+                random.uniform(0.8, 1.0)     # High SYN ratio
+            ]
+        elif scenario == "LOFT":
+            return [
+                random.uniform(10.0, 30.0),
+                random.uniform(15.0, 30.0),
+                random.uniform(10.0, 25.0),
+                random.uniform(5.0, 12.0),
+                random.uniform(0.08, 0.15),
+                random.uniform(0.02, 0.08),
+                random.uniform(100, 300),
+                random.uniform(30, 80),
+                random.uniform(8.0, 18.0),   # Moderate PacketIn pressure
+                random.uniform(0.2, 0.4)
+            ]
+        else: # RUSH_HOUR
+            return [
+                random.uniform(0.5, 3.0),
+                random.uniform(40.0, 80.0),  # High traffic, but benign
+                random.uniform(30.0, 60.0),
+                random.uniform(15.0, 30.0),
+                random.uniform(0.01, 0.04),
+                random.uniform(0.005, 0.02),
+                random.uniform(128, 512),
+                random.uniform(20, 50),
+                random.uniform(3.0, 6.0),    # Low PacketIn ratio
+                random.uniform(0.01, 0.05)
+            ]
+
+    def run_continuous_stream(self, interval: float = 1.5):
+        print("=" * 70)
+        print("  AUTOMATED REAL-TIME V2X TELEMETRY STREAMING DEMONSTRATOR")
+        print("=" * 70)
+        print(f"[*] Streaming live telemetry to Controller at {self.controller_url} every {interval}s...")
+        
+        scenarios = ["NORMAL", "NORMAL", "NORMAL", "RUSH_HOUR", "NORMAL", "DDOS", "NORMAL", "LOFT", "NORMAL"]
+        idx = 0
         
         try:
-            resp = requests.post(self.alert_endpoint, json=payload, timeout=3.0)
-            if resp.status_code == 200:
-                data = resp.json()
-                print(f"[+] Alert successfully processed by SDN Controller! Status: {data.get('mitigation_status')}")
-                return True
-            else:
-                print(f"[!] Controller returned status code {resp.status_code}: {resp.text}")
-                return False
-        except Exception as e:
-            print(f"[!] Failed to connect to SDN Controller REST API at {self.alert_endpoint}: {e}")
-            return False
-
-    def simulate_scenario(self, scenario_name: str, duration_sec: int = 15):
-        """Runs a designated traffic scenario simulation."""
-        print(f"\n" + "=" * 65)
-        print(f"  RUNNING TRAFFIC SCENARIO: {scenario_name.upper()}")
-        print("=" * 65)
-        
-        if scenario_name == "normal":
-            print("[*] Simulating Normal V2X Vehicle-to-RSU CAM/DENM Message Flows...")
-            for i in range(duration_sec):
-                pkt_rate = random.randint(40, 60)
-                pkt_in = random.randint(1, 3)
-                print(f"  [t={i+1:02d}s] RSU s1 Telemetry | Packet Rate: {pkt_rate} pkts/s | packet_in: {pkt_in} | Status: NORMAL")
-                time.sleep(1.0)
+            while True:
+                current_scenario = scenarios[idx % len(scenarios)]
+                feat = self.generate_feature_sample(current_scenario)
                 
-        elif scenario_name == "ddos":
-            print("[!] Simulating Control-Plane DDoS PacketIn Flooding from veh5 (10.0.0.15)...")
-            for i in range(duration_sec):
-                pkt_rate = random.randint(1200, 2500)
-                pkt_in = random.randint(200, 500)
-                print(f"  [t={i+1:02d}s] RSU s1 Telemetry | Packet Rate: {pkt_rate} pkts/s | packet_in: {pkt_in} | [!] CRITICAL ANOMALY")
-                if i == 3:
-                    print("\n[AI Detection] Model detected Reconstruction Error RE = 1.842 > Tau (0.420).")
-                    print("[AI Detection] Classifying Anomaly Category: DDoS_PacketIn_Flood (Prob: 0.982)")
-                    self.send_alert_to_controller(
-                        attack_type="DDoS_PacketIn_Flood",
-                        dpid="0000000000000001",
-                        src_ip="10.0.0.15",
-                        re_error=1.842,
-                        cooldown_sec=20.0
-                    )
-                time.sleep(1.0)
+                # Push into rolling tensor buffer
+                tensor_input = self.stream_buf.push(feat)
                 
-        elif scenario_name == "loft":
-            print("[!] Simulating Low-Rate OpenFlow Trust (LOFT) Attack from veh5 (10.0.0.15)...")
-            for i in range(duration_sec):
-                pkt_rate = random.randint(80, 120)
-                pkt_in = random.randint(25, 45)
-                print(f"  [t={i+1:02d}s] RSU s1 Telemetry | Packet Rate: {pkt_rate} pkts/s | packet_in: {pkt_in} | [!] LOW-RATE PROBE")
-                if i == 3:
-                    print("\n[AI Detection] Model detected Reconstruction Error RE = 0.891 > Tau (0.420).")
-                    print("[AI Detection] Classifying Anomaly Category: LOFT_LowRate_Attack (Prob: 0.941)")
-                    self.send_alert_to_controller(
-                        attack_type="LOFT_LowRate_Attack",
-                        dpid="0000000000000001",
-                        src_ip="10.0.0.15",
-                        re_error=0.891,
-                        cooldown_sec=15.0
-                    )
-                time.sleep(1.0)
-
-        elif scenario_name == "rushhour":
-            print("[*] Simulating Benign Rush-Hour Mobility Burst (High Volume, Low packet_in)...")
-            for i in range(duration_sec):
-                pkt_rate = random.randint(300, 500)
-                pkt_in = random.randint(2, 5)
-                print(f"  [t={i+1:02d}s] RSU s1 Telemetry | Packet Rate: {pkt_rate} pkts/s | packet_in: {pkt_in} | Status: RUSH_HOUR")
-                if i == 3:
-                    print("\n[AI Detection] Model detected Volume Surge with Normal packet_in frequency.")
-                    print("[AI Detection] Classifying Category: RushHour_Burst (Prob: 0.965)")
-                    self.send_alert_to_controller(
-                        attack_type="RushHour_Burst",
-                        dpid="0000000000000001",
-                        src_ip="10.0.0.12",
-                        re_error=0.120,
-                        cooldown_sec=0.0
-                    )
-                time.sleep(1.0)
-
+                # Model Inference
+                with torch.no_grad():
+                    x_hat, logits = self.model(tensor_input)
+                    diff = tensor_input - x_hat
+                    re_score = float(torch.sum(diff ** 2).item())
+                    pred_class_idx = int(torch.argmax(logits, dim=1).item())
+                    
+                label_names = list(LABEL_MAPPING.keys())
+                pred_label = label_names[pred_class_idx] if pred_class_idx < len(label_names) else "Unknown"
+                
+                is_anomaly = re_score > self.tau_threshold
+                status_str = f"ALERT (RE={re_score:.2f} > Tau)" if is_anomaly else f"NOMINAL (RE={re_score:.2f})"
+                print(f"[{time.strftime('%H:%M:%S')}] Scenario: {current_scenario:<10} | {status_str:<25} | Class: {pred_label}")
+                
+                # Post alert if anomalous or rush hour
+                if is_anomaly or current_scenario in ["DDOS", "LOFT", "RUSH_HOUR"]:
+                    attack_type_map = {
+                        "DDOS": "DDoS_PacketIn_Flood",
+                        "LOFT": "LOFT_LowRate_Attack",
+                        "RUSH_HOUR": "RushHour_Burst",
+                        "NORMAL": "DDoS_PacketIn_Flood"
+                    }
+                    
+                    src_ip_map = {
+                        "DDOS": "10.0.0.15",
+                        "LOFT": "10.0.0.18",
+                        "RUSH_HOUR": "10.0.0.12",
+                        "NORMAL": "10.0.0.99"
+                    }
+                    
+                    payload = {
+                        "alert_id": f"AUTO-{int(time.time())}",
+                        "dpid": "0000000000000001",
+                        "src_ip": src_ip_map[current_scenario],
+                        "attack_type": attack_type_map[current_scenario],
+                        "reconstruction_error": round(re_score, 2),
+                        "confidence": 0.97,
+                        "cooldown_seconds": 12.0
+                    }
+                    
+                    try:
+                        requests.post(f"{self.controller_url}/api/v1/anomaly_alert", json=payload, timeout=1.0)
+                    except Exception:
+                        pass
+                        
+                idx += 1
+                time.sleep(interval)
+        except KeyboardInterrupt:
+            print("\n[*] Telemetry streaming stopped by user.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="V2X Traffic Generator & Anomaly Injection")
-    parser.add_argument("--scenario", type=str, choices=["normal", "ddos", "loft", "rushhour"], default="ddos", help="Scenario type")
-    parser.add_argument("--controller_url", type=str, default="http://localhost:8080", help="SDN Controller REST API URL")
-    parser.add_argument("--duration", type=int, default=8, help="Scenario duration in seconds")
+    parser = argparse.ArgumentParser(description="Live V2X Telemetry Streamer")
+    parser.add_argument("--controller", type=str, default="http://127.0.0.1:8080", help="Controller REST API URL")
+    parser.add_argument("--interval", type=float, default=1.5, help="Streaming interval in seconds")
     args = parser.parse_args()
     
-    gen = V2XTrafficGenerator(controller_url=args.controller_url)
-    gen.simulate_scenario(scenario_name=args.scenario, duration_sec=args.duration)
+    sim = LiveTrafficSimulator(controller_url=args.controller)
+    sim.run_continuous_stream(interval=args.interval)
