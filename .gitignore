@@ -47,6 +47,7 @@ env/
 *.log
 extracted_report.txt
 *.docx
+*.zip
 tmp/
 
 .env

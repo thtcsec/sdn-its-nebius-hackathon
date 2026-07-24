@@ -9,7 +9,7 @@
 
 > **A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware SDN Mitigation**  
 > **Research Proposal Project** | Tsinghua University Innovation and Entrepreneurship Development Education 
-> **Author:** Trinh Hoang Tu (Team Leader, Group 86 - NexusShield AI)  
+> **Author:** Trinh Hoang Tu
 > **Project Advisor:** Prof. Kris Singh (Visiting Professor at Tsinghua University; CEO at SRII, Silicon Valley)
 
 ---
@@ -134,12 +134,12 @@ sdn-its-resilience-ai/
 ### Prerequisites
 - Python 3.10+
 - PyTorch 2.0+
-- Linux / WSL2 (for native Mininet & Mininet-WiFi emulation)
+- Linux / WSL2 or Windows
 
 ### 1. Setup Virtual Environment
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/sdn-its-resilience-ai.git
+git clone https://github.com/thtcsec/sdn-its-resilience-ai.git
 cd sdn-its-resilience-ai
 
 # Create virtual environment
@@ -151,48 +151,54 @@ py -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 2. Train the TCN-GRU Model
+### 2. ⚡ 1-Click All-In-One Interactive Demo Launcher
+On Windows PowerShell, run a single command to automatically spin up the SDN Controller REST API, launch continuous AI telemetry streaming, and open the Glassmorphism Command Center in your browser:
+```powershell
+.\scripts\dev.ps1
+```
+Open your browser at `http://127.0.0.1:8080/` to view live RSU switch status, real-time $RE$ chart vs $\tau$, active OpenFlow 1.3 flow rules, and automated cooldown rollbacks.
+
+### 3. Model Training, Dynamic Quantization & Packaging
 ```bash
+# Train the TCN-GRU Model
 python models/train.py --epochs 15 --batch_size 64 --k_sigma 2.0
-```
 
-### 3. Evaluate Model Benchmarks
-```bash
-python models/evaluate.py --checkpoint models/checkpoints/tcn_gru_best.pt
-```
+# Apply PyTorch Dynamic INT8 Quantization & Benchmark Edge Efficiency
+python models/quantize.py
 
-### 4. Run SDN Controller REST API Endpoint
-```bash
-python sdn_controller/controller.py --port 8080
-```
+# Compare Architecture Performance against RNN / LSTM / GRU Baselines
+python models/compare_models.py
 
-### 5. Simulate V2X Traffic & Cyber-Attacks
-In a separate terminal, trigger an anomaly injection scenario:
-```bash
-# Control-Plane DDoS PacketIn Flood Scenario
-python simulation/traffic_generator.py --scenario ddos --duration 8
-
-# Benign Rush-Hour Volume Surge Scenario (Verifies False Positive Protection)
-python simulation/traffic_generator.py --scenario rushhour --duration 8
-```
-
-### 6. Run Mininet ITS Topology (Linux / WSL2)
-```bash
-sudo python simulation/topology.py --controller_ip 127.0.0.1 --controller_port 6653
+# Package clean source code and artifacts into sdn_its_resilience_ai_submission.zip
+python scripts/package.py
 ```
 
 ---
 
-## 📊 Experimental Benchmarks
+## 📊 Empirical Performance & Quantization Benchmarks
 
-Benchmark comparison evaluated on synthetic V2X edge telemetry time-series sequences:
+### 1. Edge Efficiency & INT8 Model Quantization
+Evaluated on single-sample CPU inference emulating edge Roadside Units (RSUs):
 
-| Architecture | Accuracy (%) | Precision (%) | Recall (%) | F1-Score (%) | ROC-AUC | Inference Latency ($t_{\text{inf}}$) | End-to-End Latency ($T_{\text{resp}}$) | Model Size (MB) |
-|---|---|---|---|---|---|---|---|---|
-| **Vanilla RNN** | 91.2% | 89.4% | 90.1% | 89.8% | 0.9240 | 6.80 ms | 16.50 ms | 1.80 MB |
-| **Standard LSTM** | 94.5% | 93.8% | 94.1% | 93.9% | 0.9610 | 5.20 ms | 14.90 ms | 2.40 MB |
-| **GRU Autoencoder** | 95.8% | 95.2% | 95.0% | 95.1% | 0.9750 | 3.10 ms | 12.80 ms | 1.20 MB |
-| **Proposed TCN-GRU (Ours)** | **98.4%** | **98.1%** | **98.2%** | **98.1%** | **0.9942** | **1.45 ms** | **11.15 ms** | **0.75 MB** |
+| Metric | Original FP32 Model | Quantized INT8 Model | Quantization Delta |
+|---|---|---|---|
+| **Model Storage Size** | 0.981 MB | **0.174 MB** | **-82.2% (Reduced Footprint)** |
+| **Single-Sample Inference Latency** | 1.60 ms | 2.42 ms | +51.4% (Dynamic overhead) |
+| **Anomaly Binary Accuracy** | **97.33%** | **97.33%** | **0.00% (No accuracy loss)** |
+| **Anomaly Detection Recall** | **100.00%** | **100.00%** | **0.00% (No recall loss)** |
+| **Anomaly Detection Precision** | **93.85%** | **93.85%** | **0.00% (No precision loss)** |
+| **Anomaly F1-Score** | **96.83%** | **96.83%** | **0.00% (No F1 degradation)** |
+| **End-to-End Response Latency ($T_{\text{resp}}$)** | **9.89 ms** | **10.71 ms** | **Meets safety-critical ~10ms target** |
+
+### 2. Multi-Model Architecture Comparison Benchmark
+Empirical evaluation on time-series telemetry flow sequences:
+
+| Architecture | Parameters | Anomaly Accuracy (%) | Anomaly Recall (%) | Anomaly Precision (%) | F1-Score (%) | Inference Latency / Packet |
+|---|---|---|---|---|---|---|
+| **Vanilla RNN** | 1,903 | 40.67% | 100.00% | 40.67% | 57.82% | 0.107 ms |
+| **Standard LSTM** | 6,127 | 40.67% | 100.00% | 40.67% | 57.82% | 0.165 ms |
+| **GRU Autoencoder** | 4,719 | 40.67% | 100.00% | 40.67% | 57.82% | 0.051 ms |
+| **Proposed TCN-GRU (Ours)** | **82,287** | **97.33%** | **100.00%** | **93.85%** | **96.83%** | **0.337 ms** |
 
 ---
 
@@ -204,10 +210,10 @@ If you use this codebase or project design in your research, please cite the Tsi
 @techreport{trinh2026sdnits,
   title        = {AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems: A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware Mitigation},
   author       = {Trinh, Hoang Tu},
-  institution  = {Innovation and Entrepreneurship Development Education (IEDE), Tsinghua University},
+  institution  = {Innovation and Entrepreneurship Development Education, Tsinghua University},
   year         = {2026},
   type         = {Research Proposal},
-  note         = {Group 86 - NexusShield AI. Project Advisor: Prof. Kris Singh}
+  note         = {Project Advisor: Prof. Kris Singh}
 }
 ```
 
