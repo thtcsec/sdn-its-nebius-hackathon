@@ -2,7 +2,7 @@
 
 **Project Title:** AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems: A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware Mitigation  
 **Academic Context:** Innovation and Entrepreneurship Development Education (IEDE) Autumn Semester 2026, Tsinghua University, Beijing, China  
-**Author:** Trinh Hoang Tu (Team Leader, Group 86 - NexusShield AI)  
+**Author:** Trinh Hoang Tu
 **Project Advisor:** Professor Kris Singh (Visiting Professor at Tsinghua University; CEO at SRII, Silicon Valley)  
 
 ---
