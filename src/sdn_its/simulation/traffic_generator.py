@@ -1,19 +1,19 @@
+import argparse
 import os
+import random
 import sys
 import time
-import random
-import argparse
-import torch
+
 import requests
-import numpy as np
+import torch
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from sdn_its.telemetry import StreamingTelemetryBuffer
 from sdn_its.ai.tcn_gru import TCNGRUResilienceModel
-from sdn_its.telemetry import LABEL_MAPPING
+from sdn_its.telemetry import LABEL_MAPPING, StreamingTelemetryBuffer
+
 
 class LiveTrafficSimulator:
     """
@@ -24,7 +24,7 @@ class LiveTrafficSimulator:
         self.controller_url = controller_url
         self.stream_buf = StreamingTelemetryBuffer(seq_len=10, num_features=10)
         self.device = torch.device("cpu")
-        
+
         # Load trained PyTorch Model
         self.model = TCNGRUResilienceModel(num_features=10, num_classes=len(LABEL_MAPPING))
         if os.path.exists(checkpoint_path):
@@ -35,7 +35,7 @@ class LiveTrafficSimulator:
         else:
             self.tau_threshold = 53.12
             print("[!] Model checkpoint not found, using baseline threshold.")
-            
+
         self.model.eval()
 
     def generate_feature_sample(self, scenario: str) -> list:
@@ -98,32 +98,32 @@ class LiveTrafficSimulator:
         print("  AUTOMATED REAL-TIME V2X TELEMETRY STREAMING DEMONSTRATOR")
         print("=" * 70)
         print(f"[*] Streaming live telemetry to Controller at {self.controller_url} every {interval}s...")
-        
+
         scenarios = ["NORMAL", "NORMAL", "NORMAL", "RUSH_HOUR", "NORMAL", "DDOS", "NORMAL", "LOFT", "NORMAL"]
         idx = 0
-        
+
         try:
             while True:
                 current_scenario = scenarios[idx % len(scenarios)]
                 feat = self.generate_feature_sample(current_scenario)
-                
+
                 # Push into rolling tensor buffer
                 tensor_input = self.stream_buf.push(feat)
-                
+
                 # Model Inference
                 with torch.no_grad():
                     x_hat, logits = self.model(tensor_input)
                     diff = tensor_input - x_hat
                     re_score = float(torch.sum(diff ** 2).item())
                     pred_class_idx = int(torch.argmax(logits, dim=1).item())
-                    
+
                 label_names = list(LABEL_MAPPING.keys())
                 pred_label = label_names[pred_class_idx] if pred_class_idx < len(label_names) else "Unknown"
-                
+
                 is_anomaly = re_score > self.tau_threshold
                 status_str = f"ALERT (RE={re_score:.2f} > Tau)" if is_anomaly else f"NOMINAL (RE={re_score:.2f})"
                 print(f"[{time.strftime('%H:%M:%S')}] Scenario: {current_scenario:<10} | {status_str:<25} | Class: {pred_label}")
-                
+
                 # Post alert if anomalous or rush hour
                 if is_anomaly or current_scenario in ["DDOS", "LOFT", "RUSH_HOUR"]:
                     attack_type_map = {
@@ -132,14 +132,14 @@ class LiveTrafficSimulator:
                         "RUSH_HOUR": "RushHour_Burst",
                         "NORMAL": "DDoS_PacketIn_Flood"
                     }
-                    
+
                     src_ip_map = {
                         "DDOS": "10.0.0.15",
                         "LOFT": "10.0.0.18",
                         "RUSH_HOUR": "10.0.0.12",
                         "NORMAL": "10.0.0.99"
                     }
-                    
+
                     payload = {
                         "alert_id": f"AUTO-{int(time.time())}",
                         "dpid": "0000000000000001",
@@ -149,12 +149,12 @@ class LiveTrafficSimulator:
                         "confidence": 0.97,
                         "cooldown_seconds": 12.0
                     }
-                    
+
                     try:
                         requests.post(f"{self.controller_url}/api/v1/anomaly_alert", json=payload, timeout=1.0)
                     except Exception:
                         pass
-                        
+
                 idx += 1
                 time.sleep(interval)
         except KeyboardInterrupt:
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     parser.add_argument("--controller", type=str, default="http://127.0.0.1:8080", help="Controller REST API URL")
     parser.add_argument("--interval", type=float, default=1.5, help="Streaming interval in seconds")
     args = parser.parse_args()
-    
+
     sim = LiveTrafficSimulator(controller_url=args.controller)
     sim.run_continuous_stream(interval=args.interval)
 

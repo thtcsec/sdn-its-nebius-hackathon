@@ -1,7 +1,7 @@
-import unittest
-import time
-import sys
 import os
+import sys
+import time
+import unittest
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(PROJECT_ROOT, "src")
@@ -9,8 +9,8 @@ for p in (PROJECT_ROOT, SRC):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from sdn_its.mitigation import FlowRule
 from sdn_its.controller import FlowRuleManager
+from sdn_its.mitigation import FlowRule
 
 
 class TestFlowRules(unittest.TestCase):

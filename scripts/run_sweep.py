@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 
 import _bootstrap  # noqa: F401
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -54,7 +53,7 @@ def _eval(model: nn.Module, loader, device="cpu", tau: float | None = None) -> d
             y_true.extend(by.numpy().tolist())
     y_true_bin = [0 if y == 0 else 1 for y in y_true]
     if tau is None:
-        normal_re = [r for r, y in zip(res, y_true) if y == 0]
+        normal_re = [r for r, y in zip(res, y_true, strict=False) if y == 0]
         if normal_re:
             mu, sd = float(np.mean(normal_re)), float(np.std(normal_re) + 1e-6)
             tau = mu + 2.0 * sd
@@ -113,7 +112,7 @@ def run_ablation(epochs: int = 3, samples: int = 800, k_list: list[float] | None
             re = torch.sum((bx - x_hat) ** 2, dim=(1, 2)).numpy()
             all_re.extend(re.tolist())
             all_y.extend(by.numpy().tolist())
-    normal_re = [r for r, y in zip(all_re, all_y) if y == 0]
+    normal_re = [r for r, y in zip(all_re, all_y, strict=False) if y == 0]
     mu, sd = float(np.mean(normal_re)), float(np.std(normal_re) + 1e-6)
     k_rows = {}
     for k in k_list:

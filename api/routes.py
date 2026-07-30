@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import time
-from pathlib import Path
 
 from flask import Flask, jsonify, render_template, request
 
@@ -297,8 +296,8 @@ def register_routes(app: Flask) -> None:
 
     @app.route("/api/v1/export/report", methods=["POST"])
     def export_report():
-        from sdn_its.ai.report import write_markdown_report
         from sdn_its.ai.live_scorer import get_live_scorer
+        from sdn_its.ai.report import write_markdown_report
 
         controller = app.extensions["sdn_controller"]
         data = request.get_json(force=True, silent=True) or {}

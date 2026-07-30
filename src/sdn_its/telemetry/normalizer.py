@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
@@ -15,7 +13,7 @@ class FeatureNormalizer:
         self.scaler = StandardScaler()
         self.fitted = False
 
-    def fit(self, x: np.ndarray) -> "FeatureNormalizer":
+    def fit(self, x: np.ndarray) -> FeatureNormalizer:
         flat = x.reshape(-1, x.shape[-1]) if x.ndim == 3 else x
         self.scaler.fit(flat)
         self.fitted = True

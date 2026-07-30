@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Dict
-
 import torch
 
 from sdn_its.telemetry.schema import FEATURE_COLUMNS
 
 
-def feature_attribution(x: torch.Tensor, x_hat: torch.Tensor) -> Dict[str, float]:
+def feature_attribution(x: torch.Tensor, x_hat: torch.Tensor) -> dict[str, float]:
     """
     Attribute RE contribution per feature: mean squared error over the sequence.
 
@@ -22,12 +20,12 @@ def feature_attribution(x: torch.Tensor, x_hat: torch.Tensor) -> Dict[str, float
     # mean over batch + time → [F]
     per_feat = diff.mean(dim=(0, 1)).detach().cpu().tolist()
     names = list(FEATURE_COLUMNS)
-    out: Dict[str, float] = {}
+    out: dict[str, float] = {}
     for i, val in enumerate(per_feat):
         name = names[i] if i < len(names) else f"f{i}"
         out[name] = round(float(val), 6)
     return out
 
 
-def top_features(attribution: Dict[str, float], k: int = 3) -> list[tuple[str, float]]:
+def top_features(attribution: dict[str, float], k: int = 3) -> list[tuple[str, float]]:
     return sorted(attribution.items(), key=lambda kv: kv[1], reverse=True)[:k]

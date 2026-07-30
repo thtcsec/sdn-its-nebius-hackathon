@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .containment import ContainmentEngine
 
@@ -11,7 +11,7 @@ from .containment import ContainmentEngine
 @dataclass
 class MitigationResult:
     mitigation_status: str
-    applied_rules: List[Dict[str, Any]] = field(default_factory=list)
+    applied_rules: list[dict[str, Any]] = field(default_factory=list)
     false_positive_avoided: bool = False
 
 
@@ -26,10 +26,10 @@ class PolicyEngine:
         attack_type: str,
         dpid: str,
         src_ip: str = "10.0.0.15",
-        dst_ip: Optional[str] = None,
+        dst_ip: str | None = None,
         cooldown: float = 30.0,
     ) -> MitigationResult:
-        applied: List[Dict[str, Any]] = []
+        applied: list[dict[str, Any]] = []
 
         if attack_type == "DDoS_PacketIn_Flood":
             rule1 = self.containment.create_drop_rule(

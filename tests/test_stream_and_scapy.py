@@ -1,6 +1,6 @@
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 import torch
 
@@ -10,8 +10,8 @@ for p in (PROJECT_ROOT, SRC):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from sdn_its.telemetry import StreamingTelemetryBuffer
 from sdn_its.simulation.scapy_traffic import ScapyTelemetryInjector
+from sdn_its.telemetry import StreamingTelemetryBuffer
 
 
 class TestStreamBufferAndScapy(unittest.TestCase):

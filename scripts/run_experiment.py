@@ -9,14 +9,12 @@ import time
 from pathlib import Path
 
 import _bootstrap  # noqa: F401
-
 import numpy as np
 import requests
 import yaml
 
 from sdn_its.ai.report import write_markdown_report
 from sdn_its.utils.paths import PROJECT_ROOT
-
 
 ATTACK_TO_TYPE = {
     "none": "Normal",

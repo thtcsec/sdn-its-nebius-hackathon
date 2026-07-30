@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any
 
 
 class OVSManager:
@@ -12,12 +12,12 @@ class OVSManager:
     Production deployments should replace mock methods with ovs-ofctl / OVSDB calls.
     """
 
-    def list_bridges(self) -> List[str]:
+    def list_bridges(self) -> list[str]:
         return ["s1", "s2", "s3", "s4"]
 
-    def dump_flows(self, bridge: str) -> List[Dict[str, Any]]:
+    def dump_flows(self, bridge: str) -> list[dict[str, Any]]:
         return [{"bridge": bridge, "flows": [], "note": "stub — connect ovs-ofctl"}]
 
-    def apply_flow_mod(self, bridge: str, match: Dict[str, Any], actions: List[str]) -> bool:
+    def apply_flow_mod(self, bridge: str, match: dict[str, Any], actions: list[str]) -> bool:
         print(f"[OVSManager stub] flow_mod on {bridge}: match={match} actions={actions}")
         return True

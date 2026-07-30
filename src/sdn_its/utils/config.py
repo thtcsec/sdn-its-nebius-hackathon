@@ -1,14 +1,14 @@
 """YAML configuration loader."""
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import yaml
 
 from .paths import PROJECT_ROOT
 
 
-def load_config(name_or_path: str) -> Dict[str, Any]:
+def load_config(name_or_path: str) -> dict[str, Any]:
     """
     Load a YAML config by filename under configs/ or by absolute/relative path.
 
@@ -26,5 +26,5 @@ def load_config(name_or_path: str) -> Dict[str, Any]:
             path = candidate
         else:
             path = PROJECT_ROOT / path
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}

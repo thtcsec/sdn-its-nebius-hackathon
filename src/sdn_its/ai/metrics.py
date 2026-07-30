@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Dict
-
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, roc_auc_score
 
 
-def binary_anomaly_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_score=None) -> Dict[str, float]:
+def binary_anomaly_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_score=None) -> dict[str, float]:
     prec, rec, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="binary", zero_division=0)
     out = {
         "accuracy": float(accuracy_score(y_true, y_pred)),

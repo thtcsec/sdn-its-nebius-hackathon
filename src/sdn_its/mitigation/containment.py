@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 
 @dataclass
@@ -14,13 +15,13 @@ class FlowRule:
 
     rule_id: str
     dpid: str
-    src_ip: Optional[str]
-    dst_ip: Optional[str]
+    src_ip: str | None
+    dst_ip: str | None
     action: str  # "DROP", "RATE_LIMIT", "THROTTLE_PACKET_IN"
     priority: int
     created_at: float
     cooldown_seconds: float
-    parameters: Dict[str, Any] = field(default_factory=dict)
+    parameters: dict[str, Any] = field(default_factory=dict)
 
     @property
     def is_expired(self) -> bool:
@@ -30,7 +31,7 @@ class FlowRule:
     def remaining_cooldown(self) -> float:
         return max(0.0, self.cooldown_seconds - (time.time() - self.created_at))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "rule_id": self.rule_id,
             "dpid": self.dpid,
@@ -50,9 +51,9 @@ class ContainmentEngine:
 
     def __init__(
         self,
-        active_rules: Dict[str, FlowRule],
+        active_rules: dict[str, FlowRule],
         lock,
-        of_push_callback: Optional[Callable] = None,
+        of_push_callback: Callable | None = None,
     ):
         self.active_rules = active_rules
         self.lock = lock
@@ -73,7 +74,7 @@ class ContainmentEngine:
         self,
         dpid: str,
         src_ip: str,
-        dst_ip: Optional[str] = None,
+        dst_ip: str | None = None,
         priority: int = 200,
         cooldown: float = 60.0,
     ) -> FlowRule:

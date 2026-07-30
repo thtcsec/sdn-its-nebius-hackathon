@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class TelemetryCollector:
@@ -13,7 +13,7 @@ class TelemetryCollector:
         self.poll_interval_ms = poll_interval_ms
         self._last_poll = 0.0
 
-    def poll(self, dpid: str = "0000000000000001") -> Dict[str, Any]:
+    def poll(self, dpid: str = "0000000000000001") -> dict[str, Any]:
         self._last_poll = time.time()
         return {
             "dpid": dpid,
@@ -24,6 +24,6 @@ class TelemetryCollector:
             "note": "stub collector — wire to ovs-ofctl / sFlow in lab deployments",
         }
 
-    def poll_batch(self, dpids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    def poll_batch(self, dpids: list[str] | None = None) -> list[dict[str, Any]]:
         dpids = dpids or ["0000000000000001", "0000000000000002"]
         return [self.poll(d) for d in dpids]

@@ -7,7 +7,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class AlertNotifier:
@@ -19,9 +19,9 @@ class AlertNotifier:
         self.min_interval_s = float(min_interval_s)
         self._last_sent = 0.0
         self._lock = threading.Lock()
-        self.history: List[Dict[str, Any]] = []
+        self.history: list[dict[str, Any]] = []
 
-    def configure(self, webhook_url: Optional[str] = None, enabled: Optional[bool] = None) -> Dict[str, Any]:
+    def configure(self, webhook_url: str | None = None, enabled: bool | None = None) -> dict[str, Any]:
         with self._lock:
             if webhook_url is not None:
                 self.webhook_url = webhook_url
@@ -31,7 +31,7 @@ class AlertNotifier:
                 self.enabled = bool(self.webhook_url)
             return self.status()
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         return {
             "enabled": self.enabled,
             "webhook_url": self.webhook_url[:80] + ("…" if len(self.webhook_url) > 80 else ""),
@@ -40,7 +40,7 @@ class AlertNotifier:
             "last": self.history[-1] if self.history else None,
         }
 
-    def notify(self, event: Dict[str, Any]) -> None:
+    def notify(self, event: dict[str, Any]) -> None:
         if not self.enabled or not self.webhook_url:
             return
         now = time.time()
@@ -55,7 +55,7 @@ class AlertNotifier:
         }
         threading.Thread(target=self._post, args=(payload,), daemon=True).start()
 
-    def _post(self, payload: Dict[str, Any]) -> None:
+    def _post(self, payload: dict[str, Any]) -> None:
         body = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
             self.webhook_url,
@@ -63,7 +63,7 @@ class AlertNotifier:
             headers={"Content-Type": "application/json", "User-Agent": "sdn-its-alerts/0.2"},
             method="POST",
         )
-        record: Dict[str, Any] = {"ts": payload["ts"], "ok": False}
+        record: dict[str, Any] = {"ts": payload["ts"], "ok": False}
         try:
             with urllib.request.urlopen(req, timeout=3) as resp:
                 record["ok"] = 200 <= getattr(resp, "status", 200) < 300

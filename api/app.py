@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from flask import Flask
 
 from api.middleware import register_middleware
@@ -12,7 +10,7 @@ from sdn_its.controller.rest_api import ResilienceSDNController
 from sdn_its.utils.paths import PROJECT_ROOT
 
 
-def create_app(controller: Optional[ResilienceSDNController] = None) -> Flask:
+def create_app(controller: ResilienceSDNController | None = None) -> Flask:
     template_folder = str(PROJECT_ROOT / "dashboard" / "templates")
     static_folder = str(PROJECT_ROOT / "dashboard" / "static")
     app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)

@@ -1,7 +1,8 @@
+from collections import deque
+
 import numpy as np
 import torch
-from collections import deque
-from typing import Optional, List, Tuple
+
 
 class StreamingTelemetryBuffer:
     """
@@ -12,16 +13,16 @@ class StreamingTelemetryBuffer:
         self.seq_len = seq_len
         self.num_features = num_features
         self.buffer = deque(maxlen=seq_len)
-        
+
         # Pre-fill buffer with nominal baseline features
         for _ in range(seq_len):
             self.buffer.append(np.zeros(num_features, dtype=np.float32))
 
-    def push(self, feature_vector: List[float]) -> np.ndarray:
+    def push(self, feature_vector: list[float]) -> np.ndarray:
         """Pushes a new 10-dimensional flow feature vector into the rolling buffer."""
         if len(feature_vector) != self.num_features:
             raise ValueError(f"Expected feature vector of length {self.num_features}, got {len(feature_vector)}")
-        
+
         self.buffer.append(np.array(feature_vector, dtype=np.float32))
         return self.get_tensor()
 

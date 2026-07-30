@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import random
 from collections import deque
-from typing import Deque, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -78,9 +77,9 @@ class DRLResilienceAgent:
         self.target_net.eval()
 
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=lr)
-        self.memory: Deque[Tuple[np.ndarray, int, float, np.ndarray, bool]] = deque(maxlen=memory_size)
+        self.memory: deque[tuple[np.ndarray, int, float, np.ndarray, bool]] = deque(maxlen=memory_size)
         self.action_names = list(self.ACTION_NAMES)
-        self.train_losses: List[float] = []
+        self.train_losses: list[float] = []
 
     def select_action(self, state: np.ndarray, explore: bool = True) -> int:
         if explore and random.random() < self.epsilon:
@@ -93,7 +92,7 @@ class DRLResilienceAgent:
     def get_action_name(self, action_idx: int) -> str:
         return self.action_names[action_idx]
 
-    def compute_reward(self, state: np.ndarray, action: int, tau: Optional[float] = None) -> float:
+    def compute_reward(self, state: np.ndarray, action: int, tau: float | None = None) -> float:
         cpu_load, pkt_in_rate, bw_util, re_score, confidence = state
         thr = self.tau_threshold if tau is None else float(tau)
         is_anomaly = re_score > thr
@@ -127,7 +126,7 @@ class DRLResilienceAgent:
             )
         )
 
-    def train_step(self) -> Optional[float]:
+    def train_step(self) -> float | None:
         if len(self.memory) < self.batch_size:
             return None
         batch = random.sample(self.memory, self.batch_size)

@@ -2,22 +2,21 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
-
+from typing import Any
 
 REQUIRED_ALERT_FIELDS = ("attack_type", "dpid")
 
 
-def validate_anomaly_alert(data: Any) -> Tuple[bool, str]:
+def validate_anomaly_alert(data: Any) -> tuple[bool, str]:
     if not isinstance(data, dict):
         return False, "Payload must be a JSON object"
     for field in REQUIRED_ALERT_FIELDS:
         if field not in data:
-            return False, f"Invalid payload format. Required: 'attack_type', 'dpid'"
+            return False, "Invalid payload format. Required: 'attack_type', 'dpid'"
     return True, ""
 
 
-def status_payload(controller) -> Dict[str, Any]:
+def status_payload(controller) -> dict[str, Any]:
     import time
 
     uptime_sec = time.time() - controller.stats["start_time"]

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from sdn_its.controller.flow_manager import FlowRuleManager
 from sdn_its.mitigation.containment import FlowRule
@@ -21,7 +21,7 @@ class ResilienceSDNController:
         self,
         host: str = "0.0.0.0",
         port: int = 8080,
-        app: Optional["Flask"] = None,
+        app: Flask | None = None,
         create_flask: bool = True,
     ):
         self.host = host
@@ -31,7 +31,7 @@ class ResilienceSDNController:
             of_push_callback=self._mock_openflow_switch_push,
         )
         self.policy = PolicyEngine(self.flow_mgr.containment)
-        self.stats: Dict[str, Any] = {
+        self.stats: dict[str, Any] = {
             "total_alerts_received": 0,
             "mitigations_applied": 0,
             "false_positives_avoided": 0,
@@ -39,7 +39,7 @@ class ResilienceSDNController:
             "webhook_events": 0,
             "start_time": time.time(),
         }
-        self.runtime_settings: Dict[str, Any] = {
+        self.runtime_settings: dict[str, Any] = {
             "tau": 53.12,
             "k_sigma": 2.0,
             "ddos_cooldown": 12.0,
@@ -71,7 +71,7 @@ class ResilienceSDNController:
             f"DPID={rule.dpid}, Match={rule.src_ip}, Action={rule.action}"
         )
 
-    def update_runtime_settings(self, patch: Dict[str, Any]) -> Dict[str, Any]:
+    def update_runtime_settings(self, patch: dict[str, Any]) -> dict[str, Any]:
         allowed = set(self.runtime_settings.keys())
         for k, v in (patch or {}).items():
             if k in allowed:
@@ -104,7 +104,7 @@ class ResilienceSDNController:
             )
         return dict(self.runtime_settings)
 
-    def handle_alert(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def handle_alert(self, data: dict[str, Any]) -> dict[str, Any]:
         """Apply Detect -> Contain -> Rollback policy for an anomaly alert payload."""
         t0 = time.perf_counter()
         self.stats["total_alerts_received"] += 1

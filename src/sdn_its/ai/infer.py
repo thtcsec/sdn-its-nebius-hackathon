@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import torch
 
@@ -12,7 +12,7 @@ from sdn_its.telemetry import LABEL_MAPPING
 
 def load_model(
     checkpoint_path: str = "models/checkpoints/tcn_gru_best.pt",
-    device: Optional[torch.device] = None,
+    device: torch.device | None = None,
 ) -> tuple[TCNGRUResilienceModel, float]:
     device = device or torch.device("cpu")
     model = TCNGRUResilienceModel(num_features=10, num_classes=len(LABEL_MAPPING))
@@ -28,7 +28,7 @@ def load_model(
     return model, tau
 
 
-def infer(model: TCNGRUResilienceModel, x: torch.Tensor, tau: float) -> Dict[str, Any]:
+def infer(model: TCNGRUResilienceModel, x: torch.Tensor, tau: float) -> dict[str, Any]:
     with torch.no_grad():
         x_hat, logits = model(x)
         diff = x - x_hat

@@ -8,18 +8,18 @@ L_total = L_MSE(x, \hat{x}) + \alpha * L_CE(y_pred, y_true)
 Saves trained weights and threshold parameters to models/checkpoints/.
 """
 
-import os
 import argparse
-import time
+import os
 import random
+import time
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from sdn_its.telemetry import TelemetryDataLoader, LABEL_MAPPING
 from sdn_its.ai.tcn_gru import TCNGRUResilienceModel
+from sdn_its.telemetry import LABEL_MAPPING, TelemetryDataLoader
 
 
 def _set_seed(seed: int):
@@ -80,7 +80,7 @@ def train_model(
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=3
     )
-    
+
     best_val_loss = float("inf")
     epochs_without_improve = 0
     os.makedirs(save_dir, exist_ok=True)

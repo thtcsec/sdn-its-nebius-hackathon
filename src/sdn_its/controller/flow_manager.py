@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import threading
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from sdn_its.mitigation.containment import ContainmentEngine, FlowRule
 from sdn_its.mitigation.rollback import RollbackManager
@@ -15,9 +16,9 @@ class FlowRuleManager:
     def __init__(
         self,
         rollback_check_interval: float = 5.0,
-        of_push_callback: Optional[Callable] = None,
+        of_push_callback: Callable | None = None,
     ):
-        self.active_rules: Dict[str, FlowRule] = {}
+        self.active_rules: dict[str, FlowRule] = {}
         self.lock = threading.Lock()
         self.of_push_callback = of_push_callback
         self.containment = ContainmentEngine(
@@ -33,7 +34,7 @@ class FlowRuleManager:
         )
 
     @property
-    def rollback_history(self) -> List[Dict[str, Any]]:
+    def rollback_history(self) -> list[dict[str, Any]]:
         return self.rollback.rollback_history
 
     def create_drop_rule(self, *args, **kwargs) -> FlowRule:
@@ -48,7 +49,7 @@ class FlowRuleManager:
     def revoke_rule(self, rule_id: str, reason: str = "MANUAL_REVOCATION") -> bool:
         return self.rollback.revoke_rule(rule_id, reason=reason)
 
-    def get_all_active_rules(self) -> List[Dict[str, Any]]:
+    def get_all_active_rules(self) -> list[dict[str, Any]]:
         with self.lock:
             return [rule.to_dict() for rule in self.active_rules.values()]
 

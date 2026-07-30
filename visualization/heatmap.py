@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 
 
-def plot_confusion_heatmap(cm: np.ndarray, labels=None, out: Optional[str] = None):
+def plot_confusion_heatmap(cm: np.ndarray, labels=None, out: str | None = None):
     import matplotlib.pyplot as plt
     import seaborn as sns
 

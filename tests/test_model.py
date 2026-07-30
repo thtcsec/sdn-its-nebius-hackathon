@@ -1,8 +1,9 @@
-import unittest
-import torch
-import numpy as np
-import sys
 import os
+import sys
+import unittest
+
+import numpy as np
+import torch
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(PROJECT_ROOT, "src")
@@ -11,7 +12,7 @@ for p in (PROJECT_ROOT, SRC):
         sys.path.insert(0, p)
 
 from sdn_its.ai import TCNGRUResilienceModel
-from sdn_its.telemetry import TelemetryDataLoader, FEATURE_COLUMNS
+from sdn_its.telemetry import FEATURE_COLUMNS, TelemetryDataLoader
 
 
 class TestTCNGRUModel(unittest.TestCase):
@@ -56,7 +57,7 @@ class TestTCNGRUModel(unittest.TestCase):
             loader = TelemetryDataLoader(seq_len=10, batch_size=4)
             train_dl, val_dl, test_dl = loader.get_csv_loaders(temp_csv)
 
-            for bx, by in train_dl:
+            for bx, _by in train_dl:
                 self.assertEqual(bx.shape[1], 10)
                 self.assertEqual(bx.shape[2], len(FEATURE_COLUMNS))
                 self.assertTrue(bx.shape[0] <= 4)

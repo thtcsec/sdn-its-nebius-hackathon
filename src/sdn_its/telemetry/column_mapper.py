@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Iterable, List, Optional, Tuple
+from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,7 @@ import pandas as pd
 from .schema import FEATURE_COLUMNS, LABEL_MAPPING
 
 # Canonical feature <- possible source column names (normalized)
-FEATURE_ALIASES: Dict[str, List[str]] = {
+FEATURE_ALIASES: dict[str, list[str]] = {
     "flow_duration": [
         "flow_duration",
         "flow duration",
@@ -83,7 +83,7 @@ FEATURE_ALIASES: Dict[str, List[str]] = {
 LABEL_COLUMN_ALIASES = ["label", "class", "attack", "attack_type", "category", "target", "y"]
 
 # InSDN / CIC string labels -> our 5-class taxonomy
-LABEL_ALIASES: Dict[str, int] = {
+LABEL_ALIASES: dict[str, int] = {
     "normal": 0,
     "benign": 0,
     "0": 0,
@@ -130,11 +130,11 @@ def normalize_column_name(name: str) -> str:
     return s.strip()
 
 
-def _build_normalized_lookup(columns: Iterable[str]) -> Dict[str, str]:
+def _build_normalized_lookup(columns: Iterable[str]) -> dict[str, str]:
     return {normalize_column_name(c): c for c in columns}
 
 
-def resolve_column(columns: Iterable[str], aliases: List[str]) -> Optional[str]:
+def resolve_column(columns: Iterable[str], aliases: list[str]) -> str | None:
     lookup = _build_normalized_lookup(columns)
     for alias in aliases:
         key = normalize_column_name(alias)
@@ -162,13 +162,13 @@ def map_label_value(value) -> int:
     return 1  # unknown attack-like traffic -> anomaly class
 
 
-def _series_or_default(df: pd.DataFrame, col: Optional[str], default: float = 0.0) -> pd.Series:
+def _series_or_default(df: pd.DataFrame, col: str | None, default: float = 0.0) -> pd.Series:
     if col is None:
         return pd.Series(np.full(len(df), default, dtype=np.float64), index=df.index)
     return pd.to_numeric(df[col], errors="coerce").fillna(default)
 
 
-def canonicalize_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Optional[str]]]:
+def canonicalize_dataframe(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, str | None]]:
     """
     Convert a raw InSDN/CIC/canonical CSV into FEATURE_COLUMNS + label.
 
@@ -181,7 +181,7 @@ def canonicalize_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Op
     df = df.copy()
     df.columns = [str(c).strip().lstrip("\ufeff") for c in df.columns]
 
-    source_map: Dict[str, Optional[str]] = {}
+    source_map: dict[str, str | None] = {}
     out = pd.DataFrame(index=df.index)
 
     for feature, aliases in FEATURE_ALIASES.items():
@@ -241,6 +241,6 @@ def canonicalize_dataframe(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Op
     return out[FEATURE_COLUMNS + ["label"]], source_map
 
 
-def load_and_canonicalize_csv(path: str) -> Tuple[pd.DataFrame, Dict[str, Optional[str]]]:
+def load_and_canonicalize_csv(path: str) -> tuple[pd.DataFrame, dict[str, str | None]]:
     df = pd.read_csv(path, low_memory=False)
     return canonicalize_dataframe(df)

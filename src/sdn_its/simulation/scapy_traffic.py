@@ -1,15 +1,16 @@
+import argparse
 import os
 import sys
 import time
-import argparse
-from typing import Dict, Any, List
+
 import requests
 
 try:
-    from scapy.all import IP, TCP, UDP, send, AsyncSniffer, Ether
+    from scapy.all import IP, TCP, send
     SCAPY_AVAILABLE = True
 except ImportError:
     SCAPY_AVAILABLE = False
+    IP = TCP = send = None  # type: ignore[misc, assignment]
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
@@ -38,10 +39,10 @@ class ScapyTelemetryInjector:
             try:
                 pkts = [IP(src=src_ip, dst=self.target_host)/TCP(dport=6653, flags="S") for _ in range(count)]
                 send(pkts, verbose=False)
-                self.packet_count += count
-                self.byte_count += count * 64
             except Exception as e:
                 print(f"[!] Raw socket note: {e}. Falling back to socket stream.")
+            self.packet_count += count
+            self.byte_count += count * 64
 
         # Post alert to SDN Controller
         self._notify_controller("DDoS_PacketIn_Flood", src_ip=src_ip, re_score=84.5)
@@ -58,7 +59,7 @@ class ScapyTelemetryInjector:
             time.sleep(0.2)
             self.packet_count += 5
             self.byte_count += 320
-            
+
         self._notify_controller("LOFT_LowRate_Attack", src_ip=src_ip, re_score=68.2)
 
     def _notify_controller(self, attack_type: str, src_ip: str, re_score: float):
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--attack", type=str, choices=["ddos", "loft"], default="ddos", help="Type of attack traffic to inject")
     parser.add_argument("--controller", type=str, default="http://127.0.0.1:8080", help="Controller REST API URL")
     args = parser.parse_args()
-    
+
     injector = ScapyTelemetryInjector(controller_url=args.controller)
     if args.attack == "ddos":
         injector.generate_ddos_flood(count=50)

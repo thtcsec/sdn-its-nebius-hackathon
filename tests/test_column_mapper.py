@@ -1,10 +1,9 @@
-import unittest
-import sys
 import os
+import sys
 import tempfile
+import unittest
 
 import pandas as pd
-import numpy as np
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SRC = os.path.join(PROJECT_ROOT, "src")
@@ -12,12 +11,12 @@ for p in (PROJECT_ROOT, SRC):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from sdn_its.telemetry import FEATURE_COLUMNS, TelemetryDataLoader
 from sdn_its.telemetry.column_mapper import (
     canonicalize_dataframe,
     map_label_value,
     normalize_column_name,
 )
-from sdn_its.telemetry import FEATURE_COLUMNS, TelemetryDataLoader
 
 
 class TestColumnMapper(unittest.TestCase):

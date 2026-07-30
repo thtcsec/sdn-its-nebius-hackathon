@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence
 
 
-def plot_re_timeline(re_scores: Sequence[float], tau: float, out: Optional[str] = None):
+def plot_re_timeline(re_scores: Sequence[float], tau: float, out: str | None = None):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(8, 3))

@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
+from typing import Any
 
 from sdn_its.utils.paths import PROJECT_ROOT
 
@@ -14,7 +15,7 @@ def write_markdown_report(
     metrics: Mapping[str, Any],
     out_path: str | Path,
     title: str = "SDN-ITS Experiment Report",
-    extra_sections: Optional[Dict[str, str]] = None,
+    extra_sections: dict[str, str] | None = None,
 ) -> Path:
     out = Path(out_path)
     if not out.is_absolute():

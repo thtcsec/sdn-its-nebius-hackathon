@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from flask import Flask, g
 import time
+
+from flask import Flask, g
 
 
 def register_middleware(app: Flask) -> None:

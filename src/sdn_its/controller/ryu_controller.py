@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class RyuControllerAdapter:
@@ -19,8 +19,8 @@ class RyuControllerAdapter:
     def __init__(self, of_port: int = 6653):
         self.of_port = of_port
         self.connected = False
-        self.datapaths: Dict[str, Any] = {}
-        self.flow_log: List[Dict[str, Any]] = []
+        self.datapaths: dict[str, Any] = {}
+        self.flow_log: list[dict[str, Any]] = []
 
     def start(self) -> None:
         print(
@@ -33,16 +33,16 @@ class RyuControllerAdapter:
         self.datapaths[dpid] = datapath
         self.connected = True
 
-    def push_flow(self, dpid: str, rule: Dict[str, Any]) -> bool:
+    def push_flow(self, dpid: str, rule: dict[str, Any]) -> bool:
         self.flow_log.append({"dpid": dpid, "rule": rule})
         print(f"[RyuControllerAdapter stub] push_flow dpid={dpid} rule={rule}")
         return False
 
-    def revoke_flow(self, dpid: str, cookie: Optional[int] = None) -> bool:
+    def revoke_flow(self, dpid: str, cookie: int | None = None) -> bool:
         print(f"[RyuControllerAdapter stub] revoke_flow dpid={dpid} cookie={cookie}")
         return False
 
-    def lab_checklist(self) -> List[str]:
+    def lab_checklist(self) -> list[str]:
         return [
             "Install Ryu + Mininet-WiFi on Ubuntu/WSL2",
             "Start controller listening OF 1.3",

@@ -6,7 +6,7 @@ import threading
 import time
 from collections import deque
 from pathlib import Path
-from typing import Any, Deque, Dict, Optional
+from typing import Any
 
 import numpy as np
 import torch
@@ -41,14 +41,14 @@ class LiveScorer:
         self.k_sigma = float(k_sigma)
         self.window = int(window)
         self._lock = threading.RLock()
-        self._re_hist: Deque[float] = deque(maxlen=self.window)
+        self._re_hist: deque[float] = deque(maxlen=self.window)
         self._model = None
         self._tau = 53.12
         self._mu = 0.0
         self._std = 1.0
         self._device = torch.device("cpu")
         self._loaded = False
-        self._last: Dict[str, Any] = {}
+        self._last: dict[str, Any] = {}
         self._dataset_mode = "sample"
         self._load()
 
@@ -69,7 +69,7 @@ class LiveScorer:
             self._loaded = False
             self._last = {"error": f"model load failed: {exc}"}
 
-    def reload(self, checkpoint: Optional[str] = None) -> Dict[str, Any]:
+    def reload(self, checkpoint: str | None = None) -> dict[str, Any]:
         with self._lock:
             if checkpoint:
                 self.checkpoint = (
@@ -80,7 +80,7 @@ class LiveScorer:
             self._load()
             return self.status()
 
-    def status(self) -> Dict[str, Any]:
+    def status(self) -> dict[str, Any]:
         with self._lock:
             return {
                 "loaded": self._loaded,
@@ -145,10 +145,10 @@ class LiveScorer:
 
     def score(
         self,
-        window: Optional[Any] = None,
+        window: Any | None = None,
         scenario: str = "normal",
         adapt_tau: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         with self._lock:
             t0 = time.perf_counter()
             if not self._loaded or self._model is None:
@@ -213,7 +213,7 @@ class LiveScorer:
             return result
 
 
-_SCORER: Optional[LiveScorer] = None
+_SCORER: LiveScorer | None = None
 _SCORER_LOCK = threading.Lock()
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import numpy as np
 import torch
@@ -13,7 +13,7 @@ from sdn_its.ai.infer import load_model
 from sdn_its.utils.paths import PROJECT_ROOT
 
 
-def run(n_iters: int = 200, warmup: int = 20, checkpoint: str = "models/checkpoints/tcn_gru_best.pt") -> Dict[str, Any]:
+def run(n_iters: int = 200, warmup: int = 20, checkpoint: str = "models/checkpoints/tcn_gru_best.pt") -> dict[str, Any]:
     ckpt = checkpoint if Path(checkpoint).is_absolute() else str(PROJECT_ROOT / checkpoint)
     model, tau = load_model(ckpt)
     model.eval()
@@ -23,7 +23,7 @@ def run(n_iters: int = 200, warmup: int = 20, checkpoint: str = "models/checkpoi
         with torch.no_grad():
             model(x)
 
-    samples: List[float] = []
+    samples: list[float] = []
     with torch.no_grad():
         for _ in range(n_iters):
             t0 = time.perf_counter()

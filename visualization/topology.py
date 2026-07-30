@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 
-def plot_topology_summary(out: Optional[str] = None):
+def plot_topology_summary(out: str | None = None):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(7, 4))

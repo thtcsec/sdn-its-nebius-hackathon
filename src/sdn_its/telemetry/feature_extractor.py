@@ -6,21 +6,20 @@ Accepts canonical FEATURE_COLUMNS CSVs or raw InSDN/CICFlowMeter CSVs via column
 """
 
 import os
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
+from torch.utils.data import DataLoader, Dataset
 
 from .column_mapper import canonicalize_dataframe
-from .schema import FEATURE_COLUMNS, LABEL_MAPPING
+from .schema import FEATURE_COLUMNS
 
 
 def generate_synthetic_telemetry(
     num_samples: int = 2000, seq_len: int = 10, seed: int = 42
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Synthetic time-series telemetry for SDN-enabled V2X edge networks."""
     np.random.seed(seed)
     X_list = []

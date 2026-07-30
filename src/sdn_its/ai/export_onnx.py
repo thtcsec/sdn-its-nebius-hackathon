@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import torch
 
@@ -18,7 +18,7 @@ def export_onnx(
     opset: int = 17,
     seq_len: int = 10,
     num_features: int = 10,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     device = torch.device("cpu")
     ckpt = checkpoint if Path(checkpoint).is_absolute() else str(PROJECT_ROOT / checkpoint)
     out = Path(out_path if Path(out_path).is_absolute() else PROJECT_ROOT / out_path)
@@ -61,7 +61,7 @@ def export_torchscript(
     out_path: str = "models/exported/torchscript/tcn_gru.ts",
     seq_len: int = 10,
     num_features: int = 10,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     device = torch.device("cpu")
     ckpt = checkpoint if Path(checkpoint).is_absolute() else str(PROJECT_ROOT / checkpoint)
     out = Path(out_path if Path(out_path).is_absolute() else PROJECT_ROOT / out_path)

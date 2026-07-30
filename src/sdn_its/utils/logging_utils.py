@@ -1,10 +1,9 @@
 """Lightweight logging helpers."""
 
 import logging
-from typing import Optional
 
 
-def get_logger(name: str = "sdn_its", level: Optional[int] = None) -> logging.Logger:
+def get_logger(name: str = "sdn_its", level: int | None = None) -> logging.Logger:
     logger = logging.getLogger(name)
     if not logger.handlers:
         handler = logging.StreamHandler()

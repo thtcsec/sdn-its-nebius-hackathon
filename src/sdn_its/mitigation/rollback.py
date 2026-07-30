@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
 from .containment import FlowRule
 from .cooldown import CooldownTracker
@@ -15,16 +16,16 @@ class RollbackManager:
 
     def __init__(
         self,
-        active_rules: Dict[str, FlowRule],
+        active_rules: dict[str, FlowRule],
         lock: threading.Lock,
-        of_push_callback: Optional[Callable] = None,
+        of_push_callback: Callable | None = None,
         check_interval: float = 5.0,
     ):
         self.active_rules = active_rules
         self.lock = lock
         self.of_push_callback = of_push_callback
         self.check_interval = check_interval
-        self.rollback_history: List[Dict[str, Any]] = []
+        self.rollback_history: list[dict[str, Any]] = []
         self.cooldown = CooldownTracker()
         self.running = True
         self._thread = threading.Thread(target=self._auto_rollback_loop, daemon=True)
