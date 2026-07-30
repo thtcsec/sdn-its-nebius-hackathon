@@ -1,0 +1,49 @@
+# Dataset paths & schema mapping for SDN-ITS resilience training
+
+schema:
+  features:
+    - flow_duration
+    - packet_rate
+    - byte_rate
+    - pkt_iat_mean
+    - pkt_iat_std
+    - packet_len_mean
+    - packet_in_count
+    - tcp_flags_syn_count
+    - flow_active_ratio
+    - rsu_channel_occupancy
+  label_column: label
+  seq_len: 10
+  train_ratio: 0.70
+  val_ratio: 0.15
+
+paths:
+  raw_insdn: datasets/raw/insdn
+  raw_cic: datasets/raw/cicids2017
+  processed: datasets/processed
+  sample_canonical: datasets/sample/canonical_flows.csv
+  sample_insdn_shaped: datasets/sample/insdn_shaped_sample.csv
+  default_train_csv: datasets/sample/canonical_flows.csv
+
+sources:
+  insdn:
+    official_page: https://aseados.ucd.ie/datasets/SDN/
+    paper: https://doi.org/10.1109/access.2020.3022633
+    notes: >
+      CICFlowMeter CSV exports (Normal_data.csv, OVS.csv, Meterpreter.csv, etc.).
+      Place downloaded CSVs under datasets/raw/insdn/ then run:
+      python scripts/prepare_data.py --source insdn
+  cicids2017:
+    official_page: https://www.unb.ca/cic/datasets/ids-2017.html
+    notes: >
+      Prefer CIC-IDS2017 over full 2018 for size. Place CSVs under datasets/raw/cicids2017/
+      then: python scripts/prepare_data.py --source cic
+  synthetic_v2x:
+    notes: Generated locally with ITS labels including RushHour and RSU fault.
+
+label_taxonomy:
+  0: Normal
+  1: DDoS_PacketIn_Flood   # DDoS / DoS / Bot
+  2: LOFT_LowRate_Attack   # Probe / BFA / Web / low-rate
+  3: RSU_Link_Fault        # Exploit / U2R / synthetic fault
+  4: RushHour_Burst        # synthetic V2X only (or explicit label)

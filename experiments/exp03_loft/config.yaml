@@ -1,0 +1,17 @@
+experiment:
+  id: exp03_loft
+  name: LOFT Low-Rate Attack
+  description: Low-rate OpenFlow trust probes targeting controller.
+
+attack:
+  type: loft
+  duration: 180
+  packet_rate: 80
+
+controller:
+  url: "http://127.0.0.1:8080"
+  cooldown_seconds: 45
+
+telemetry:
+  interval: 1.5
+  scenario: LOFT

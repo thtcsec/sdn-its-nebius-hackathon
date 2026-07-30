@@ -1,0 +1,7 @@
+checkpoint: models/checkpoints/tcn_gru_best.pt
+seq_len: 10
+csv_path: datasets/sample/canonical_flows.csv
+output_dir: results
+seed: 42
+export_metrics_csv: results/accuracy.csv
+export_latency_csv: results/latency.csv

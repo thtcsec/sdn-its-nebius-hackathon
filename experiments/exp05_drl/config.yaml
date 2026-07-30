@@ -1,0 +1,25 @@
+experiment:
+  id: exp05_drl
+  name: DRL Orchestration & Rollback Validation
+  description: Validate Detect -> Contain -> Rollback cooldown and DRL action selection stub.
+
+attack:
+  type: ddos
+  duration: 60
+  packet_rate: 3000
+
+controller:
+  url: "http://127.0.0.1:8080"
+  cooldown_seconds: 8
+
+telemetry:
+  interval: 1.0
+  scenario: DDOS
+
+drl:
+  enabled: true
+  state_dim: 5
+  action_dim: 4
+  episodes: 30
+  steps: 40
+  tau: 53.12

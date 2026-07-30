@@ -1,0 +1,4 @@
+# Optional webhook for containment / FP-avoid events
+enabled: false
+webhook_url: ""
+min_interval_seconds: 5.0

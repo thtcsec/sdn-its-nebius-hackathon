@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sdn-its-resilience-ai"
+version = "0.2.0"
+description = "AI-Assisted Resilience Framework for SDN-Enabled Intelligent Transportation Systems"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Trinh Hoang Tu" }]
+dependencies = [
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.2.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "Flask>=2.3.0",
+    "requests>=2.31.0",
+    "urllib3>=2.0.0",
+    "scapy>=2.5.0",
+    "traci>=1.18.0",
+    "jupyter>=1.0.0",
+    "notebook>=6.5.0",
+    "tqdm>=4.65.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.4.0", "huggingface_hub>=0.20.0"]
+export = ["onnx>=1.14"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"

@@ -1,0 +1,17 @@
+experiment:
+  id: exp01_normal
+  name: Normal Traffic Baseline
+  description: Benign V2X telemetry under nominal RSU load.
+
+attack:
+  type: none
+  duration: 120
+  packet_rate: 50
+
+controller:
+  url: "http://127.0.0.1:8080"
+  cooldown_seconds: 12
+
+telemetry:
+  interval: 1.5
+  scenario: NORMAL

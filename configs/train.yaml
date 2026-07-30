@@ -1,0 +1,11 @@
+epochs: 15
+batch_size: 64
+lr: 0.001
+seq_len: 10
+alpha: 1.0
+k_sigma: 2.0
+seed: 42
+early_stopping_patience: 5
+class_weights: null  # e.g. [1.0, 1.2, 1.2, 1.5, 1.0] or null for uniform
+save_dir: models/checkpoints
+csv_path: datasets/sample/canonical_flows.csv

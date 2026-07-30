@@ -1,0 +1,17 @@
+experiment:
+  id: exp02_ddos
+  name: Packet Flood / DDoS PacketIn
+  description: High-rate packet_in flood against SDN controller.
+
+attack:
+  type: ddos
+  duration: 120
+  packet_rate: 5000
+
+controller:
+  url: "http://127.0.0.1:8080"
+  cooldown_seconds: 30
+
+telemetry:
+  interval: 1.0
+  scenario: DDOS

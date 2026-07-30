@@ -1,0 +1,6 @@
+controller_url: "http://127.0.0.1:8080"
+interval: 1.5
+checkpoint: models/checkpoints/tcn_gru_best.pt
+topology:
+  switches: [s1, s2, s3, s4]
+  vehicles: 6

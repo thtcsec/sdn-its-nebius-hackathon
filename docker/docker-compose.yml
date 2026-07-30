@@ -1,0 +1,31 @@
+services:
+  controller:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../models:/app/models
+      - ../configs:/app/configs
+    command: ["python", "-m", "api.app", "--port", "8080"]
+
+  telemetry:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      - controller
+    volumes:
+      - ../models:/app/models
+      - ../configs:/app/configs
+    command:
+      [
+        "python",
+        "-m",
+        "sdn_its.simulation.traffic_generator",
+        "--controller",
+        "http://controller:8080",
+        "--interval",
+        "1.5",
+      ]

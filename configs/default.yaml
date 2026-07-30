@@ -1,0 +1,21 @@
+project:
+  name: sdn-its-resilience-ai
+  version: "0.2.0"
+
+telemetry:
+  seq_len: 10
+  num_features: 10
+  poll_interval_ms: 5.0
+
+model:
+  tcn_channels: [32, 64]
+  gru_hidden_dim: 64
+  num_classes: 5
+  dropout: 0.2
+  k_sigma: 2.0
+
+paths:
+  checkpoints: models/checkpoints
+  quantized: models/quantized
+  results: results
+  logs: logs

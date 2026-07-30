@@ -24,13 +24,19 @@ wheels/
 .installed.cfg
 *.egg
 
-# PyTorch Checkpoints & Datasets
-models/checkpoints/*.pt
-models/checkpoints/*.pth
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
+# PyTorch Checkpoints & Datasets (keep sample/)
+models/checkpoints/*
+!models/checkpoints/.gitkeep
+models/quantized/*
+!models/quantized/.gitkeep
+models/exported/**/*
+!models/exported/**/.gitkeep
+datasets/raw/*
+!datasets/raw/.gitkeep
+datasets/processed/*
+!datasets/processed/.gitkeep
+datasets/synthetic/*
+!datasets/synthetic/.gitkeep
 
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints
@@ -45,10 +51,29 @@ env/
 
 # Logs & Temporary files
 *.log
+logs/*
+!logs/.gitkeep
+results/*.csv
+results/*.png
+!results/.gitkeep
 extracted_report.txt
 *.docx
 *.zip
 tmp/
+temp_dummy_dataset.csv
 
 .env
+
+# Experiment run artifacts (keep folder structure)
+experiments/*/results/*
+!experiments/*/results/.gitkeep
+experiments/*/plots/*
+!experiments/*/plots/.gitkeep
+experiments/*/logs/*
+!experiments/*/logs/.gitkeep
+
+# Ephemeral console/API reports
+results/unit_test_report.*
+results/console_*.md
+results/console_*.json
 

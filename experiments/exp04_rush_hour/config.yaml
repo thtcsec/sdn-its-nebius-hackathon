@@ -1,0 +1,17 @@
+experiment:
+  id: exp04_rush_hour
+  name: Rush Hour Burst
+  description: Legitimate mobility volume surge — must NOT trigger persistent block.
+
+attack:
+  type: rush_hour
+  duration: 120
+  packet_rate: 400
+
+controller:
+  url: "http://127.0.0.1:8080"
+  cooldown_seconds: 0
+
+telemetry:
+  interval: 1.0
+  scenario: RUSH_HOUR

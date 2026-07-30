@@ -17,12 +17,15 @@ if (-not (Test-Path $PythonExec)) {
     $PythonExec = "python"
 }
 
+$env:PYTHONPATH = "$ProjectRoot\src;$ProjectRoot"
+
 # 1. Start SDN Resilience Controller
 Write-Host "[*] Step 1: Starting SDN Controller REST API on http://127.0.0.1:8080..." -ForegroundColor Green
 $ControllerJob = Start-Job -ScriptBlock {
     param($py, $root)
     Set-Location $root
-    & $py "$root\sdn_controller\controller.py" --port 8080
+    $env:PYTHONPATH = "$root\src;$root"
+    & $py -m api.app --port 8080
 } -ArgumentList $PythonExec, $ProjectRoot
 
 Start-Sleep -Seconds 2
@@ -37,7 +40,7 @@ Write-Host "[+] System Live! Watch real-time AI anomaly detection & OpenFlow mit
 Write-Host "[!] Press Ctrl+C in this terminal window to stop all background services.`n" -ForegroundColor Gray
 
 try {
-    & $PythonExec "$ProjectRoot\simulation\traffic_generator.py" --interval 1.5
+    & $PythonExec -m sdn_its.simulation.traffic_generator --interval 1.5
 }
 finally {
     Write-Host "`n[*] Cleaning up background processes..." -ForegroundColor Yellow

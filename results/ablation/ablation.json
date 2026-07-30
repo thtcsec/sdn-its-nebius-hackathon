@@ -1,0 +1,65 @@
+{
+  "architectures": {
+    "RNN": {
+      "accuracy_cls": 0.5166666666666667,
+      "precision": 0.9666666666666667,
+      "recall": 1.0,
+      "f1": 0.9830508474576272,
+      "tau": 59.77627691347522,
+      "latency_ms_per_sample": 0.014627232303610072,
+      "params": 1903
+    },
+    "LSTM": {
+      "accuracy_cls": 0.7166666666666667,
+      "precision": 0.9666666666666667,
+      "recall": 1.0,
+      "f1": 0.9830508474576272,
+      "tau": 66.21528414017477,
+      "latency_ms_per_sample": 0.12157499973649724,
+      "params": 6127
+    },
+    "GRU": {
+      "accuracy_cls": 0.13333333333333333,
+      "precision": 0.9354838709677419,
+      "recall": 1.0,
+      "f1": 0.9666666666666667,
+      "tau": 61.77626357713366,
+      "latency_ms_per_sample": 0.03436941902431759,
+      "params": 4719
+    },
+    "TCN-GRU": {
+      "accuracy_cls": 0.5166666666666667,
+      "precision": 0.9354838709677419,
+      "recall": 1.0,
+      "f1": 0.9666666666666667,
+      "tau": 66.2385647455403,
+      "latency_ms_per_sample": 0.36149821426079143,
+      "params": 82287
+    }
+  },
+  "k_sigma": {
+    "k=1.0": {
+      "tau": 58.92584756520809,
+      "f1": 0.9508196721311475,
+      "precision": 0.90625,
+      "recall": 1.0,
+      "rush_false_block_rate": 1.0
+    },
+    "k=2.0": {
+      "tau": 66.2385647455403,
+      "f1": 0.9666666666666667,
+      "precision": 0.9354838709677419,
+      "recall": 1.0,
+      "rush_false_block_rate": 1.0
+    },
+    "k=3.0": {
+      "tau": 73.5512819258725,
+      "f1": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "rush_false_block_rate": 1.0
+    }
+  },
+  "samples": 400,
+  "epochs": 1
+}
