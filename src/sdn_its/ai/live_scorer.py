@@ -168,6 +168,9 @@ class LiveScorer:
                     if x.shape[1] == 10 and x.shape[2] != 10:
                         x = x.transpose(1, 2)
                 x = x.to(self._device)
+                # Demo windows are raw-scale; trained checkpoint expects ~z-scored features.
+                # Per-window standardization keeps RE on a readable demo scale.
+                x = (x - x.mean(dim=(1, 2), keepdim=True)) / (x.std(dim=(1, 2), keepdim=True) + 1e-6)
                 with torch.no_grad():
                     x_hat, logits = self._model(x)
                     diff = x - x_hat

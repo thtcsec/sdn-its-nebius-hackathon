@@ -19,13 +19,37 @@ import torch.nn as nn
 import torch.optim as optim
 
 from sdn_its.ai.tcn_gru import TCNGRUResilienceModel
+from sdn_its.ai.temporal_transformer import TemporalTransformerModel
 from sdn_its.telemetry import LABEL_MAPPING, TelemetryDataLoader
+
+DEFAULT_NPZ = "datasets/processed/insdn_windows.npz"
+DEFAULT_CSV = "datasets/sample/canonical_flows.csv"
 
 
 def _set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+
+def _build_model(arch: str, num_features: int, num_classes: int) -> torch.nn.Module:
+    arch = (arch or "tcn_gru").lower()
+    if arch in {"transformer", "temporal_transformer", "attn"}:
+        return TemporalTransformerModel(
+            num_features=num_features,
+            d_model=64,
+            nhead=4,
+            num_layers=2,
+            num_classes=num_classes,
+            dropout=0.1,
+        )
+    return TCNGRUResilienceModel(
+        num_features=num_features,
+        tcn_channels=[32, 64],
+        gru_hidden_dim=64,
+        num_classes=num_classes,
+        dropout=0.2,
+    )
 
 
 def train_model(
@@ -37,38 +61,31 @@ def train_model(
     k_sigma: float = 2.0,
     save_dir: str = "models/checkpoints",
     csv_path: str = None,
+    npz_path: str = None,
+    arch: str = "tcn_gru",
     seed: int = 42,
     class_weights=None,
     early_stopping_patience: int = 5,
 ):
     print("=" * 65)
-    print("  TCN-GRU MODEL TRAINING PIPELINE - SDN-ITS RESILIENCE AI")
+    print("  MODEL TRAINING PIPELINE - SDN-ITS RESILIENCE AI")
     print("=" * 65)
 
     _set_seed(seed)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[*] Compute Device: {device} | seed={seed}")
+    print(f"[*] Compute Device: {device} | seed={seed} | arch={arch}")
 
     loader = TelemetryDataLoader(seq_len=seq_len, batch_size=batch_size)
-    if csv_path and os.path.exists(csv_path):
-        print(f"[*] Loading telemetry CSV: {csv_path}")
-        train_dl, val_dl, test_dl = loader.get_csv_loaders(csv_path)
-    else:
-        if csv_path:
-            print(f"[!] CSV not found ({csv_path}); falling back to synthetic.")
-        print("[*] Generating synthetic time-series telemetry...")
-        train_dl, val_dl, test_dl = loader.get_synthetic_loaders(num_samples=2500)
+    train_dl, val_dl, test_dl = loader.resolve_loaders(
+        npz_path=npz_path,
+        csv_path=csv_path,
+        synthetic_samples=2500,
+    )
     print(f"[+] Train={len(train_dl.dataset)} Val={len(val_dl.dataset)} Test={len(test_dl.dataset)}")
 
     num_features = 10
     num_classes = len(LABEL_MAPPING)
-    model = TCNGRUResilienceModel(
-        num_features=num_features,
-        tcn_channels=[32, 64],
-        gru_hidden_dim=64,
-        num_classes=num_classes,
-        dropout=0.2,
-    ).to(device)
+    model = _build_model(arch, num_features, num_classes).to(device)
 
     mse_criterion = nn.MSELoss()
     if class_weights:
@@ -84,7 +101,8 @@ def train_model(
     best_val_loss = float("inf")
     epochs_without_improve = 0
     os.makedirs(save_dir, exist_ok=True)
-    best_model_path = os.path.join(save_dir, "tcn_gru_best.pt")
+    ckpt_name = "transformer_best.pt" if "transformer" in arch.lower() or arch.lower() == "attn" else "tcn_gru_best.pt"
+    best_model_path = os.path.join(save_dir, ckpt_name)
 
     start_time = time.time()
     for epoch in range(1, epochs + 1):
@@ -163,6 +181,8 @@ def train_model(
                     "std_re": model.std_re.item(),
                     "label_mapping": LABEL_MAPPING,
                     "csv_path": csv_path,
+                    "npz_path": npz_path,
+                    "arch": arch,
                     "seed": seed,
                 },
                 best_model_path,
@@ -182,7 +202,7 @@ def train_model(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train TCN-GRU Model for SDN ITS Resilience")
+    parser = argparse.ArgumentParser(description="Train resilience models for SDN ITS")
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -190,10 +210,23 @@ if __name__ == "__main__":
     parser.add_argument("--k_sigma", type=float, default=2.0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--arch",
+        type=str,
+        default="tcn_gru",
+        choices=["tcn_gru", "transformer", "attn"],
+        help="Model architecture (tcn_gru default, transformer ablation)",
+    )
+    parser.add_argument(
+        "--npz",
+        type=str,
+        default=DEFAULT_NPZ,
+        help="Processed windows NPZ (preferred; from prepare_data --prepare)",
+    )
+    parser.add_argument(
         "--csv",
         type=str,
-        default="datasets/sample/canonical_flows.csv",
-        help="Canonical or InSDN/CIC-shaped CSV path",
+        default=DEFAULT_CSV,
+        help="Fallback canonical / InSDN CSV if NPZ missing",
     )
     parser.add_argument("--synthetic", action="store_true", help="Force synthetic data")
     args = parser.parse_args()
@@ -205,5 +238,7 @@ if __name__ == "__main__":
         seq_len=args.seq_len,
         k_sigma=args.k_sigma,
         seed=args.seed,
+        arch=args.arch,
+        npz_path=None if args.synthetic else args.npz,
         csv_path=None if args.synthetic else args.csv,
     )

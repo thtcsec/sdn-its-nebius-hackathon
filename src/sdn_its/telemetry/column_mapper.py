@@ -146,7 +146,7 @@ def resolve_column(columns: Iterable[str], aliases: list[str]) -> str | None:
 def map_label_value(value) -> int:
     if value is None or (isinstance(value, float) and np.isnan(value)):
         return 0
-    if isinstance(value, (int, np.integer)) and not isinstance(value, bool):
+    if isinstance(value, int | np.integer) and not isinstance(value, bool):
         iv = int(value)
         return iv if iv in LABEL_MAPPING else (0 if iv == 0 else 1)
     key = normalize_column_name(str(value)).replace(" ", "_").replace("/", "_")

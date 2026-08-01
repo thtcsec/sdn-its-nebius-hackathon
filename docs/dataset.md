@@ -4,9 +4,35 @@ Public datasets are **not** committed to git. Download into `datasets/raw/` then
 
 | Dataset | Purpose | How to use |
 |---------|---------|------------|
-| **InSDN (real)** | SDN / OpenFlow intrusion flows | `python scripts/download_dataset.py --name insdn` |
-| **CSE-CIC-IDS2017** | General attacks (Kaggle) | needs `~/.kaggle/kaggle.json` → `--name cicids2017 --prefer kaggle` |
+| **InSDN (real)** | SDN / OpenFlow intrusion flows (~344k rows) | `python scripts/download_dataset.py --name insdn` |
+| **CSE-CIC-IDS2017** | General attacks (Kaggle, multi-GB) | needs `~/.kaggle/kaggle.json` → `--name cicids2017 --prefer kaggle` |
 | **Synthetic V2X** | RushHour / RSU fault labels | `prepare_data.py --source synthetic` (fallback only) |
+
+## Recommended research path (not the 800-row demo)
+
+```bash
+# 1) Download real InSDN (~141 MB CSV from Hugging Face — no Kaggle token)
+pip install -e ".[data]"
+python scripts/download_dataset.py --name insdn --prefer hf --prepare
+# → datasets/raw/insdn/Dataset.csv
+# → datasets/processed/insdn_windows.npz   (~50k windows by default)
+
+# 2) Train on the processed windows (preferred over sample CSV)
+python -m sdn_its.ai.train --npz datasets/processed/insdn_windows.npz --epochs 15
+
+# 3) Evaluate + export confusion matrix / metrics JSON
+python -m sdn_its.ai.evaluate --npz datasets/processed/insdn_windows.npz
+
+# 4) Ablation: Temporal Transformer vs TCN-GRU
+python -m sdn_its.ai.train --arch transformer --npz datasets/processed/insdn_windows.npz --epochs 15
+python -m sdn_its.ai.compare --npz datasets/processed/insdn_windows.npz
+```
+
+To enlarge the window bank (more of the 344k flows):
+
+```bash
+python scripts/prepare_data.py --source insdn --max-rows 200000 --num-samples 5000
+```
 
 ## Download REAL InSDN (no Kaggle token needed)
 
@@ -39,3 +65,5 @@ python scripts/download_dataset.py --name cicids2017 --prefer kaggle --prepare
 ## Feature mapping
 
 See `sdn_its.telemetry.column_mapper`. Config: [`configs/dataset.yaml`](../configs/dataset.yaml).
+
+Loader priority in `train` / `evaluate` / `compare`: **NPZ → CSV → synthetic**.

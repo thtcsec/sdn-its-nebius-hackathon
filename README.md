@@ -26,7 +26,7 @@ This repository is structured as a **research framework** (not a flat student sc
 
 Pipeline: **Vehicle → RSU → OVS → Controller → Telemetry → AI → Mitigation → Rollback**
 
-Docs: [architecture](docs/architecture.md) · [dataset](docs/dataset.md) · [experiments](docs/experiments.md) · [api](docs/api.md) · [deployment](docs/deployment.md)
+Docs: [architecture](docs/ARCHITECTURE.md) · [dataset](docs/dataset.md) · [experiments](docs/experiments.md) · [api](docs/api.md) · [deployment](docs/deployment.md)
 
 ---
 
@@ -38,7 +38,7 @@ sdn-its-resilience-ai/
 ├── configs/              # YAML configs (train / evaluate / controller / simulation)
 ├── datasets/             # raw / processed / synthetic / sample (no large commits)
 ├── src/sdn_its/
-│   ├── ai/               # TCN-GRU train / eval / quantize / infer
+│   ├── ai/               # TCN-GRU + Transformer train / eval / quantize / infer
 │   ├── telemetry/        # Features, window buffer, normalizer
 │   ├── controller/       # Flow manager, REST glue, Ryu/OVS stubs
 │   ├── mitigation/       # Containment, rollback, cooldown, policy
@@ -90,10 +90,14 @@ Open `http://127.0.0.1:8080/`.
 # Download REAL InSDN (~141MB, Hugging Face — no Kaggle token)
 python scripts/download_dataset.py --name insdn --prefer hf --prepare
 
-# Train on prepared canonical sample (from real InSDN)
-python -m sdn_its.ai.train --csv datasets/sample/canonical_flows.csv --epochs 15
-python -m sdn_its.ai.evaluate
+# Train on full processed windows (~50k from InSDN) — preferred over 800-row sample
+python -m sdn_its.ai.train --npz datasets/processed/insdn_windows.npz --epochs 15
+python -m sdn_its.ai.evaluate --npz datasets/processed/insdn_windows.npz
 python -m sdn_its.ai.quantize
+
+# Optional ablation: Temporal Transformer
+python -m sdn_its.ai.train --arch transformer --npz datasets/processed/insdn_windows.npz --epochs 15
+python -m sdn_its.ai.compare --npz datasets/processed/insdn_windows.npz
 ```
 
 Dataset docs: [docs/dataset.md](docs/dataset.md) · config: [configs/dataset.yaml](configs/dataset.yaml)

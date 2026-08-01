@@ -35,7 +35,7 @@ def write_markdown_report(
     for k, v in metrics.items():
         if isinstance(v, float):
             lines.append(f"| `{k}` | {v:.4f} |")
-        elif isinstance(v, (dict, list)):
+        elif isinstance(v, dict | list):
             lines.append(f"| `{k}` | `{json.dumps(v)[:120]}` |")
         else:
             lines.append(f"| `{k}` | {v} |")

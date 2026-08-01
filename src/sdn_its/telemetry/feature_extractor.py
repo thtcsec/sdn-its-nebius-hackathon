@@ -148,6 +148,78 @@ class TelemetryDataLoader:
         print(f"[+] Built {len(X_windows)} sliding windows (seq_len={self.seq_len})")
         return self._split_windows(X_windows, y_windows, train_ratio, val_ratio)
 
+    def get_npz_loaders(
+        self,
+        npz_path: str,
+        train_ratio: float = 0.7,
+        val_ratio: float = 0.15,
+        already_scaled: bool = False,
+    ):
+        """Load prebuilt windows from prepare_data.py (e.g. InSDN ~50k windows).
+
+        By default windows are re-standardized with StandardScaler (prepare_data
+        writes raw-scale features). Pass already_scaled=True only if X is z-scored.
+        """
+        if not os.path.exists(npz_path):
+            raise FileNotFoundError(f"NPZ dataset not found at: {npz_path}")
+
+        data = np.load(npz_path)
+        if "X" not in data or "y" not in data:
+            raise ValueError(f"NPZ must contain arrays 'X' and 'y' (got {list(data.keys())})")
+
+        X = np.asarray(data["X"], dtype=np.float32)
+        y = np.asarray(data["y"], dtype=np.int64)
+        if X.ndim != 3:
+            raise ValueError(f"Expected X shape (N, seq_len, features), got {X.shape}")
+        if X.shape[1] != self.seq_len:
+            print(
+                f"[!] NPZ seq_len={X.shape[1]} differs from loader seq_len={self.seq_len}; "
+                f"using NPZ seq_len"
+            )
+            self.seq_len = int(X.shape[1])
+
+        # Clip extreme CICFlowMeter / InSDN outliers before z-score
+        X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+        X = np.clip(X, -1e7, 1e7)
+
+        n, l, f = X.shape
+        if already_scaled:
+            Xs = X.astype(np.float32)
+            self.scaler.fit(X.reshape(-1, f))
+        else:
+            Xs = self.scaler.fit_transform(X.reshape(-1, f)).reshape(n, l, f).astype(np.float32)
+            print(
+                f"[*] Standardized NPZ features "
+                f"(raw max={float(np.max(np.abs(X))):.3g} → z mean={float(Xs.mean()):.3g} std={float(Xs.std()):.3g})"
+            )
+
+        uniq, counts = np.unique(y, return_counts=True)
+        dist = {int(u): int(c) for u, c in zip(uniq, counts, strict=True)}
+        print(f"[+] Loaded NPZ windows: N={n} shape={X.shape} label_dist={dist}")
+        return self._split_windows(Xs, y, train_ratio, val_ratio)
+
+    def resolve_loaders(
+        self,
+        npz_path: str | None = None,
+        csv_path: str | None = None,
+        synthetic_samples: int = 2500,
+        train_ratio: float = 0.7,
+        val_ratio: float = 0.15,
+    ):
+        """Prefer NPZ (full InSDN) → CSV → synthetic fallback."""
+        if npz_path and os.path.exists(npz_path):
+            print(f"[*] Loading processed windows NPZ: {npz_path}")
+            return self.get_npz_loaders(npz_path, train_ratio, val_ratio)
+        if csv_path and os.path.exists(csv_path):
+            print(f"[*] Loading telemetry CSV: {csv_path}")
+            return self.get_csv_loaders(csv_path, train_ratio, val_ratio)
+        if npz_path:
+            print(f"[!] NPZ not found ({npz_path})")
+        if csv_path:
+            print(f"[!] CSV not found ({csv_path})")
+        print(f"[*] Generating synthetic time-series telemetry (n={synthetic_samples})...")
+        return self.get_synthetic_loaders(synthetic_samples, train_ratio, val_ratio)
+
 
 if __name__ == "__main__":
     loader = TelemetryDataLoader(seq_len=10, batch_size=32)

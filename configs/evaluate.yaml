@@ -1,7 +1,10 @@
 checkpoint: models/checkpoints/tcn_gru_best.pt
 seq_len: 10
+npz_path: datasets/processed/insdn_windows.npz
 csv_path: datasets/sample/canonical_flows.csv
 output_dir: results
 seed: 42
 export_metrics_csv: results/accuracy.csv
 export_latency_csv: results/latency.csv
+export_confusion_png: results/confusion_matrix.png
+export_metrics_json: results/eval_metrics.json
