@@ -62,27 +62,34 @@ FEATURE_ALIASES: dict[str, list[str]] = {
         "tot fwd pkts",
         "total fwd packets",
         "fwd act data pkts",
+        "total fwd packets",
+        "subflow fwd pkts",
     ],
     "tcp_flags_syn_count": [
         "tcp_flags_syn_count",
         "syn flag cnt",
         "syn flag count",
         "syn flags",
+        "syn flag cnt",
     ],
     "flow_active_ratio": [
         "flow_active_ratio",
         "active/idle ratio",
+        "active mean",
+        "idle mean",
     ],
     "rsu_channel_occupancy": [
         "rsu_channel_occupancy",
         "channel occupancy",
         "rsu occupancy",
+        # CIC proxy: normalize via Flow Bytes/s magnitude later if needed
+        "bwd pkts/s",
     ],
 }
 
 LABEL_COLUMN_ALIASES = ["label", "class", "attack", "attack_type", "category", "target", "y"]
 
-# InSDN / CIC string labels -> our 5-class taxonomy
+# InSDN / CIC-IDS2017 / CICFlowMeter string labels -> our 5-class taxonomy
 LABEL_ALIASES: dict[str, int] = {
     "normal": 0,
     "benign": 0,
@@ -90,11 +97,15 @@ LABEL_ALIASES: dict[str, int] = {
     "ddos": 1,
     "ddos_packetin_flood": 1,
     "ddos attack": 1,
+    "ddos attack loic http": 1,
+    "ddos attack hoic": 1,
+    "ddos loic http": 1,
     "dos": 1,
     "dos slowloris": 1,
     "dos slowhttptest": 1,
     "dos hulk": 1,
     "dos goldeneye": 1,
+    "heartbleed": 1,
     "loft": 2,
     "loft_lowrate_attack": 2,
     "probe": 2,
@@ -104,9 +115,14 @@ LABEL_ALIASES: dict[str, int] = {
     "bfa": 2,
     "bruteforce": 2,
     "brute force": 2,
+    "ftp patator": 2,
+    "ssh patator": 2,
     "web-attack": 2,
     "web attack": 2,
     "webattack": 2,
+    "web attack brute force": 2,
+    "web attack xss": 2,
+    "web attack sql injection": 2,
     "bot": 1,
     "botnet": 1,
     "u2r": 3,

@@ -6,6 +6,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from sdn_its.controller.flow_manager import FlowRuleManager
+from sdn_its.controller.of_backend import backend_status, resolve_of_backend
 from sdn_its.mitigation.containment import FlowRule
 from sdn_its.mitigation.policy_engine import PolicyEngine
 from sdn_its.utils.alerts import AlertNotifier
@@ -23,13 +24,16 @@ class ResilienceSDNController:
         port: int = 8080,
         app: Flask | None = None,
         create_flask: bool = True,
+        of_backend: str | None = None,
     ):
         self.host = host
         self.port = port
+        self.of_backend_name, of_cb = resolve_of_backend(of_backend)
         self.flow_mgr = FlowRuleManager(
             rollback_check_interval=2.0,
-            of_push_callback=self._mock_openflow_switch_push,
+            of_push_callback=of_cb,
         )
+        self._of_callback = of_cb
         self.policy = PolicyEngine(self.flow_mgr.containment)
         self.stats: dict[str, Any] = {
             "total_alerts_received": 0,
@@ -37,6 +41,7 @@ class ResilienceSDNController:
             "false_positives_avoided": 0,
             "infer_calls": 0,
             "webhook_events": 0,
+            "of_backend": self.of_backend_name,
             "start_time": time.time(),
         }
         self.runtime_settings: dict[str, Any] = {
@@ -66,10 +71,16 @@ class ResilienceSDNController:
             self.app = create_app(controller=self)
 
     def _mock_openflow_switch_push(self, action: str, rule: FlowRule):
+        """Backward-compatible alias — prefer of_backend.resolve_of_backend."""
         print(
             f"[OpenFlow Switch Channel] {action} Rule [{rule.rule_id}] -> "
             f"DPID={rule.dpid}, Match={rule.src_ip}, Action={rule.action}"
         )
+
+    def openflow_status(self) -> dict[str, Any]:
+        st = backend_status(self._of_callback)
+        st["configured_backend"] = self.of_backend_name
+        return st
 
     def update_runtime_settings(self, patch: dict[str, Any]) -> dict[str, Any]:
         allowed = set(self.runtime_settings.keys())

@@ -34,10 +34,15 @@ DATASETS = {
         "title": "CSE-CIC-IDS2017 (ML-ready CSV mirror)",
         "raw_dir": "datasets/raw/cicids2017",
         "kaggle": "chethuhn/network-intrusion-dataset",
-        "huggingface": None,
+        "huggingface": {
+            "repo_id": "bvk/CICIDS-2017",
+            # Attack-heavy days first (no Kaggle token needed)
+            "filenames": ["friday.csv", "tuesday.csv", "wednesday.csv"],
+        },
         "official": [
             "https://www.unb.ca/cic/datasets/ids-2017.html",
             "https://www.kaggle.com/datasets/chethuhn/network-intrusion-dataset",
+            "https://huggingface.co/datasets/bvk/CICIDS-2017",
         ],
     },
 }
@@ -80,7 +85,7 @@ def _download_kaggle(slug: str, dest: Path) -> bool:
     return any(dest.rglob("*.csv"))
 
 
-def _download_huggingface(repo_id: str, filename: str, dest: Path) -> bool:
+def _download_huggingface(repo_id: str, filename: str | None, dest: Path, filenames: list[str] | None = None) -> bool:
     ensure_dir(dest)
     try:
         from huggingface_hub import hf_hub_download
@@ -89,19 +94,28 @@ def _download_huggingface(repo_id: str, filename: str, dest: Path) -> bool:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "huggingface_hub"])
         from huggingface_hub import hf_hub_download
 
-    print(f"[*] Hugging Face: {repo_id} / {filename}")
-    try:
-        path = hf_hub_download(
-            repo_id=repo_id,
-            filename=filename,
-            repo_type="dataset",
-            local_dir=str(dest),
-        )
-        print(f"[+] Saved {path}")
-        return Path(path).exists()
-    except Exception as exc:
-        print(f"[!] Hugging Face download failed: {exc}")
+    files = list(filenames or [])
+    if filename:
+        files = [filename] + [f for f in files if f != filename]
+    if not files:
+        print("[!] No Hugging Face filenames configured")
         return False
+
+    ok_any = False
+    for fn in files:
+        print(f"[*] Hugging Face: {repo_id} / {fn}")
+        try:
+            path = hf_hub_download(
+                repo_id=repo_id,
+                filename=fn,
+                repo_type="dataset",
+                local_dir=str(dest),
+            )
+            print(f"[+] Saved {path}")
+            ok_any = True
+        except Exception as exc:
+            print(f"[!] Hugging Face download failed for {fn}: {exc}")
+    return ok_any
 
 
 def _write_readme(name: str, info: dict, dest: Path):
@@ -126,7 +140,7 @@ def download_one(name: str, prefer: str) -> bool:
         order = ["kaggle", "hf"]
     elif prefer == "hf":
         order = ["hf", "kaggle"]
-    else:  # auto: HF first for InSDN (no token), else kaggle
+    else:  # auto: HF first when available (no token)
         order = ["hf", "kaggle"] if info.get("huggingface") else ["kaggle"]
 
     for src in order:
@@ -134,12 +148,16 @@ def download_one(name: str, prefer: str) -> bool:
             break
         if src == "hf" and info.get("huggingface"):
             hf = info["huggingface"]
-            ok = _download_huggingface(hf["repo_id"], hf["filename"], dest)
+            ok = _download_huggingface(
+                hf["repo_id"],
+                hf.get("filename"),
+                dest,
+                filenames=hf.get("filenames"),
+            )
         elif src == "kaggle" and info.get("kaggle"):
             if not _have_kaggle():
                 print(f"[!] Skip Kaggle ({info['kaggle']}): no ~/.kaggle/kaggle.json")
                 continue
-            # ensure package
             try:
                 import kaggle  # noqa: F401
             except ImportError:
@@ -184,18 +202,29 @@ def main():
         print(f"[{'OK' if ok else 'FAIL'}] {name}")
 
     if args.prepare and any(results.values()):
-        src = "insdn" if results.get("insdn") else "cic"
+        # Prefer the dataset that was just requested (don't silently fall back to InSDN)
+        if args.name != "all" and results.get(args.name):
+            src = "insdn" if args.name == "insdn" else "cic"
+        else:
+            src = "cic" if results.get("cicids2017") else "insdn"
         print(f"[*] Running prepare_data --source {src}")
         subprocess.check_call(
-            [sys.executable, str(PROJECT_ROOT / "scripts" / "prepare_data.py"), "--source", src]
+            [
+                sys.executable,
+                str(PROJECT_ROOT / "scripts" / "prepare_data.py"),
+                "--source",
+                src,
+                "--max-rows",
+                "80000",
+            ]
         )
 
     if not any(results.values()):
         print("\n[!] Download failed. Options:")
-        print("  1) HuggingFace (InSDN): pip install huggingface_hub && retry")
+        print("  1) HuggingFace: pip install huggingface_hub && retry --prefer hf")
         print("  2) Kaggle: put kaggle.json in %USERPROFILE%\\.kaggle\\ then:")
         print("       pip install kaggle")
-        print("       python scripts/download_dataset.py --name insdn --prefer kaggle")
+        print("       python scripts/download_dataset.py --name cicids2017 --prefer kaggle")
         sys.exit(1)
 
 

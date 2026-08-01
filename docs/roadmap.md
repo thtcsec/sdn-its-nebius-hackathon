@@ -8,6 +8,9 @@
 - [x] Full InSDN windows NPZ wired into train / evaluate / compare (not just 800-row sample)
 - [x] Temporal Transformer ablation baseline alongside TCN-GRU
 - [x] Eval exports: confusion matrix PNG + `eval_metrics.json`
+- [x] CIC-IDS2017 HF download mirror + prepare → `cic_windows.npz`
+- [x] Cross-dataset holdout script (InSDN train scaler → CIC test)
+- [x] OpenFlow backends: `mock` | `queue` | `ryu` + Ryu app + lab checklist
 - [x] Live TCN-GRU inference API (`/api/v1/infer`, `/telemetry`) + online τ
 - [x] Settings GET/POST, theme / role / dataset / webhook
 - [x] Scenario replay timeline + before/after compare mode
@@ -19,8 +22,7 @@
 - [x] Console report / ONNX export endpoints
 
 ## Lab / paper (needs Linux or longer runs)
-- [ ] Real Ryu OpenFlow 1.3 app on Mininet-WiFi (adapter + checklist ready)
+- [ ] Sign off WSL2 Mininet+Ryu lab against `docs/lab_checklist.md` pass criteria
 - [ ] Paper-ready multi-seed sweeps → IEEE/Q1 draft tables
-- [ ] Cross-dataset holdout (InSDN train → CIC-IDS2017 test) once CIC is downloaded
 - [ ] Full SUMO / Mininet-WiFi mobility coupling
 - [ ] Production webhook integrations (Slack/Teams templates)

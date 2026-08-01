@@ -11,6 +11,13 @@ pip install -e ".[dev]"
 
 Open `http://127.0.0.1:8080/`.
 
+OpenFlow backend (optional):
+
+```powershell
+$env:SDN_OF_BACKEND = "mock"   # default print-only
+$env:SDN_OF_BACKEND = "queue"  # in-memory flow-mod log (dry-run)
+```
+
 ## Docker Compose
 
 ```bash
@@ -18,14 +25,29 @@ cd docker
 docker compose up --build
 ```
 
-Services mirror the architecture: **controller/API/dashboard** (Flask) and **telemetry** streamer.
+Services mirror the architecture: **controller/API/dashboard** (Flask) and **telemetry** streamer.  
+Compose is the portable demo path — it does **not** ship a privileged Mininet/OVS lab.
 
-## Linux / Mininet lab
+## Linux / Mininet + Ryu lab (real OpenFlow)
 
-- Run topology: `python -m sdn_its.simulation.topology`
-- Ryu OpenFlow adapter is a documented stub (`sdn_its.controller.ryu_controller`); wire to real Ryu on WSL2/Linux.
+Full step-by-step: **[lab_checklist.md](lab_checklist.md)**.
+
+Short version (WSL2 Ubuntu):
+
+```bash
+# Terminal A
+ryu-manager src/sdn_its/controller/ryu_app.py
+
+# Terminal B
+sudo python -m sdn_its.simulation.topology
+
+# Terminal C
+export SDN_OF_BACKEND=ryu
+python -m api.app
+```
 
 ## Config
 
 Controller port/host: `configs/controller.yaml`  
-Simulation streamer: `configs/simulation.yaml`
+Simulation streamer: `configs/simulation.yaml`  
+OpenFlow backend: env `SDN_OF_BACKEND` = `mock` | `queue` | `ryu`

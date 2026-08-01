@@ -5,8 +5,23 @@ Public datasets are **not** committed to git. Download into `datasets/raw/` then
 | Dataset | Purpose | How to use |
 |---------|---------|------------|
 | **InSDN (real)** | SDN / OpenFlow intrusion flows (~344k rows) | `python scripts/download_dataset.py --name insdn` |
-| **CSE-CIC-IDS2017** | General attacks (Kaggle, multi-GB) | needs `~/.kaggle/kaggle.json` → `--name cicids2017 --prefer kaggle` |
+| **CSE-CIC-IDS2017** | Cross-dataset holdout (HF, no Kaggle needed) | `python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare` |
 | **Synthetic V2X** | RushHour / RSU fault labels | `prepare_data.py --source synthetic` (fallback only) |
+
+## Cross-dataset (InSDN → CIC)
+
+```bash
+# Download CIC days (friday/tuesday/…) from Hugging Face — no Kaggle token
+python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare
+# → datasets/processed/cic_windows.npz
+
+# Score an InSDN-trained checkpoint on CIC holdout (scaler fit on InSDN only)
+python scripts/run_cross_dataset.py \
+  --train-npz datasets/processed/insdn_windows.npz \
+  --test-npz datasets/processed/cic_windows.npz \
+  --checkpoint models/checkpoints/tcn_gru_best.pt
+# → results/cross_dataset/eval_metrics.json
+```
 
 ## Recommended research path (not the 800-row demo)
 

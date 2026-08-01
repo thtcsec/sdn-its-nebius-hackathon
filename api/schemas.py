@@ -33,6 +33,7 @@ def status_payload(controller) -> dict[str, Any]:
         "service": "SDN ITS AI Resilience Controller",
         "uptime_seconds": round(uptime_sec, 1),
         "stats": controller.stats,
+        "openflow": getattr(controller, "openflow_status", lambda: {})(),
         "active_mitigations_count": len(controller.flow_mgr.active_rules),
         "tau": tau,
         "role_mode": runtime.get("role_mode", "research"),

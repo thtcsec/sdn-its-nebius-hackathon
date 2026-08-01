@@ -220,6 +220,61 @@ class TelemetryDataLoader:
         print(f"[*] Generating synthetic time-series telemetry (n={synthetic_samples})...")
         return self.get_synthetic_loaders(synthetic_samples, train_ratio, val_ratio)
 
+    def get_cross_dataset_loaders(
+        self,
+        train_npz: str,
+        test_npz: str,
+        train_ratio: float = 0.85,
+        val_ratio: float = 0.15,
+        batch_size: int | None = None,
+    ):
+        """Train/val from train_npz (scaled in-domain); full test_npz as holdout.
+
+        Scaler is fit on train windows only, then applied to holdout — the correct
+        cross-dataset protocol (no test leakage).
+        """
+        if not os.path.exists(train_npz):
+            raise FileNotFoundError(f"Train NPZ not found: {train_npz}")
+        if not os.path.exists(test_npz):
+            raise FileNotFoundError(f"Test NPZ not found: {test_npz}")
+
+        bs = batch_size or self.batch_size
+        tr = np.load(train_npz)
+        te = np.load(test_npz)
+        Xtr = np.nan_to_num(np.asarray(tr["X"], dtype=np.float32), nan=0.0, posinf=0.0, neginf=0.0)
+        ytr = np.asarray(tr["y"], dtype=np.int64)
+        Xte = np.nan_to_num(np.asarray(te["X"], dtype=np.float32), nan=0.0, posinf=0.0, neginf=0.0)
+        yte = np.asarray(te["y"], dtype=np.int64)
+        Xtr = np.clip(Xtr, -1e7, 1e7)
+        Xte = np.clip(Xte, -1e7, 1e7)
+
+        n, l, f = Xtr.shape
+        self.seq_len = int(l)
+        Xs_tr = self.scaler.fit_transform(Xtr.reshape(-1, f)).reshape(n, l, f).astype(np.float32)
+        nt, lt, ft = Xte.shape
+        if (lt, ft) != (l, f):
+            raise ValueError(f"Shape mismatch train {Xtr.shape} vs test {Xte.shape}")
+        Xs_te = self.scaler.transform(Xte.reshape(-1, ft)).reshape(nt, lt, ft).astype(np.float32)
+
+        # Use almost-all of train as train, small val; entire foreign set as test
+        n_train = int(n * train_ratio)
+        n_val = max(1, int(n * val_ratio))
+        if n_train + n_val > n:
+            n_val = max(1, n - n_train)
+        train_ds = TelemetryDataset(Xs_tr[:n_train], ytr[:n_train])
+        val_ds = TelemetryDataset(Xs_tr[n_train : n_train + n_val], ytr[n_train : n_train + n_val])
+        test_ds = TelemetryDataset(Xs_te, yte)
+
+        print(
+            f"[+] Cross-dataset: train={len(train_ds)} val={len(val_ds)} "
+            f"holdout_test={len(test_ds)} (scaler fit on train only)"
+        )
+        return (
+            DataLoader(train_ds, batch_size=bs, shuffle=True),
+            DataLoader(val_ds, batch_size=bs, shuffle=False),
+            DataLoader(test_ds, batch_size=bs, shuffle=False),
+        )
+
 
 if __name__ == "__main__":
     loader = TelemetryDataLoader(seq_len=10, batch_size=32)

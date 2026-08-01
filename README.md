@@ -26,7 +26,7 @@ This repository is structured as a **research framework** (not a flat student sc
 
 Pipeline: **Vehicle → RSU → OVS → Controller → Telemetry → AI → Mitigation → Rollback**
 
-Docs: [architecture](docs/ARCHITECTURE.md) · [dataset](docs/dataset.md) · [experiments](docs/experiments.md) · [api](docs/api.md) · [deployment](docs/deployment.md)
+Docs: [architecture](docs/ARCHITECTURE.md) · [dataset](docs/dataset.md) · [lab](docs/lab_checklist.md) · [experiments](docs/experiments.md) · [api](docs/api.md) · [deployment](docs/deployment.md)
 
 ---
 
@@ -98,9 +98,13 @@ python -m sdn_its.ai.quantize
 # Optional ablation: Temporal Transformer
 python -m sdn_its.ai.train --arch transformer --npz datasets/processed/insdn_windows.npz --epochs 15
 python -m sdn_its.ai.compare --npz datasets/processed/insdn_windows.npz
+
+# Cross-dataset holdout (InSDN → CIC-IDS2017, no Kaggle token)
+python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare
+python scripts/run_cross_dataset.py
 ```
 
-Dataset docs: [docs/dataset.md](docs/dataset.md) · config: [configs/dataset.yaml](configs/dataset.yaml)
+Dataset docs: [docs/dataset.md](docs/dataset.md) · lab: [docs/lab_checklist.md](docs/lab_checklist.md) · config: [configs/dataset.yaml](configs/dataset.yaml)
 
 ### Experiments / sweeps / export
 
