@@ -871,6 +871,23 @@
             font-weight: 700; letter-spacing: 0.04em; color: var(--ink);
             margin-bottom: 4px;
         }
+        .cam-preview {
+            display: block;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            background: #0e1116;
+            border: 1px solid var(--line);
+            margin: 4px 0 6px;
+        }
+        .cam-preview-missing {
+            display: flex; align-items: center; justify-content: center;
+            width: 100%; aspect-ratio: 16 / 9;
+            border: 1px dashed var(--line);
+            color: var(--muted);
+            margin: 4px 0 6px;
+            font-size: 9px;
+        }
         .cam-card .prio-critical { color: var(--alert); }
         .cam-card .prio-high { color: var(--warn); }
         .fusion-block { margin-bottom: 8px; }
@@ -1292,7 +1309,7 @@
                     <button type="button" class="scenario-btn" data-cam-scen="idle">Cam · idle</button>
                 </div>
                 <div class="cam-cards" id="cam-cards"></div>
-                <div class="ev-note" id="cam-note">Edge analytics publish vehicle/queue/ped/incident — RTSP preview optional.</div>
+                <div class="ev-note" id="cam-note">RTSP edge-energy = visual activity proxy (not vehicle detection). Preview = one overwritten JPEG.</div>
             </div>
         </article>
         <article class="panel" id="panel-fusion">
@@ -1859,12 +1876,23 @@
                 `Allow-list ${cfg.loaded ?? "?"} / inventory ${cfg.inventory_total ?? "?"} · mode=${(cam.aggregate||{}).physical_mode || "—"} · frames overwritten only (no archive)`;
             cards.innerHTML = (cam.cameras || []).map((c) => {
                 const ctx = c.context || {};
+                const q = c.quality || {};
+                const va = ctx.visual_activity || {};
                 const prio = (c.network_priority || "NORMAL").toLowerCase();
+                const bust = c.preview_mtime || 0;
+                const preview = c.preview_url
+                    ? `<img class="cam-preview" alt="preview ${c.camera_id}" src="${c.preview_url}?t=${bust}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'cam-preview-missing',textContent:'preview 404 — waiting for ffmpeg grab'}))" />`
+                    : `<div class="cam-preview-missing">no frame yet · need ffmpeg + live RTSP</div>`;
+                const metricLine = ctx.is_vehicle_count || ctx.vehicle_count_is_real
+                    ? `Vehicles: ${ctx.vehicle_count ?? "—"} · Queue: ${ctx.queue_length_m ?? "—"} m`
+                    : `Activity proxy: ${va.value ?? "—"} (${ctx.activity_band || va.activity_band || "—"}) · NOT vehicle_count`;
                 return `<div class="cam-card">
                     <div class="cam-id">${(c.label || c.camera_id)} · ${c.connected ? "LIVE" : "DOWN"}</div>
+                    ${preview}
                     <div>${c.role || "cam"} · ${c.codec || "—"} ${c.resolution || ""}</div>
                     <div>RTSP · ${c.rtsp_configured ? (c.latency_ms != null ? c.latency_ms + " ms" : "probing") : "synthetic"}</div>
-                    <div>Vehicles: ${ctx.vehicle_count ?? "—"} · Queue: ${ctx.queue_length_m ?? "—"} m · src=${ctx.source || "—"}</div>
+                    <div>stream=${q.stream_available ? "ok" : "no"} · frame=${q.frame_fresh ? "ok" : "no"} · scene=${q.scene_valid ? "ok" : "no"} · analytics=${q.analytics_valid ? "ok" : "no"}</div>
+                    <div>${metricLine} · src=${ctx.source || "—"}</div>
                     <div>Pedestrian: ${ctx.pedestrian_present ? "YES" : "NO"} · Incident: ${ctx.incident ? "YES" : "NO"}</div>
                     <div class="prio-${prio}">Priority: ${c.network_priority || "NORMAL"}</div>
                 </div>`;
@@ -1872,13 +1900,16 @@
             const fus = (await fetch("/api/v1/lab/evidence").then((r) => r.json())).fusion
                 || {};
             const phys = fus.physical || agg;
+            const physMetric = (phys.is_vehicle_count || phys.vehicle_count_is_real)
+                ? `veh=${phys.vehicle_count ?? "—"} · queue=${phys.queue_length_m ?? "—"}m`
+                : `proxy_band=${phys.activity_band || agg.activity_band || "—"} · energy=${(phys.visual_activity || agg.visual_activity || {}).value ?? "—"}`;
             document.getElementById("fus-net").textContent =
                 `pred=${fus.network_prediction || "—"} · reasons=${(fus.reason_codes || []).slice(0, 4).join(", ") || "—"}`;
             document.getElementById("fus-phys").textContent =
-                `${phys.physical_label || agg.physical_label || "—"} · veh=${phys.vehicle_count ?? agg.vehicle_count ?? "—"} · queue=${phys.queue_length_m ?? agg.queue_length_m ?? "—"}m`;
+                `${phys.physical_label || agg.physical_label || "—"} · ${physMetric}`;
             document.getElementById("fus-dec").textContent =
                 `${fus.recommended_action || "—"} · risk=${fus.final_risk || "—"}`;
-            document.getElementById("fus-explain").textContent = fus.explain || "Awaiting decision…";
+            document.getElementById("fus-explain").textContent = fus.explain || agg.honesty || "Awaiting decision…";
             document.getElementById("fusion-head-meta").textContent =
                 fus.false_positive_corrected ? "FP corrected by camera" : "network × physical";
         } catch (_) {}

@@ -1,7 +1,7 @@
 """Camera-assisted physical context for safety-aware SDN mitigation.
 
 Metadata-first: edge analytics publish traffic state; fusion joins SDN signals.
-RTSP preview is optional and never the research claim.
+RTSP preview is optional. Edge-energy is a visual activity proxy, not vehicle detection.
 """
 
 from .fusion import FusionEngine, FusionDecision

@@ -42,11 +42,16 @@ class FusionEngine:
     ) -> FusionDecision:
         net = network_prediction or "Normal"
         phys = str(physical.get("physical_label") or "unknown")
-        vehicles = int(physical.get("vehicle_count") or 0)
-        queue = float(physical.get("queue_length_m") or 0.0)
+        is_vc = bool(physical.get("is_vehicle_count") or physical.get("vehicle_count_is_real"))
+        vehicles = int(physical.get("vehicle_count") or 0) if is_vc else 0
+        queue = float(physical.get("queue_length_m") or 0.0) if is_vc else 0.0
+        band = str(physical.get("activity_band") or "unknown")
         ped = bool(physical.get("pedestrian_present"))
         incident = bool(physical.get("incident"))
         stale = bool(physical.get("stale"))
+        analytics_valid = physical.get("analytics_valid")
+        if analytics_valid is None:
+            analytics_valid = not stale
         dominance = 0.5 if source_dominance is None else float(source_dominance)
         distributed = bool(distributed_sources) if distributed_sources is not None else dominance < 0.45
         pin = packet_in_delta_pct
@@ -54,10 +59,16 @@ class FusionEngine:
         reasons: list[str] = []
         if pin is not None and pin >= 100:
             reasons.append("HIGH_PACKET_IN")
-        if vehicles >= 25 or queue >= 40 or phys == "rush_hour":
+        if is_vc and (vehicles >= 25 or queue >= 40 or phys == "rush_hour"):
             reasons.append("HIGH_PHYSICAL_TRAFFIC")
-        if phys in {"stable", "unknown"} and vehicles < 12:
+        elif (not is_vc) and (band == "high" or phys == "rush_hour"):
+            reasons.append("HIGH_VISUAL_ACTIVITY_PROXY")
+        if is_vc and phys in {"stable", "unknown"} and vehicles < 12:
             reasons.append("PHYSICAL_STABLE")
+        elif (not is_vc) and band == "low" and phys in {"stable", "unknown"}:
+            reasons.append("PHYSICAL_STABLE")
+        if not is_vc and physical.get("visual_activity"):
+            reasons.append("VISUAL_ACTIVITY_PROXY_NOT_DETECTOR")
         if distributed:
             reasons.append("DISTRIBUTED_SOURCES")
         if dominance >= 0.7:
@@ -68,11 +79,16 @@ class FusionEngine:
             reasons.append("INCIDENT_DETECTED")
         if stale:
             reasons.append("CAMERA_CONTEXT_STALE")
+        if analytics_valid is False:
+            reasons.append("ANALYTICS_INVALID")
 
         net_anom = net in {"DDoS_PacketIn_Flood", "LOFT_LowRate_Attack"} or (
             net not in {"Normal", "RushHour_Burst", None, ""}
         )
-        rush_phys = phys in {"rush_hour", "elevated", "mixed_busy"} and vehicles >= 12
+        if is_vc:
+            rush_phys = phys in {"rush_hour", "elevated", "mixed_busy"} and vehicles >= 12
+        else:
+            rush_phys = phys in {"rush_hour", "elevated", "mixed_busy"} and band in {"high", "medium"}
 
         # Scenario C first: physical rush/incident BUT a dominant attacker → isolate source only
         if net_anom and rush_phys and dominance >= 0.7 and not stale:
@@ -156,8 +172,8 @@ class FusionEngine:
                 explain="Network anomaly without matching physical traffic → isolate dominant source temporarily.",
             )
 
-        # Soft path when camera stale
-        if net_anom and stale:
+        # Soft path when camera stale / analytics invalid
+        if net_anom and (stale or analytics_valid is False):
             return FusionDecision(
                 network_prediction=net,
                 physical_context=phys,
@@ -168,7 +184,7 @@ class FusionEngine:
                 cooldown_seconds=12.0,
                 false_positive_corrected=False,
                 safety_critical=False,
-                explain="Camera context stale — prefer soft rate-limit over hard DROP.",
+                explain="Camera stale or analytics invalid — prefer soft rate-limit over hard DROP.",
             )
 
         if net == "RushHour_Burst":

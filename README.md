@@ -30,14 +30,17 @@ Not a video wall and **not** a pile of `CAMERA_*` env vars. Selection is an allo
 
 - `configs/cameras.yaml` — which inventory IDs to load (max 3)
 - `1.cameras.json` — local inventory with RTSP URLs (**gitignored**; may hold credentials)
-- Worker probes RTSP health; optional single overwritten JPEG under `tmp/camera_frames/` (no history)
+- Worker probes RTSP health + quality (`stream_available` / `frame_fresh` / `scene_valid` / `analytics_valid`)
+- Live RTSP uses **visual activity proxy** (edge energy) — not `vehicle_count` until a real detector
+- Optional single overwritten JPEG preview (`GET /api/v1/camera/<id>/preview`; no archive)
 
 ```powershell
 # Edit select: in configs/cameras.yaml, keep inventory file local
 .\.venv\Scripts\python.exe scripts\exp_bc_camera_fusion.py
+.\.venv\Scripts\python.exe scripts\exp_bc_sensitivity.py
 ```
 
-Console: **Camera context** + **Fusion decision** (`GET /api/v1/camera`, `POST /api/v1/camera/reload`).
+Console: **Camera context** + preview thumbnails + **Fusion decision** (`GET /api/v1/camera`, `POST /api/v1/camera/reload`).
 
 ### Experiment A — DDoS containment (network evidence)
 
@@ -98,7 +101,22 @@ Defaults: **Lab mode on**, no scenario label cheat, no ambient fake RE, research
 Evidence bar must show `MODEL · LOADED` before treating numbers as real.  
 If checkpoint missing → `DEGRADED` (inference disabled), not silent fake scores.
 
+Camera preview needs **ffmpeg/ffprobe** on PATH and a live allow-list (`1.cameras.json` + `sample_frames: true`). Hard-refresh the console after starting; thumbnails reuse the last overwritten JPEG under `tmp/camera_frames/`.
+
 Demo injects that force labels: Settings → disable Lab mode → enable scenario override (UI marks `OVERRIDDEN`).
+
+### Docker (console)
+
+```powershell
+cd docker
+docker compose up --build
+# → http://127.0.0.1:8080/
+
+# With local camera inventory (../1.cameras.json must exist; never commit it):
+docker compose -f docker-compose.yml -f docker-compose.cameras.yml up --build
+```
+
+Details: [docs/docker.md](docs/docker.md). Image includes `ffmpeg` for RTSP probe/preview.
 
 ### Train / evaluate (preferred evidence path)
 

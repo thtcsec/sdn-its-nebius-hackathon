@@ -10,6 +10,7 @@ Base URL: `http://127.0.0.1:8080`
 | GET | `/api/v1/lab` | OpenFlow/agent snapshot + mitigation log |
 | GET | `/api/v1/lab/evidence` | Traffic / Detection / Actuation / Outcome board (+ Exp A file) |
 | GET | `/api/v1/camera` | Camera cards + aggregate physical context |
+| GET | `/api/v1/camera/<id>/preview` | Latest overwritten JPEG preview (404 if none) |
 | POST | `/api/v1/camera/scenario` | Set synthetic camera scenario (`rush` / `attack_physical_stable` / `mixed` / …) |
 | POST | `/api/v1/camera/fusion_preview` | Dry-run fusion decision without installing rules |
 | GET | `/api/v1/empirical` | Cached InSDN / CIC metrics from `results/` |

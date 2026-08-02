@@ -1,8 +1,16 @@
 {
   "experiment": "B_C",
   "title": "Camera-assisted safety-aware fusion",
-  "generated_at": "2026-08-02T04:05:38Z",
-  "note": "Synthetic edge analytics (vehicle_count / queue / ped / incident). Not a YOLO accuracy paper \u2014 fusion explainability is the claim.",
+  "generated_at": "2026-08-02T04:47:00Z",
+  "note": "Synthetic edge analytics (vehicle_count / queue / ped / incident) with is_vehicle_count=true for rule tests. pass=true proves fusion rules match scripted inputs \u2014 NOT that live RTSP/edge-energy reduces false positives. Live RTSP uses visual_activity_proxy only until a real detector exists.",
+  "honesty": {
+    "claim": "explainable multimodal fusion rules",
+    "not_claimed": [
+      "YOLO / tracker accuracy",
+      "real-camera false-positive reduction",
+      "OpenFlow outcome (see Exp A for network evidence)"
+    ]
+  },
   "cases": [
     {
       "scenario": "A_legitimate_surge",
@@ -10,16 +18,33 @@
       "network_prediction": "DDoS_PacketIn_Flood",
       "source_dominance": 0.3,
       "physical": {
-        "vehicle_count": 59,
-        "queue_length_m": 45.0,
+        "vehicle_count": 61,
+        "queue_length_m": 46.0,
+        "is_vehicle_count": true,
+        "vehicle_count_is_real": true,
+        "activity_band": "high",
+        "visual_activity": {
+          "metric": "visual_activity_proxy",
+          "value": null,
+          "source": "aggregate",
+          "is_vehicle_count": false,
+          "activity_band": "high"
+        },
         "pedestrian_present": false,
         "incident": false,
         "physical_label": "rush_hour",
         "confidence": 0.9,
         "cameras": 2,
+        "live_rtsp": 2,
+        "stream_available": true,
+        "frame_fresh": false,
+        "scene_valid": false,
+        "analytics_valid": true,
         "max_analytics_age_s": 0.0,
         "stale": false,
-        "scenario": "rush"
+        "scenario": "rush",
+        "physical_mode": "synthetic",
+        "honesty": "RTSP edge-energy is a visual activity proxy, not vehicle detection. Exp B/C synthetic scenarios prove fusion rules, not camera FP reduction."
       },
       "fusion": {
         "network_prediction": "DDoS_PacketIn_Flood",
@@ -49,14 +74,31 @@
       "physical": {
         "vehicle_count": 11,
         "queue_length_m": 6.0,
+        "is_vehicle_count": true,
+        "vehicle_count_is_real": true,
+        "activity_band": "low",
+        "visual_activity": {
+          "metric": "visual_activity_proxy",
+          "value": null,
+          "source": "aggregate",
+          "is_vehicle_count": false,
+          "activity_band": "low"
+        },
         "pedestrian_present": false,
         "incident": false,
         "physical_label": "stable",
         "confidence": 0.88,
         "cameras": 2,
+        "live_rtsp": 2,
+        "stream_available": true,
+        "frame_fresh": false,
+        "scene_valid": false,
+        "analytics_valid": true,
         "max_analytics_age_s": 0.0,
         "stale": false,
-        "scenario": "attack_physical_stable"
+        "scenario": "attack_physical_stable",
+        "physical_mode": "synthetic",
+        "honesty": "RTSP edge-energy is a visual activity proxy, not vehicle detection. Exp B/C synthetic scenarios prove fusion rules, not camera FP reduction."
       },
       "fusion": {
         "network_prediction": "DDoS_PacketIn_Flood",
@@ -84,16 +126,33 @@
       "network_prediction": "DDoS_PacketIn_Flood",
       "source_dominance": 0.82,
       "physical": {
-        "vehicle_count": 63,
+        "vehicle_count": 65,
         "queue_length_m": 48.0,
+        "is_vehicle_count": true,
+        "vehicle_count_is_real": true,
+        "activity_band": "high",
+        "visual_activity": {
+          "metric": "visual_activity_proxy",
+          "value": null,
+          "source": "aggregate",
+          "is_vehicle_count": false,
+          "activity_band": "high"
+        },
         "pedestrian_present": true,
         "incident": false,
         "physical_label": "mixed_busy",
         "confidence": 0.91,
         "cameras": 2,
+        "live_rtsp": 2,
+        "stream_available": true,
+        "frame_fresh": false,
+        "scene_valid": false,
+        "analytics_valid": true,
         "max_analytics_age_s": 0.0,
         "stale": false,
-        "scenario": "mixed"
+        "scenario": "mixed",
+        "physical_mode": "synthetic",
+        "honesty": "RTSP edge-energy is a visual activity proxy, not vehicle detection. Exp B/C synthetic scenarios prove fusion rules, not camera FP reduction."
       },
       "fusion": {
         "network_prediction": "DDoS_PacketIn_Flood",

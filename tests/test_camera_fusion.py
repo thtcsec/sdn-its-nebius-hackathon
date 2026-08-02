@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 import unittest
@@ -25,11 +24,14 @@ class TestCameraFusion(unittest.TestCase):
             network_prediction="DDoS_PacketIn_Flood",
             physical={
                 "physical_label": "rush_hour",
+                "is_vehicle_count": True,
                 "vehicle_count": 40,
                 "queue_length_m": 50,
+                "activity_band": "high",
                 "pedestrian_present": False,
                 "incident": False,
                 "stale": False,
+                "analytics_valid": True,
             },
             source_dominance=0.3,
             distributed_sources=True,
@@ -44,17 +46,47 @@ class TestCameraFusion(unittest.TestCase):
             network_prediction="DDoS_PacketIn_Flood",
             physical={
                 "physical_label": "stable",
+                "is_vehicle_count": True,
                 "vehicle_count": 5,
                 "queue_length_m": 4,
+                "activity_band": "low",
                 "pedestrian_present": False,
                 "incident": False,
                 "stale": False,
+                "analytics_valid": True,
             },
             source_dominance=0.85,
             distributed_sources=False,
             packet_in_delta_pct=400,
         )
         self.assertEqual(d.recommended_action, "temporary_drop")
+
+    def test_proxy_band_does_not_claim_vehicle_count(self):
+        eng = FusionEngine()
+        d = eng.fuse(
+            network_prediction="DDoS_PacketIn_Flood",
+            physical={
+                "physical_label": "rush_hour",
+                "is_vehicle_count": False,
+                "vehicle_count": None,
+                "activity_band": "high",
+                "visual_activity": {
+                    "metric": "visual_activity_proxy",
+                    "value": 32.0,
+                    "source": "edge_energy",
+                    "is_vehicle_count": False,
+                    "activity_band": "high",
+                },
+                "stale": False,
+                "analytics_valid": True,
+            },
+            source_dominance=0.3,
+            distributed_sources=True,
+            packet_in_delta_pct=400,
+        )
+        self.assertEqual(d.recommended_action, "preserve_rush_hour")
+        self.assertIn("VISUAL_ACTIVITY_PROXY_NOT_DETECTOR", d.reason_codes)
+        self.assertIn("HIGH_VISUAL_ACTIVITY_PROXY", d.reason_codes)
 
     def test_controller_alert_includes_fusion(self):
         store = get_camera_store()
@@ -83,6 +115,8 @@ class TestCameraFusion(unittest.TestCase):
             cam = client.get("/api/v1/camera").json
             self.assertIn("cameras", cam)
             self.assertGreaterEqual(len(cam["cameras"]), 1)
+            agg = cam.get("aggregate") or {}
+            self.assertTrue(agg.get("is_vehicle_count") or agg.get("vehicle_count_is_real"))
         finally:
             ctrl.flow_mgr.stop()
 

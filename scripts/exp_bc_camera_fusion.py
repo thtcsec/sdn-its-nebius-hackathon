@@ -111,9 +111,19 @@ def main() -> int:
         "title": "Camera-assisted safety-aware fusion",
         "generated_at": _utc(),
         "note": (
-            "Synthetic edge analytics (vehicle_count / queue / ped / incident). "
-            "Not a YOLO accuracy paper — fusion explainability is the claim."
+            "Synthetic edge analytics (vehicle_count / queue / ped / incident) with "
+            "is_vehicle_count=true for rule tests. pass=true proves fusion rules match "
+            "scripted inputs — NOT that live RTSP/edge-energy reduces false positives. "
+            "Live RTSP uses visual_activity_proxy only until a real detector exists."
         ),
+        "honesty": {
+            "claim": "explainable multimodal fusion rules",
+            "not_claimed": [
+                "YOLO / tracker accuracy",
+                "real-camera false-positive reduction",
+                "OpenFlow outcome (see Exp A for network evidence)",
+            ],
+        },
         "cases": cases,
         "summary": summary,
         "pass": all(summary.values()),

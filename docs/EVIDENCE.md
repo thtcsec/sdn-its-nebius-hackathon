@@ -55,14 +55,27 @@ Refresh with `scripts/sync_artifacts.ps1` after any eval run.
 
 ## Camera fusion (not a video wall)
 
-Physical context is **metadata** (`vehicle_count`, `queue_length_m`, `pedestrian_present`, `incident`).
-Fusion is **rule-based** and explainable (`reason_codes`).
+**Honest boundary:** live RTSP currently feeds a **visual activity proxy** (edge energy),
+not a vehicle detector. Provenance fields:
+
+- `visual_activity` / `activity_band` / `is_vehicle_count: false` for RTSP proxy
+- `vehicle_count` / `queue_length_m` only when `is_vehicle_count: true` (synthetic Exp B/C or future detector)
+- Stream quality: `stream_available` · `frame_fresh` · `scene_valid` · `analytics_valid`
+- Preview: `GET /api/v1/camera/<id>/preview` (one overwritten JPEG, no archive)
+
+Fusion is **rule-based** and explainable (`reason_codes`). Thresholds are handcrafted;
+see `scripts/exp_bc_sensitivity.py` → `artifacts/results/exp_bc/exp_bc_sensitivity.json`.
 
 - `GET /api/v1/camera` — cards + aggregate
 - `POST /api/v1/camera/scenario` — synthetic rush / stable / mixed
 - `scripts/exp_bc_camera_fusion.py` → `artifacts/results/exp_bc/exp_bc_fusion.json`
 
-`false_positives_avoided` increments only when fusion **corrects** an anomaly prediction using camera context — not when a RushHour label alone is ignored.
+`pass: true` on Exp B/C proves **rule correctness on scripted inputs**, not live-camera FP reduction.
+`false_positives_avoided` increments only when fusion **corrects** an anomaly prediction using camera context.
+
+Camera → fusion → **OpenFlow + traffic outcome** still belongs to Exp A-style evidence; fusion alone is policy intelligence on paper until OF is verified.
+
+Privacy (prototype): inventory RTSP URLs gitignored; no raw URL logs; single overwritten frame; no video archive. Production needs secret store, ACL, TLS/private net, retention, audit.
 
 ## Experiment A metrics file
 

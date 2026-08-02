@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
 from .config import ROOT, load_camera_config, load_selected_cameras
-from .models import CameraCard, CameraHealth, TrafficContext
+from .models import CameraCard, CameraHealth, StreamQuality, TrafficContext, VisualActivity
 from .rtsp_probe import grab_latest_frame, probe_stream
 
 _STORE: CameraContextStore | None = None
@@ -58,6 +59,7 @@ class CameraContextStore:
         self._ffprobe_t = float(self._cfg.get("ffprobe_timeout_s") or 12)
         self._ffmpeg_t = float(self._cfg.get("ffmpeg_timeout_s") or 20)
         self._proxy: dict[str, dict[str, Any]] = {}
+        self._frame_dir.mkdir(parents=True, exist_ok=True)
         for cam in cameras or _default_cameras():
             self._health[cam.camera_id] = cam
             self._ctx[cam.camera_id] = TrafficContext(
@@ -67,7 +69,11 @@ class CameraContextStore:
                 mean_speed_kmh=38.0,
                 confidence=0.7,
                 source="synthetic",
+                is_vehicle_count=True,
+                activity_band="low",
+                analytics_valid=True,
             )
+            self._hydrate_frame_unlocked(cam.camera_id)
 
     @classmethod
     def from_config(cls, path: Path | None = None) -> CameraContextStore:
@@ -124,8 +130,16 @@ class CameraContextStore:
             }
         for c in contexts:
             c.refresh_age()
-        vehicle_count = sum(c.vehicle_count for c in contexts)
-        queue = max(c.queue_length_m for c in contexts)
+        any_real_vc = any(c.is_vehicle_count for c in contexts)
+        vehicle_count = sum(int(c.vehicle_count or 0) for c in contexts) if any_real_vc else None
+        queue_vals = [float(c.queue_length_m or 0) for c in contexts if c.is_vehicle_count]
+        queue = max(queue_vals) if queue_vals else None
+        bands = [c.activity_band for c in contexts]
+        band = "unknown"
+        for b in ("high", "medium", "low"):
+            if b in bands:
+                band = b
+                break
         ped = any(c.pedestrian_present for c in contexts)
         incident = any(c.incident for c in contexts)
         conf = sum(c.confidence for c in contexts) / len(contexts)
@@ -142,31 +156,90 @@ class CameraContextStore:
             elif c.physical_label == "mixed_busy" and label in {"stable", "elevated"}:
                 label = "mixed_busy"
         live_n = sum(1 for c in cards if c.health.connected)
+        analytics_valid = any(c.analytics_valid for c in contexts)
+        energies = [
+            float(c.visual_activity.value)
+            for c in contexts
+            if c.visual_activity and c.visual_activity.value is not None
+        ]
         return {
             "vehicle_count": vehicle_count,
-            "queue_length_m": round(queue, 1),
+            "queue_length_m": round(queue, 1) if queue is not None else None,
+            "is_vehicle_count": any_real_vc,
+            "vehicle_count_is_real": any_real_vc,
+            "activity_band": band,
+            "visual_activity": {
+                "metric": "visual_activity_proxy",
+                "value": round(max(energies), 2) if energies else None,
+                "source": "aggregate",
+                "is_vehicle_count": False,
+                "activity_band": band,
+            },
             "pedestrian_present": ped,
             "incident": incident,
             "physical_label": label,
             "confidence": round(conf, 3),
             "cameras": len(contexts),
             "live_rtsp": live_n,
+            "stream_available": live_n > 0,
+            "frame_fresh": any(c.health.quality.frame_fresh for c in cards),
+            "scene_valid": any(c.health.quality.scene_valid for c in cards),
+            "analytics_valid": analytics_valid,
             "max_analytics_age_s": round(max(ages), 2),
             "stale": max(ages) > max(15.0, self._probe_interval * 2),
             "scenario": self.get_scenario(),
             "physical_mode": self._physical_mode,
+            "honesty": (
+                "RTSP edge-energy is a visual activity proxy, not vehicle detection. "
+                "Exp B/C synthetic scenarios prove fusion rules, not camera FP reduction."
+            ),
         }
+
+    def _frame_path(self, camera_id: str) -> Path:
+        # camera_id is allow-listed (cam-<hex>); never take a free-form path from the client
+        safe = "".join(ch for ch in camera_id if ch.isalnum() or ch in {"-", "_"})
+        return self._frame_dir / f"latest_{safe}.jpg"
+
+    def _hydrate_frame_unlocked(self, camera_id: str) -> None:
+        """Reuse overwritten JPEG on disk so preview works before the next RTSP grab."""
+        h = self._health.get(camera_id)
+        if not h:
+            return
+        p = self._frame_path(camera_id)
+        if p.is_file() and p.stat().st_size > 0:
+            h.latest_frame = str(p)
+
+    def latest_frame_path(self, camera_id: str) -> Path | None:
+        """Absolute path to overwritten preview JPEG, if present."""
+        with self._lock:
+            if camera_id not in self._health:
+                return None
+            self._hydrate_frame_unlocked(camera_id)
+            p = self._frame_path(camera_id)
+            if p.is_file() and p.stat().st_size > 0:
+                return p
+            return None
 
     def list_cards(self) -> list[dict[str, Any]]:
         with self._lock:
-            return [self._card_unlocked(cid).to_dict() for cid in sorted(self._health)]
+            out: list[dict[str, Any]] = []
+            for cid in sorted(self._health):
+                self._hydrate_frame_unlocked(cid)
+                row = self._card_unlocked(cid).to_dict()
+                p = self._frame_path(cid)
+                if p.is_file() and p.stat().st_size > 0:
+                    row["preview_url"] = f"/api/v1/camera/{cid}/preview"
+                    row["preview_mtime"] = int(p.stat().st_mtime)
+                out.append(row)
+            return out
 
     def snapshot(self) -> dict[str, Any]:
         return {
             "enabled": True,
             "research_role": (
-                "Allow-listed RTSP → health + optional proxy context for fusion. "
-                "Not a video wall / not an archive."
+                "Allow-listed RTSP → stream quality + visual_activity_proxy for fusion. "
+                "Not vehicle detection / not a video wall / not an archive. "
+                "vehicle_count only when is_vehicle_count=true (synthetic or real detector)."
             ),
             "scenario": self.get_scenario(),
             "aggregate": self.aggregate_context(),
@@ -207,6 +280,57 @@ class CameraContextStore:
             if self._stop.wait(self._probe_interval):
                 break
 
+    def _probe_one(self, cam_id: str, url: str) -> tuple[str, dict[str, Any], dict[str, Any]]:
+        info = probe_stream(url, timeout_s=self._ffprobe_t)
+        frame_info: dict[str, Any] = {}
+        if info.get("ok") and self._sample_frames:
+            frame_info = grab_latest_frame(
+                url,
+                self._frame_path(cam_id),
+                timeout_s=self._ffmpeg_t,
+                max_bytes=self._frame_max,
+            )
+        return cam_id, info, frame_info
+
+    def _apply_probe_result(
+        self, cam_id: str, info: dict[str, Any], frame_info: dict[str, Any]
+    ) -> None:
+        h = self._health.get(cam_id)
+        if not h:
+            return
+        stream_ok = bool(info.get("ok"))
+        h.connected = stream_ok
+        h.latency_ms = info.get("latency_ms")
+        h.last_error = None if stream_ok else info.get("error")
+        if stream_ok:
+            h.codec = info.get("codec") or h.codec
+            h.resolution = info.get("resolution") or h.resolution
+            h.fps_cfg = info.get("fps") or h.fps_cfg
+            h.mode = "rtsp_health"
+        frame_ok = bool(frame_info.get("ok"))
+        scene_ok = bool(frame_info.get("scene_valid")) if frame_ok else False
+        analytics_ok = bool(frame_info.get("analytics_valid")) if frame_ok else False
+        note = frame_info.get("note") if frame_ok else (frame_info.get("error") or info.get("error"))
+        # Keep last good JPEG for preview even if this grab failed
+        self._hydrate_frame_unlocked(cam_id)
+        h.quality = StreamQuality(
+            stream_available=stream_ok,
+            frame_fresh=frame_ok,
+            scene_valid=scene_ok,
+            analytics_valid=analytics_ok and scene_ok,
+            mean_luma=frame_info.get("mean_luma") if frame_ok else None,
+            note=str(note)[:180] if note else None,
+        )
+        if frame_ok:
+            h.latest_frame = frame_info.get("path") or str(self._frame_path(cam_id))
+            h.latency_ms = frame_info.get("latency_ms") or h.latency_ms
+            self._proxy[cam_id] = frame_info
+        elif self._sample_frames and stream_ok:
+            h.last_error = frame_info.get("error") or h.last_error
+            # Keep prior proxy if frame still on disk; clear only when no preview exists
+            if not h.latest_frame:
+                self._proxy.pop(cam_id, None)
+
     def _probe_all(self) -> None:
         with self._lock:
             items = [
@@ -215,37 +339,29 @@ class CameraContextStore:
             ]
         if self._cfg.get("probe_primary_first", True):
             items.sort(key=lambda t: 0 if t[3] == "primary" else 1)
-        for cam_id, url, mode, _role in items:
-            if not url or mode == "disabled":
-                continue
-            info = probe_stream(url, timeout_s=self._ffprobe_t)
-            frame_info: dict[str, Any] = {}
-            if info.get("ok") and self._sample_frames:
-                dest = self._frame_dir / f"latest_{cam_id}.jpg"
-                frame_info = grab_latest_frame(
-                    url,
-                    dest,
-                    timeout_s=self._ffmpeg_t,
-                    max_bytes=self._frame_max,
-                )
-            with self._lock:
-                h = self._health.get(cam_id)
-                if not h:
+        work = [(cid, url) for cid, url, mode, _r in items if url and mode != "disabled"]
+        if not work:
+            return
+        # Parallel grab so all previews appear ~one RTSP timeout, not 3× serial
+        results: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+        with ThreadPoolExecutor(max_workers=min(3, len(work))) as pool:
+            futs = [pool.submit(self._probe_one, cid, url) for cid, url in work]
+            for fut in as_completed(futs):
+                try:
+                    results.append(fut.result())
+                except Exception as exc:  # noqa: BLE001
+                    # Should be rare — probe helpers already catch
+                    results.append(("", {"ok": False, "error": str(exc)[:200]}, {}))
+        with self._lock:
+            for cam_id, info, frame_info in results:
+                if not cam_id:
                     continue
-                h.connected = bool(info.get("ok"))
-                h.latency_ms = info.get("latency_ms")
-                h.last_error = None if info.get("ok") else info.get("error")
-                if info.get("ok"):
-                    h.codec = info.get("codec") or h.codec
-                    h.resolution = info.get("resolution") or h.resolution
-                    h.fps_cfg = info.get("fps") or h.fps_cfg
-                    h.mode = "rtsp_health"
-                if frame_info.get("ok"):
-                    h.latest_frame = frame_info.get("path")
-                    h.latency_ms = frame_info.get("latency_ms") or h.latency_ms
-                    self._proxy[cam_id] = frame_info
-                elif self._sample_frames and info.get("ok"):
-                    h.last_error = frame_info.get("error") or h.last_error
+                self._apply_probe_result(cam_id, info, frame_info)
+
+    def _emit_synthetic(self) -> None:
+        """Force one context publish tick (Exp B/C / tests)."""
+        self._tick += 1
+        self._emit_context()
 
     def _emit_context(self) -> None:
         with self._lock:
@@ -256,34 +372,49 @@ class CameraContextStore:
             with self._lock:
                 h = self._health[cid]
                 proxy = self._proxy.get(cid)
-            # Scenario buttons override live proxy (demo / Exp B-C)
+            # Scenario buttons override live proxy (demo / Exp B-C) — synthetic counts ARE labeled real for rule tests
             if scenario and scenario != "idle":
                 ctx = _synth_context(cid, scenario, self._tick, phase=i)
                 self.publish(ctx)
                 continue
-            if mode == "rtsp_proxy" and h.connected and isinstance(proxy, dict) and proxy.get("vehicle_count_proxy") is not None:
+            if mode == "rtsp_proxy" and h.connected and isinstance(proxy, dict) and proxy.get("visual_activity"):
+                va_raw = proxy["visual_activity"]
+                va = VisualActivity(
+                    metric=str(va_raw.get("metric") or "visual_activity_proxy"),
+                    value=va_raw.get("value"),
+                    source=str(va_raw.get("source") or "edge_energy"),
+                    is_vehicle_count=False,
+                    activity_band=str(va_raw.get("activity_band") or proxy.get("activity_band") or "unknown"),
+                )
+                band = va.activity_band
+                cong = "high" if band == "high" else ("medium" if band == "medium" else "low")
                 ctx = TrafficContext(
                     camera_id=cid,
-                    vehicle_count=int(proxy["vehicle_count_proxy"]),
-                    queue_length_m=float(proxy.get("queue_length_m_proxy") or 0),
-                    mean_speed_kmh=18.0 if proxy.get("physical_label_proxy") == "rush_hour" else 35.0,
+                    vehicle_count=None,
+                    queue_length_m=None,
+                    mean_speed_kmh=None,
                     pedestrian_present=False,
                     incident=False,
-                    congestion_level="high" if proxy.get("physical_label_proxy") == "rush_hour" else "low",
-                    confidence=0.55,
+                    congestion_level=cong,
+                    confidence=0.45 if h.quality.analytics_valid else 0.2,
                     source="rtsp_proxy",
+                    is_vehicle_count=False,
+                    visual_activity=va,
+                    activity_band=band,
+                    analytics_valid=bool(h.quality.analytics_valid),
                 )
             elif mode == "rtsp_proxy" and h.connected:
-                # Stream up but no frame proxy yet — mild elevated for primary
-                base = 18 if h.role == "primary" or h.network_priority == "HIGH" else 6
+                # Stream up but no usable frame analytics yet
                 ctx = TrafficContext(
                     camera_id=cid,
-                    vehicle_count=base,
-                    queue_length_m=12.0 if base > 10 else 5.0,
-                    mean_speed_kmh=25.0,
-                    congestion_level="elevated" if base > 10 else "low",
-                    confidence=0.5,
+                    vehicle_count=None,
+                    queue_length_m=None,
                     source="rtsp_live_no_proxy",
+                    is_vehicle_count=False,
+                    activity_band="unknown",
+                    analytics_valid=False,
+                    confidence=0.2,
+                    congestion_level="low",
                 )
             else:
                 ctx = _synth_context(cid, scenario, self._tick, phase=i)
@@ -327,9 +458,24 @@ def _default_cameras() -> list[CameraHealth]:
 
 
 def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> TrafficContext:
+    """Synthetic scenario inputs for Exp B/C — vehicle_count is intentional and flagged real."""
     wobble = (tick + phase * 3) % 5
-    if scenario in {"rush", "legitimate_surge"}:
+
+    def _vc(**kwargs: Any) -> TrafficContext:
+        band = kwargs.pop("activity_band", None)
+        vc = int(kwargs.get("vehicle_count") or 0)
+        if band is None:
+            band = "high" if vc >= 25 else ("medium" if vc >= 12 else "low")
         return TrafficContext(
+            is_vehicle_count=True,
+            analytics_valid=True,
+            activity_band=band,
+            source="synthetic",
+            **kwargs,
+        )
+
+    if scenario in {"rush", "legitimate_surge"}:
+        return _vc(
             camera_id=camera_id,
             vehicle_count=28 + wobble,
             queue_length_m=42.0 + wobble,
@@ -338,20 +484,18 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
             incident=False,
             congestion_level="high",
             confidence=0.9,
-            source="synthetic",
         )
     if scenario in {"attack_physical_stable", "attack"}:
-        return TrafficContext(
+        return _vc(
             camera_id=camera_id,
             vehicle_count=5 + (wobble % 2),
             queue_length_m=6.0,
             mean_speed_kmh=40.0,
             congestion_level="low",
             confidence=0.88,
-            source="synthetic",
         )
     if scenario == "mixed":
-        return TrafficContext(
+        return _vc(
             camera_id=camera_id,
             vehicle_count=30 + wobble,
             queue_length_m=48.0,
@@ -359,10 +503,9 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
             pedestrian_present=True,
             congestion_level="high",
             confidence=0.91,
-            source="synthetic",
         )
     if scenario == "incident":
-        return TrafficContext(
+        return _vc(
             camera_id=camera_id,
             vehicle_count=18,
             queue_length_m=55.0,
@@ -371,14 +514,12 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
             incident=True,
             congestion_level="high",
             confidence=0.93,
-            source="synthetic",
         )
-    return TrafficContext(
+    return _vc(
         camera_id=camera_id,
         vehicle_count=4 + wobble,
         queue_length_m=5.0 + wobble,
         mean_speed_kmh=36.0,
         congestion_level="low",
         confidence=0.75,
-        source="synthetic",
     )

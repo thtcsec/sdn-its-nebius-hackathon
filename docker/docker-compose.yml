@@ -1,3 +1,14 @@
+# Research console + optional telemetry feeder.
+#
+#   cd docker
+#   docker compose up --build
+#   → http://127.0.0.1:8080/
+#
+# With cameras (host must have ../1.cameras.json):
+#   docker compose -f docker-compose.yml -f docker-compose.cameras.yml up --build
+#
+# See docs/docker.md
+
 services:
   controller:
     build:
@@ -5,9 +16,13 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      SDN_CAMERAS_CONFIG: /app/configs/cameras.yaml
     volumes:
       - ../models:/app/models
       - ../configs:/app/configs
+      - ../artifacts:/app/artifacts
+      - ../tmp/camera_frames:/app/tmp/camera_frames
     command: ["python", "-m", "api.app", "--port", "8080"]
 
   telemetry:

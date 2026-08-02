@@ -15,15 +15,20 @@ def main() -> int:
         time.sleep(8)
         snap = store.snapshot()
         agg = snap["aggregate"]
+        va = agg.get("visual_activity") or {}
         print(
-            f"t+{(i+1)*8}s live={agg.get('live_rtsp')} veh={agg.get('vehicle_count')} "
-            f"label={agg.get('physical_label')} stale={agg.get('stale')}"
+            f"t+{(i+1)*8}s live={agg.get('live_rtsp')} band={agg.get('activity_band')} "
+            f"energy={va.get('value')} is_vc={agg.get('is_vehicle_count')} "
+            f"label={agg.get('physical_label')} analytics={agg.get('analytics_valid')} stale={agg.get('stale')}"
         )
         for c in snap["cameras"]:
             ctx = c.get("context") or {}
+            q = c.get("quality") or {}
             print(
                 f"  {c['camera_id']} conn={c['connected']} src={ctx.get('source')} "
-                f"veh={ctx.get('vehicle_count')} codec={c.get('codec')} frame={bool(c.get('latest_frame'))}"
+                f"band={ctx.get('activity_band')} stream/frame/scene/an="
+                f"{q.get('stream_available')}/{q.get('frame_fresh')}/{q.get('scene_valid')}/{q.get('analytics_valid')} "
+                f"preview={bool(c.get('preview_url'))}"
             )
         live_ctx = any(
             str((c.get("context") or {}).get("source") or "").startswith("rtsp") for c in snap["cameras"]

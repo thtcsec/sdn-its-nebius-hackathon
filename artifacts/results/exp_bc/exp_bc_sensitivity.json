@@ -1,0 +1,47 @@
+{
+  "experiment": "B_C_sensitivity",
+  "generated_at": "2026-08-02T04:47:00Z",
+  "honesty": "Handcrafted thresholds; this table is a sensitivity check, not a validated ROC. Production would need labeled multimodal traces.",
+  "rows": [
+    {
+      "dominance_threshold_probe": 0.55,
+      "A_rush_distributed_action": "preserve_rush_hour",
+      "A_fp_corrected": true,
+      "mixed_at_dom=thr_action": "temporary_drop",
+      "B_stable_at_dom=thr_action": "temporary_drop",
+      "false_preserve_risk": false,
+      "false_contain_risk": false,
+      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+    },
+    {
+      "dominance_threshold_probe": 0.65,
+      "A_rush_distributed_action": "preserve_rush_hour",
+      "A_fp_corrected": true,
+      "mixed_at_dom=thr_action": "temporary_drop",
+      "B_stable_at_dom=thr_action": "temporary_drop",
+      "false_preserve_risk": false,
+      "false_contain_risk": false,
+      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+    },
+    {
+      "dominance_threshold_probe": 0.75,
+      "A_rush_distributed_action": "preserve_rush_hour",
+      "A_fp_corrected": true,
+      "mixed_at_dom=thr_action": "temporary_drop",
+      "B_stable_at_dom=thr_action": "temporary_drop",
+      "false_preserve_risk": false,
+      "false_contain_risk": false,
+      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+    },
+    {
+      "dominance_threshold_probe": 0.85,
+      "A_rush_distributed_action": "preserve_rush_hour",
+      "A_fp_corrected": true,
+      "mixed_at_dom=thr_action": "temporary_drop",
+      "B_stable_at_dom=thr_action": "temporary_drop",
+      "false_preserve_risk": false,
+      "false_contain_risk": false,
+      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+    }
+  ]
+}

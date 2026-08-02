@@ -167,6 +167,20 @@ def register_routes(app: Flask) -> None:
 
         return jsonify(get_camera_store().snapshot()), 200
 
+    @app.route("/api/v1/camera/<camera_id>/preview", methods=["GET"])
+    def camera_preview(camera_id: str):
+        """Serve the single overwritten JPEG for a camera (no archive / no video)."""
+        from flask import send_file
+
+        from sdn_its.camera.store import get_camera_store
+
+        path = get_camera_store().latest_frame_path(camera_id)
+        if path is None:
+            return jsonify({"error": "preview_unavailable", "camera_id": camera_id}), 404
+        resp = send_file(path, mimetype="image/jpeg", max_age=2, conditional=True)
+        resp.headers["Cache-Control"] = "no-store, max-age=0"
+        return resp
+
     @app.route("/api/v1/camera/reload", methods=["POST"])
     def camera_reload():
         """Reload allow-list from configs/cameras.yaml (no env sprawl)."""
