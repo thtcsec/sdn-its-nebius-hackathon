@@ -1,12 +1,13 @@
-# AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems
+# Reversible Mitigation Testbed for SDN-Enabled ITS Edge Networks
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Academic Context](https://img.shields.io/badge/Tsinghua%20IEDE-Autumn%202026-purple.svg)](docs/IEDE_Report_Summary.md)
 
-> **Research prototype** (IEDE) — flow-level telemetry → TCN-GRU detection → temporary OpenFlow contain/rollback.  
-> **Not** a production ITS / SOC product.  
+> **Research testbed** (IEDE) — reproducible loop for *safety-aware, reversible* SDN mitigation:  
+> telemetry window → inference → policy decision → (optional) OpenFlow install → cooldown rollback.  
+> Dashboard is an **evidence console**, not a SOC product. Default OpenFlow on Windows is **mock**.  
 > **Author:** Trinh Hoang Tu · **Advisor:** Prof. Kris Singh (Tsinghua visiting / SRII)
 
 ---
@@ -15,13 +16,40 @@
 
 | Is | Is not |
 |----|--------|
-| Closed-loop **Detect → Contain → Rollback** research framework | Live RSU / vehicle deployment |
-| Train/eval on **InSDN** + cross-dataset **CIC** adaptation | Proof that synthetic 100% multiclass = real attacks |
-| Ops console with **Lab mode**, GT vs prediction, MODEL/SIMULATION badges | Silent fake scores presented as inference |
-| Optional real **OVS** via WSL `of_agent` | Default Windows path (that is **mock** OpenFlow) |
-| Tracked **artifacts/results** metrics for reviewers | A zip of screenshots without code/evidence |
+| **Reversible mitigation** testbed (Detect → temporary contain → rollback) | Proof that controller load / attack pps fell on a real switch |
+| Train/eval on **InSDN** + cross-dataset **CIC** adaptation | Claim that TCN-GRU beats simple baselines (current ablation does not) |
+| Lab console with honest KPI names + `NET · NO EVIDENCE` when mock | “134 mitigations” = 134 real network attacks |
+| Optional real **OVS** via WSL `of_agent` (`SDN_OF_BACKEND=http`) | Default Windows path installing verified OpenFlow rules |
+| Tracked **artifacts/results** + event trace IDs | End-to-end ITS latency / PacketIn evidence out of the box |
 
 Honesty & reproduce: [docs/REPRODUCE.md](docs/REPRODUCE.md) · [docs/EVIDENCE.md](docs/EVIDENCE.md) · [docs/lab_checklist.md](docs/lab_checklist.md)
+
+### Camera-assisted fusion (physical context)
+
+Not a video wall and **not** a pile of `CAMERA_*` env vars. Selection is an allow-list:
+
+- `configs/cameras.yaml` — which inventory IDs to load (max 3)
+- `1.cameras.json` — local inventory with RTSP URLs (**gitignored**; may hold credentials)
+- Worker probes RTSP health; optional single overwritten JPEG under `tmp/camera_frames/` (no history)
+
+```powershell
+# Edit select: in configs/cameras.yaml, keep inventory file local
+.\.venv\Scripts\python.exe scripts\exp_bc_camera_fusion.py
+```
+
+Console: **Camera context** + **Fusion decision** (`GET /api/v1/camera`, `POST /api/v1/camera/reload`).
+
+### Experiment A — DDoS containment (network evidence)
+
+```powershell
+# Schema only (Windows CI / no Mininet):
+.\scripts\run_exp_a.ps1 -DryRun
+
+# Live Mininet/OVS in WSL (root) — writes exp_a_metrics.json:
+.\scripts\run_exp_a.ps1
+```
+
+Compares **none / permanent DROP / temporary DROP+rollback** with ICMP delivery ratios + `ovs-ofctl` verify. Console board: `/api/v1/lab/evidence` (Actuation/Outcome grey without network evidence).
 
 ---
 

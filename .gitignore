@@ -72,6 +72,14 @@ results/unit_test_report.*
 results/console_*.md
 results/console_*.json
 results/*.csv
+console_preview_*.md
+console_preview_*.json
+
+# Local camera inventory (may contain RTSP credentials) — never commit
+1.cameras.json
+**/cameras.local.json
+tmp/camera_probe/
+tmp/camera_frames/
 
 # Experiment run dumps (keep YAML + .gitkeep structure)
 experiments/*/results/*

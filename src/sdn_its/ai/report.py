@@ -87,36 +87,51 @@ def build_console_report_markdown(controller: Any) -> tuple[str, dict[str, Any]]
     samples = list(getattr(controller, "latency_samples_ms", []) or [])
     mit_log = list(getattr(controller, "mitigation_log", []) or [])[-15:]
 
+    try:
+        network_evidence = bool(controller.network_evidence_available())
+    except Exception:
+        network_evidence = False
+    policy_samples = list(
+        getattr(controller, "policy_latency_samples_ms", None) or samples
+    )
+    infer_samples = list(getattr(controller, "infer_latency_samples_ms", []) or [])
+
     metrics: dict[str, Any] = {
         "alerts": stats.get("total_alerts_received"),
+        "policy_decisions": stats.get("policy_decisions", stats.get("total_alerts_received")),
         "mitigations": stats.get("mitigations_applied"),
-        "fp_avoided": stats.get("false_positives_avoided"),
+        "fp_avoided": stats.get("rush_hour_policy_preserves", stats.get("false_positives_avoided")),
         "infer_calls": stats.get("infer_calls"),
         "active_rules": len(controller.flow_mgr.active_rules),
+        "of_rules_installed": stats.get("of_rules_installed", 0),
+        "network_evidence": network_evidence,
         "tau": scorer.get("tau"),
         "model_loaded": scorer.get("loaded"),
         "lab_mode": runtime.get("lab_mode"),
         "scenario_override": runtime.get("scenario_override"),
         "of_backend": getattr(controller, "of_backend_name", of.get("backend")),
         "of_connected": of.get("connected"),
-        "latency_n": len(samples),
+        "latency_n": len(policy_samples),
+        "infer_latency_n": len(infer_samples),
         "insdn_cls_f1": (emp.get("insdn_in_domain") or {}).get("cls_binary_f1"),
         "cic_zero_shot_f1": (emp.get("cic_zero_shot") or {}).get("cls_binary_f1"),
         "cic_adapted_f1": (emp.get("cic_adapted") or {}).get("cls_binary_f1"),
     }
-    if samples:
+    if policy_samples:
         import numpy as np
 
-        arr = np.asarray(samples, dtype=float)
+        arr = np.asarray(policy_samples, dtype=float)
         metrics["latency_p50_ms"] = float(np.percentile(arr, 50))
         metrics["latency_p95_ms"] = float(np.percentile(arr, 95))
         metrics["latency_mean_ms"] = float(arr.mean())
 
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines = [
-        "# SDN-ITS Console Snapshot",
+        "# Reversible Mitigation Testbed — Console Snapshot",
         "",
         f"_Generated: {ts}_",
+        "",
+        "> Counters below are **software/policy** evidence unless `network_evidence=true`.",
         "",
         "## Runtime",
         "",
@@ -126,21 +141,24 @@ def build_console_report_markdown(controller: Any) -> tuple[str, dict[str, Any]]
         f"- **Dataset mode:** `{runtime.get('dataset_mode')}`",
         f"- **τ / k·σ:** `{scorer.get('tau')}` / `{runtime.get('k_sigma')}`",
         f"- **Model loaded:** `{scorer.get('loaded')}`",
+        f"- **Network evidence:** `{network_evidence}`",
         "",
         "## Controller counters",
         "",
         "| Metric | Value |",
         "|--------|-------|",
-        f"| Alerts received | {metrics['alerts']} |",
-        f"| Mitigations applied | {metrics['mitigations']} |",
-        f"| FP avoided (rush-hour) | {metrics['fp_avoided']} |",
-        f"| Infer calls | {metrics['infer_calls']} |",
-        f"| Active OpenFlow rules | {metrics['active_rules']} |",
-        f"| Latency samples | {metrics['latency_n']} |",
+        f"| Policy decisions | {metrics['policy_decisions']} |",
+        f"| Policy rule intents generated | {metrics['mitigations']} |",
+        f"| Rush-hour preserved by policy | {metrics['fp_avoided']} |",
+        f"| Infer calls (`/api/v1/infer`) | {metrics['infer_calls']} |",
+        f"| Pending / in-memory rules | {metrics['active_rules']} |",
+        f"| OF rules installed (acked) | {metrics['of_rules_installed']} |",
+        f"| Policy latency samples | {metrics['latency_n']} |",
     ]
     if "latency_p50_ms" in metrics:
-        lines.append(f"| Infer/policy p50 | {metrics['latency_p50_ms']:.3f} ms |")
-        lines.append(f"| Infer/policy p95 | {metrics['latency_p95_ms']:.3f} ms |")
+        lines.append(f"| Policy p50 (in-process) | {metrics['latency_p50_ms']:.3f} ms |")
+        lines.append(f"| Policy p95 (in-process) | {metrics['latency_p95_ms']:.3f} ms |")
+        lines.append("| Latency note | Not switch-install / not E2E PacketIn→mitigation |")
 
     lines.extend(
         [

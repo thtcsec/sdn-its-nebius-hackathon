@@ -44,13 +44,25 @@ def status_payload(controller) -> dict[str, Any]:
     except Exception:
         of = getattr(controller, "openflow_status", lambda: {})()
 
+    evidence = False
+    try:
+        evidence = bool(controller.network_evidence_available())
+    except Exception:
+        evidence = False
+    controller.stats["network_evidence"] = evidence
+    n_intended = len(controller.flow_mgr.active_rules)
+
     return {
         "status": "ONLINE",
-        "service": "SDN ITS AI Resilience Controller",
+        "service": "SDN ITS Reversible Mitigation Testbed",
         "uptime_seconds": round(uptime_sec, 1),
         "stats": controller.stats,
         "openflow": of,
-        "active_mitigations_count": len(controller.flow_mgr.active_rules),
+        "active_mitigations_count": n_intended,  # legacy alias
+        "intended_rules_count": n_intended,
+        "of_rules_installed_total": int(controller.stats.get("of_rules_installed", 0)),
+        "network_evidence": evidence,
+        "latency_note": "Default /latency_cdf is policy_in_process ms — not network E2E",
         "tau": tau,
         "role_mode": runtime.get("role_mode", "research"),
         "theme": runtime.get("theme", "light"),

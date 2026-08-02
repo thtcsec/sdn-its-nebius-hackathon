@@ -1,5 +1,5 @@
 ﻿{
-    "updated_utc":  "2026-08-02T02:46:05.8077569Z",
+    "updated_utc":  "2026-08-02T03:01:30.0128800Z",
     "arch":  "TCN-GRU",
     "scaler_path":  "models/checkpoints/scaler.joblib",
     "feature_order":  [

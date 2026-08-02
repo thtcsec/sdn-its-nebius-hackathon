@@ -805,6 +805,79 @@
             border: 1px solid var(--alert); background: var(--alert-dim);
             font-family: var(--mono); font-size: 11px; color: var(--ink);
         }
+        .no-net-banner {
+            margin-bottom: 10px; padding: 8px 10px;
+            border: 1px dashed var(--warn); background: var(--warn-dim);
+            font-family: var(--mono); font-size: 10px; color: var(--ink);
+            letter-spacing: 0.03em;
+        }
+        .panel.no-network {
+            opacity: 0.88;
+            outline: 1px dashed var(--warn);
+            outline-offset: -1px;
+        }
+        .panel.no-network .panel-head h2::after {
+            content: " · NO NET EVIDENCE";
+            color: var(--warn);
+            font-size: 10px;
+            font-family: var(--mono);
+            font-weight: 500;
+        }
+        .evidence-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 1100px) {
+            .evidence-board { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 700px) {
+            .evidence-board { grid-template-columns: 1fr; }
+        }
+        .ev-kv { font-family: var(--mono); font-size: 11px; display: grid; gap: 6px; }
+        .ev-kv b { color: var(--ink); font-weight: 600; }
+        .ev-note { color: var(--muted); font-size: 10px; margin-top: 4px; }
+        .ev-col.no-network { opacity: 0.75; }
+        .fusion-row {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        @media (max-width: 900px) {
+            .fusion-row { grid-template-columns: 1fr; }
+        }
+        .cam-scenario-row {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+        }
+        .cam-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        @media (max-width: 700px) {
+            .cam-cards { grid-template-columns: 1fr; }
+        }
+        .cam-card {
+            border: 1px solid var(--line);
+            background: var(--paper-2);
+            padding: 8px 10px;
+            font-family: var(--mono);
+            font-size: 10px;
+            line-height: 1.45;
+        }
+        .cam-card .cam-id {
+            font-weight: 700; letter-spacing: 0.04em; color: var(--ink);
+            margin-bottom: 4px;
+        }
+        .cam-card .prio-critical { color: var(--alert); }
+        .cam-card .prio-high { color: var(--warn); }
+        .fusion-block { margin-bottom: 8px; }
+        .fusion-h {
+            text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--muted); font-size: 9px; margin-bottom: 2px;
+        }
         .toolbar {
             display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end;
             margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line);
@@ -1065,10 +1138,12 @@
     <div class="evidence-bar" id="evidence-bar" aria-label="Evidence status">
         <span class="ev-chip" id="ev-model">MODEL · —</span>
         <span class="ev-chip" id="ev-of">OF · —</span>
+        <span class="ev-chip" id="ev-net">NET · —</span>
         <span class="ev-chip" id="ev-pre">PREPROCESS · —</span>
         <span class="ev-chip" id="ev-gt">GT · —</span>
         <span class="ev-chip" id="ev-pred">PRED · —</span>
         <span class="ev-chip" id="ev-match">MATCH · —</span>
+        <span class="ev-chip" id="ev-infer">INFER · —</span>
     </div>
     <div class="sim-banner" id="sim-banner" data-i18n="sim.banner" hidden>
         SIMULATION / DEGRADED — numbers may not be real model inference. Check MODEL badge.
@@ -1087,19 +1162,19 @@
 
     <section class="metrics" aria-label="Live metrics">
         <div class="metric">
-            <div class="metric-label" data-i18n="metric.alerts">Alerts</div>
+            <div class="metric-label" data-i18n="metric.alerts">Policy decisions</div>
             <div class="metric-value" id="stat-alerts">0</div>
-            <div class="metric-hint" data-i18n="metric.alerts.hint">total received</div>
+            <div class="metric-hint" data-i18n="metric.alerts.hint">alerts → policy engine</div>
         </div>
-        <div class="metric">
-            <div class="metric-label" data-i18n="metric.rules">Active rules</div>
+        <div class="metric" id="metric-rules">
+            <div class="metric-label" data-i18n="metric.rules">Pending / in-memory rules</div>
             <div class="metric-value" id="stat-active-rules">0</div>
-            <div class="metric-hint" data-i18n="metric.rules.hint">OpenFlow mitigations</div>
+            <div class="metric-hint" data-i18n="metric.rules.hint">not switch-verified unless NET ok</div>
         </div>
         <div class="metric">
-            <div class="metric-label" data-i18n="metric.fp">FP avoided</div>
+            <div class="metric-label" data-i18n="metric.fp">Rush-hour preserved (policy)</div>
             <div class="metric-value" id="stat-fp-avoided">0</div>
-            <div class="metric-hint" data-i18n="metric.fp.hint">rush-hour preserve</div>
+            <div class="metric-hint" data-i18n="metric.fp.hint">not a counterfactual FP metric</div>
         </div>
         <div class="metric">
             <div class="metric-label" data-i18n="metric.re">RE score</div>
@@ -1162,21 +1237,23 @@
                             COMPARE MODE — permanent-block baseline vs Detect→Contain→Rollback.
                         </div>
                     </div>
-                    <div class="split-metrics">
-                        <div>Infer p50<br><b id="lat-p50">—</b></div>
-                        <div>Infer p95<br><b id="lat-p95">—</b></div>
+                    <div class="split-metrics" title="In-process policy timing — not switch install / E2E">
+                        <div>Policy p50<br><b id="lat-p50">—</b></div>
+                        <div>Policy p95<br><b id="lat-p95">—</b></div>
+                        <div>Infer calls<br><b id="stat-infer-calls">0</b></div>
                     </div>
                 </div>
                 <div class="attrib-list" id="attrib-list" aria-label="Feature attribution"></div>
             </div>
         </article>
 
-        <article class="panel">
+        <article class="panel" id="panel-rules">
             <div class="panel-head">
-                <h2 data-i18n="panel.rules">Active OpenFlow rules</h2>
-                <span data-i18n="panel.rules.meta">stage 2 · contain</span>
+                <h2 data-i18n="panel.rules">Intended mitigation rules</h2>
+                <span id="rules-head-meta" data-i18n="panel.rules.meta">in-memory · await switch ack</span>
             </div>
             <div class="panel-body">
+                <div class="no-net-banner" id="no-net-banner" hidden>NO NETWORK EVIDENCE — rules below are policy intents, not installed OpenFlow flows.</div>
                 <div style="overflow-x:auto; max-height: 220px;">
                     <table>
                         <thead>
@@ -1185,17 +1262,99 @@
                                 <th data-i18n="table.dpid">DPID</th>
                                 <th data-i18n="table.match">Match</th>
                                 <th data-i18n="table.action">Action</th>
+                                <th data-i18n="table.state">State</th>
                                 <th data-i18n="table.ttl">TTL</th>
                             </tr>
                         </thead>
                         <tbody id="active-rules-body">
-                            <tr><td class="empty" colspan="5" data-i18n="table.empty_rules">No active mitigations — forwarding nominal.</td></tr>
+                            <tr><td class="empty" colspan="6" data-i18n="table.empty_rules">No intended mitigations — forwarding nominal.</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="rollback" id="rollback-log">
                     <div data-i18n="rollback.armed">[*] Cooldown daemon armed — expired rules auto-revoke.</div>
                 </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="fusion-row" id="fusion-row" aria-label="Camera context and fusion decision">
+        <article class="panel" id="panel-cameras">
+            <div class="panel-head">
+                <h2>Camera context</h2>
+                <span id="cam-head-meta">metadata · not a video wall</span>
+            </div>
+            <div class="panel-body">
+                <div class="cam-scenario-row">
+                    <button type="button" class="scenario-btn rush" data-cam-scen="rush">Cam · rush</button>
+                    <button type="button" class="scenario-btn ddos" data-cam-scen="attack_physical_stable">Cam · stable</button>
+                    <button type="button" class="scenario-btn loft" data-cam-scen="mixed">Cam · mixed</button>
+                    <button type="button" class="scenario-btn" data-cam-scen="idle">Cam · idle</button>
+                </div>
+                <div class="cam-cards" id="cam-cards"></div>
+                <div class="ev-note" id="cam-note">Edge analytics publish vehicle/queue/ped/incident — RTSP preview optional.</div>
+            </div>
+        </article>
+        <article class="panel" id="panel-fusion">
+            <div class="panel-head">
+                <h2>Fusion decision</h2>
+                <span id="fusion-head-meta">network × physical</span>
+            </div>
+            <div class="panel-body ev-kv">
+                <div class="fusion-block">
+                    <div class="fusion-h">Network evidence</div>
+                    <div id="fus-net">—</div>
+                </div>
+                <div class="fusion-block">
+                    <div class="fusion-h">Physical evidence</div>
+                    <div id="fus-phys">—</div>
+                </div>
+                <div class="fusion-block">
+                    <div class="fusion-h">Decision</div>
+                    <div id="fus-dec">—</div>
+                </div>
+                <div class="ev-note" id="fus-explain">Fusion idle — inject alert or set camera scenario.</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="evidence-board" id="evidence-board" aria-label="Four-column evidence">
+        <article class="panel ev-col" id="ev-col-traffic">
+            <div class="panel-head"><h2>1 · Traffic</h2><span id="ev-traffic-meta">data-plane</span></div>
+            <div class="panel-body ev-kv">
+                <div>Attack delivery <b id="ev-atk-ratio">—</b></div>
+                <div>Legit delivery <b id="ev-legit-ratio">—</b></div>
+                <div>PacketIn/s <b id="ev-packetin">—</b></div>
+                <div class="ev-note" id="ev-traffic-note">Run Exp A (WSL) for ratios.</div>
+            </div>
+        </article>
+        <article class="panel ev-col" id="ev-col-detect">
+            <div class="panel-head"><h2>2 · Detection</h2><span id="ev-detect-meta">model</span></div>
+            <div class="panel-body ev-kv">
+                <div>Prediction <b id="ev-det-pred">—</b></div>
+                <div>Ground truth <b id="ev-det-gt">—</b></div>
+                <div>Window / infer <b id="ev-det-ids">—</b></div>
+                <div>Infer calls <b id="ev-det-calls">—</b></div>
+            </div>
+        </article>
+        <article class="panel ev-col" id="ev-col-actuation">
+            <div class="panel-head"><h2>3 · Actuation</h2><span id="ev-act-meta">OpenFlow</span></div>
+            <div class="panel-body ev-kv">
+                <div class="no-net-banner" id="ev-act-banner" hidden>NO NETWORK EVIDENCE</div>
+                <div>Requested <b id="ev-act-rule">—</b></div>
+                <div>Switch ack <b id="ev-act-ack">—</b></div>
+                <div>Verified dump <b id="ev-act-ver">—</b></div>
+                <div>Install ms <b id="ev-act-ms">—</b></div>
+            </div>
+        </article>
+        <article class="panel ev-col" id="ev-col-outcome">
+            <div class="panel-head"><h2>4 · Outcome</h2><span id="ev-out-meta">Exp A</span></div>
+            <div class="panel-body ev-kv">
+                <div class="no-net-banner" id="ev-out-banner" hidden>NO NETWORK EVIDENCE</div>
+                <div>Attack ↓ % <b id="ev-out-atk">—</b></div>
+                <div>Legit delivery <b id="ev-out-legit">—</b></div>
+                <div>Rollback <b id="ev-out-rb">—</b></div>
+                <div>Recovery ms <b id="ev-out-rec">—</b></div>
             </div>
         </article>
     </section>
@@ -1625,7 +1784,7 @@
 
     async function refreshLatency() {
         try {
-            const cdf = await fetch("/api/v1/latency_cdf").then((r) => r.json());
+            const cdf = await fetch("/api/v1/latency_cdf?kind=policy").then((r) => r.json());
             if (cdf.count) {
                 document.getElementById("lat-p50").textContent = `${cdf.percentiles["50"]?.toFixed?.(2) ?? cdf.percentiles[50]?.toFixed?.(2) ?? "—"} ms`;
                 document.getElementById("lat-p95").textContent = `${cdf.percentiles["95"]?.toFixed?.(2) ?? cdf.percentiles[95]?.toFixed?.(2) ?? "—"} ms`;
@@ -1664,6 +1823,12 @@
         const ofb = info.of_backend || "mock";
         const ofCls = ofb === "mock" ? "warn" : (info.of_connected ? "ok" : "warn");
         setChip("ev-of", `OF · ${ofb}${info.of_connected ? " · LIVE" : ""}`, ofCls);
+        const netOk = !!info.network_evidence;
+        setChip("ev-net", netOk ? "NET · EVIDENCE" : "NET · NO EVIDENCE", netOk ? "ok" : "bad");
+        const noNet = document.getElementById("no-net-banner");
+        const panelRules = document.getElementById("panel-rules");
+        if (noNet) noNet.hidden = netOk;
+        if (panelRules) panelRules.classList.toggle("no-network", !netOk);
         const pre = info.preprocess_mode || "—";
         const preCls = pre.includes("MISMATCH") || pre === "simulated" ? "warn" : (pre.includes("fitted") ? "ok" : "");
         setChip("ev-pre", `PREPROCESS · ${pre}`, preCls);
@@ -1673,10 +1838,100 @@
         else if (info.correct === false) setChip("ev-match", "MATCH · INCORRECT", "bad");
         else if (info.scenario_override) setChip("ev-match", "MATCH · OVERRIDDEN (DEMO)", "warn");
         else setChip("ev-match", "MATCH · —", "");
+        const ic = info.infer_calls;
+        if (ic != null) setChip("ev-infer", `INFER · ${ic} calls`, ic > 0 ? "ok" : "warn");
+    }
+
+    function fmtRatio(v) {
+        if (v == null || Number.isNaN(Number(v))) return "—";
+        return `${(Number(v) * 100).toFixed(1)}%`;
+    }
+
+    async function refreshCameraFusion() {
+        try {
+            const cam = await fetch("/api/v1/camera").then((r) => r.json());
+            const cards = document.getElementById("cam-cards");
+            const agg = cam.aggregate || {};
+            document.getElementById("cam-head-meta").textContent =
+                `scenario · ${cam.scenario || "—"} · ${agg.physical_label || "—"}`;
+            const cfg = cam.config || {};
+            document.getElementById("cam-note").textContent =
+                `Allow-list ${cfg.loaded ?? "?"} / inventory ${cfg.inventory_total ?? "?"} · mode=${(cam.aggregate||{}).physical_mode || "—"} · frames overwritten only (no archive)`;
+            cards.innerHTML = (cam.cameras || []).map((c) => {
+                const ctx = c.context || {};
+                const prio = (c.network_priority || "NORMAL").toLowerCase();
+                return `<div class="cam-card">
+                    <div class="cam-id">${(c.label || c.camera_id)} · ${c.connected ? "LIVE" : "DOWN"}</div>
+                    <div>${c.role || "cam"} · ${c.codec || "—"} ${c.resolution || ""}</div>
+                    <div>RTSP · ${c.rtsp_configured ? (c.latency_ms != null ? c.latency_ms + " ms" : "probing") : "synthetic"}</div>
+                    <div>Vehicles: ${ctx.vehicle_count ?? "—"} · Queue: ${ctx.queue_length_m ?? "—"} m · src=${ctx.source || "—"}</div>
+                    <div>Pedestrian: ${ctx.pedestrian_present ? "YES" : "NO"} · Incident: ${ctx.incident ? "YES" : "NO"}</div>
+                    <div class="prio-${prio}">Priority: ${c.network_priority || "NORMAL"}</div>
+                </div>`;
+            }).join("") || `<div class="ev-note">No cameras in allow-list — check configs/cameras.yaml + 1.cameras.json</div>`;
+            const fus = (await fetch("/api/v1/lab/evidence").then((r) => r.json())).fusion
+                || {};
+            const phys = fus.physical || agg;
+            document.getElementById("fus-net").textContent =
+                `pred=${fus.network_prediction || "—"} · reasons=${(fus.reason_codes || []).slice(0, 4).join(", ") || "—"}`;
+            document.getElementById("fus-phys").textContent =
+                `${phys.physical_label || agg.physical_label || "—"} · veh=${phys.vehicle_count ?? agg.vehicle_count ?? "—"} · queue=${phys.queue_length_m ?? agg.queue_length_m ?? "—"}m`;
+            document.getElementById("fus-dec").textContent =
+                `${fus.recommended_action || "—"} · risk=${fus.final_risk || "—"}`;
+            document.getElementById("fus-explain").textContent = fus.explain || "Awaiting decision…";
+            document.getElementById("fusion-head-meta").textContent =
+                fus.false_positive_corrected ? "FP corrected by camera" : "network × physical";
+        } catch (_) {}
+    }
+
+    async function refreshEvidenceBoard() {
+        try {
+            refreshCameraFusion();
+            const ev = await fetch("/api/v1/lab/evidence").then((r) => r.json());
+            const t = ev.traffic || {};
+            const d = ev.detection || {};
+            const a = ev.actuation || {};
+            const o = ev.outcome || {};
+            document.getElementById("ev-atk-ratio").textContent = fmtRatio(t.attack_delivery_ratio);
+            document.getElementById("ev-legit-ratio").textContent = fmtRatio(t.legit_delivery_ratio);
+            document.getElementById("ev-packetin").textContent = t.packetin_per_s != null ? t.packetin_per_s : "n/a";
+            document.getElementById("ev-traffic-note").textContent = t.note || "";
+            document.getElementById("ev-traffic-meta").textContent = t.source || "—";
+            document.getElementById("ev-det-pred").textContent = d.prediction || "—";
+            document.getElementById("ev-det-gt").textContent = d.ground_truth || "—";
+            document.getElementById("ev-det-ids").textContent =
+                `${d.window_id || "—"} / ${d.inference_id || "—"}`;
+            document.getElementById("ev-det-calls").textContent = d.infer_calls != null ? d.infer_calls : "—";
+            document.getElementById("ev-detect-meta").textContent = d.model_mode || "—";
+            const actBanner = document.getElementById("ev-act-banner");
+            const outBanner = document.getElementById("ev-out-banner");
+            actBanner.hidden = !a.greyed;
+            actBanner.textContent = a.banner || "NO NETWORK EVIDENCE";
+            outBanner.hidden = !o.greyed;
+            outBanner.textContent = o.banner || "NO NETWORK EVIDENCE";
+            document.getElementById("ev-col-actuation").classList.toggle("no-network", !!a.greyed);
+            document.getElementById("ev-col-outcome").classList.toggle("no-network", !!o.greyed);
+            document.getElementById("ev-act-rule").textContent = a.requested_rule || "—";
+            document.getElementById("ev-act-ack").textContent = a.switch_ack == null ? "—" : String(a.switch_ack);
+            document.getElementById("ev-act-ver").textContent =
+                a.verified_in_flow_dump == null ? "—" : String(a.verified_in_flow_dump);
+            document.getElementById("ev-act-ms").textContent = a.install_ms != null ? a.install_ms : "—";
+            document.getElementById("ev-out-atk").textContent =
+                o.attack_reduction_pct != null ? `${o.attack_reduction_pct}%` : "—";
+            document.getElementById("ev-out-legit").textContent = fmtRatio(o.legitimate_delivery_ratio);
+            document.getElementById("ev-out-rb").textContent =
+                o.rollback_success == null ? "—" : String(o.rollback_success);
+            document.getElementById("ev-out-rec").textContent = o.recovery_ms != null ? o.recovery_ms : "—";
+            const xa = ev.exp_a || {};
+            document.getElementById("ev-out-meta").textContent = xa.loaded
+                ? (xa.network_evidence ? "Exp A · live file" : "Exp A · dry-run")
+                : "Exp A · missing";
+        } catch (_) {}
     }
 
     async function refreshLabPanels() {
         try {
+            refreshEvidenceBoard();
             const [lab, emp] = await Promise.all([
                 fetch("/api/v1/lab").then((r) => r.json()),
                 fetch("/api/v1/empirical").then((r) => r.json()),
@@ -1748,10 +2003,15 @@
                 fetch("/api/v1/topology").then((r) => r.json()).catch(() => null),
             ]);
 
-            document.getElementById("stat-alerts").textContent = status.stats.total_alerts_received;
-            document.getElementById("stat-active-rules").textContent = status.active_mitigations_count;
-            document.getElementById("stat-fp-avoided").textContent = status.stats.false_positives_avoided;
+            const st = status.stats || {};
+            document.getElementById("stat-alerts").textContent = st.policy_decisions ?? st.total_alerts_received ?? 0;
+            document.getElementById("stat-active-rules").textContent =
+                status.intended_rules_count ?? status.active_mitigations_count ?? 0;
+            document.getElementById("stat-fp-avoided").textContent =
+                st.rush_hour_policy_preserves ?? st.false_positives_avoided ?? 0;
             document.getElementById("stat-uptime").textContent = `${Math.round(status.uptime_seconds)}s`;
+            const inferEl = document.getElementById("stat-infer-calls");
+            if (inferEl) inferEl.textContent = String(st.infer_calls ?? 0);
             document.getElementById("live-label").textContent =
                 status.status === "ONLINE" ? t("live.online") : (status.status || t("live.offline"));
             if (status.lab_mode != null) {
@@ -1774,14 +2034,22 @@
                 preprocess_mode: status.preprocess_mode,
                 of_backend: status.of_backend || (status.openflow && (status.openflow.configured_backend || status.openflow.backend)),
                 of_connected: status.openflow && status.openflow.connected,
+                network_evidence: status.network_evidence,
+                infer_calls: st.infer_calls,
             });
             refreshLabPanels();
 
             const tbody = document.getElementById("active-rules-body");
             const s1Status = document.getElementById("rsu-s1-status");
+            const rulesMeta = document.getElementById("rules-head-meta");
+            if (rulesMeta) {
+                rulesMeta.textContent = rules.network_evidence
+                    ? "switch-verified · contain"
+                    : (rules.actuation_note || t("panel.rules.meta"));
+            }
 
             if (rules.count === 0) {
-                tbody.innerHTML = `<tr><td class="empty" colspan="5">${t("table.empty_rules")}</td></tr>`;
+                tbody.innerHTML = `<tr><td class="empty" colspan="6">${t("table.empty_rules")}</td></tr>`;
                 setNodeState("node-s1", "node-ok");
                 setNodeState("node-ctrl", "node-active");
                 s1Status.textContent = "NOMINAL";
@@ -1789,7 +2057,7 @@
                 else if (pipeMode !== "detect") setPipeline("idle");
             } else {
                 setNodeState("node-s1", "node-hit");
-                s1Status.textContent = "CONTAINING";
+                s1Status.textContent = rules.network_evidence ? "CONTAINING" : "INTENDED";
                 setPipeline("contain");
                 tbody.innerHTML = rules.active_rules
                     .map((rule) => {
@@ -1797,11 +2065,13 @@
                         if (rule.action === "THROTTLE_PACKET_IN") badge = "badge-throttle";
                         if (rule.action === "RATE_LIMIT") badge = "badge-ratelimit";
                         const pct = Math.max(0, Math.min(100, (rule.remaining_cooldown_sec / rule.cooldown_seconds) * 100));
+                        const state = rule.actuation_state || (rules.network_evidence ? "switch_verified" : "in_memory_intended");
                         return `<tr>
                             <td>${rule.rule_id}</td>
                             <td>…${String(rule.dpid).slice(-4)}</td>
                             <td>${rule.src_ip || "GLOBAL"}</td>
                             <td><span class="badge ${badge}">${rule.action}</span></td>
+                            <td><span class="badge ${rules.network_evidence ? "badge-ratelimit" : "badge-throttle"}">${state}</span></td>
                             <td>${rule.remaining_cooldown_sec}s<div class="cooldown"><i style="width:${pct}%"></i></div></td>
                         </tr>`;
                     })
@@ -1870,22 +2140,48 @@
         }
     }
 
+    let camScenario = "idle";
+
+    async function setCameraScenario(scen) {
+        camScenario = scen;
+        try {
+            await fetch("/api/v1/camera/scenario", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ scenario: scen }),
+            });
+            logTerm(`Camera scenario · ${scen}`, "t-info");
+            refreshCameraFusion();
+        } catch (_) {
+            logTerm("Camera scenario update failed", "t-err");
+        }
+    }
+
     async function triggerAlert(attackType) {
         let srcIp = "10.0.0.15";
         let scenario = "ddos";
         let cooldown = settings.ddos_cooldown;
         let cls = "t-err";
+        let sourceDominance = 0.82;
+        let packetInDelta = 418;
 
         if (attackType === "RushHour_Burst") {
             srcIp = "10.0.0.12";
             scenario = "rush_hour";
             cooldown = 0.0;
             cls = "t-ok";
+            sourceDominance = 0.32;
+            packetInDelta = 220;
+            if (camScenario === "idle") await setCameraScenario("rush");
         } else if (attackType === "LOFT_LowRate_Attack") {
             srcIp = "10.0.0.18";
             scenario = "loft";
             cooldown = settings.loft_cooldown;
             cls = "t-warn";
+            sourceDominance = 0.7;
+            packetInDelta = 80;
+        } else if (attackType === "DDoS_PacketIn_Flood") {
+            if (camScenario === "idle") await setCameraScenario("attack_physical_stable");
         }
 
         setPipeline("detect");
@@ -1949,21 +2245,33 @@
                     dpid: "0000000000000001",
                     src_ip: srcIp,
                     attack_type: resolvedType,
+                    prediction: resolvedType,
                     reconstruction_error: reError,
                     confidence: 0.98,
                     cooldown_seconds: cooldown,
+                    camera_scenario: camScenario,
+                    source_dominance: sourceDominance,
+                    packet_in_delta_pct: packetInDelta,
+                    distributed_sources: sourceDominance < 0.45,
                 }),
             });
             const data = await resp.json();
             const ruleIds = (data.applied_rules || []).map((r) => r.rule_id || r).join(",") || "—";
             const ofMods = (data.of_last_mods || []).map((m) => `ok=${m.ok}`).join(" ") || "";
+            const fus = data.fusion || {};
             logTerm(
-                `Policy · ${data.mitigation_status} · rules=${data.applied_rules_count} · ${ruleIds} · ${data.policy_latency_ms || "?"}ms · OF ${data.of_backend || "?"}${ofMods ? " " + ofMods : ""}`,
+                `Fusion · ${fus.recommended_action || "—"} · phys=${fus.physical_context || "—"} · fp_corr=${fus.false_positive_corrected}`,
+                fus.false_positive_corrected ? "t-ok" : "t-info"
+            );
+            logTerm(
+                `Policy · ${data.mitigation_status} · intended=${data.applied_rules_count} · act=${data.actuation_state || "?"} · ${ruleIds} · policy=${data.policy_latency_ms || "?"}ms · net=${data.network_evidence ? "yes" : "NO"} · OF ${data.of_backend || "?"}${ofMods ? " " + ofMods : ""}`,
                 data.applied_rules_count > 0 ? "t-warn" : "t-ok"
             );
+            if (fus.explain) logTerm(fus.explain, "t-info");
             if (data.applied_rules_count > 0) setPipeline("contain");
             else setPipeline("idle");
             updateDashboard();
+            refreshCameraFusion();
         } catch (e) {
             logTerm(t("log.alert_fail"), "t-err");
         }
@@ -2152,6 +2460,9 @@
         window.SDNI18N.setLang(cur === "en" ? "vi" : "en");
         applyChrome();
         updateDashboard();
+    });
+    document.querySelectorAll("[data-cam-scen]").forEach((btn) => {
+        btn.addEventListener("click", () => setCameraScenario(btn.getAttribute("data-cam-scen")));
     });
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {

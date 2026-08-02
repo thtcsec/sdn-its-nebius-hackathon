@@ -8,8 +8,12 @@ Base URL: `http://127.0.0.1:8080`
 | GET | `/api/v1/status` | Health, stats, τ, `lab_mode`, `scorer_mode`, OF backend |
 | GET/POST | `/api/v1/settings` | Runtime settings (Lab mode, theme, cooldowns, …) |
 | GET | `/api/v1/lab` | OpenFlow/agent snapshot + mitigation log |
+| GET | `/api/v1/lab/evidence` | Traffic / Detection / Actuation / Outcome board (+ Exp A file) |
+| GET | `/api/v1/camera` | Camera cards + aggregate physical context |
+| POST | `/api/v1/camera/scenario` | Set synthetic camera scenario (`rush` / `attack_physical_stable` / `mixed` / …) |
+| POST | `/api/v1/camera/fusion_preview` | Dry-run fusion decision without installing rules |
 | GET | `/api/v1/empirical` | Cached InSDN / CIC metrics from `results/` |
-| GET | `/api/v1/active_rules` | Active mitigation rules |
+| GET | `/api/v1/active_rules` | Intended / in-memory rules (+ `network_evidence`, actuation state) |
 | GET | `/api/v1/rollback_history` | Revoked rules history |
 | POST | `/api/v1/anomaly_alert` | Policy Detect/Contain/Rollback |
 | GET/POST | `/api/v1/infer` | Score window — see honesty fields below |

@@ -1,0 +1,129 @@
+{
+  "experiment": "B_C",
+  "title": "Camera-assisted safety-aware fusion",
+  "generated_at": "2026-08-02T04:05:38Z",
+  "note": "Synthetic edge analytics (vehicle_count / queue / ped / incident). Not a YOLO accuracy paper \u2014 fusion explainability is the claim.",
+  "cases": [
+    {
+      "scenario": "A_legitimate_surge",
+      "camera_scenario": "rush",
+      "network_prediction": "DDoS_PacketIn_Flood",
+      "source_dominance": 0.3,
+      "physical": {
+        "vehicle_count": 59,
+        "queue_length_m": 45.0,
+        "pedestrian_present": false,
+        "incident": false,
+        "physical_label": "rush_hour",
+        "confidence": 0.9,
+        "cameras": 2,
+        "max_analytics_age_s": 0.0,
+        "stale": false,
+        "scenario": "rush"
+      },
+      "fusion": {
+        "network_prediction": "DDoS_PacketIn_Flood",
+        "physical_context": "rush_hour",
+        "final_risk": "medium",
+        "recommended_action": "preserve_rush_hour",
+        "reason_codes": [
+          "HIGH_PACKET_IN",
+          "HIGH_PHYSICAL_TRAFFIC",
+          "DISTRIBUTED_SOURCES"
+        ],
+        "policy_attack_type": "RushHour_Burst",
+        "cooldown_seconds": 0.0,
+        "false_positive_corrected": true,
+        "safety_critical": false,
+        "explain": "Packet growth co-occurs with physical congestion and distributed sources \u2192 legitimate surge."
+      },
+      "mitigation_status": "IGNORED_BENIGN_RUSH_HOUR",
+      "rules": 0,
+      "false_positive_corrected": true
+    },
+    {
+      "scenario": "B_packetin_flood",
+      "camera_scenario": "attack_physical_stable",
+      "network_prediction": "DDoS_PacketIn_Flood",
+      "source_dominance": 0.82,
+      "physical": {
+        "vehicle_count": 11,
+        "queue_length_m": 6.0,
+        "pedestrian_present": false,
+        "incident": false,
+        "physical_label": "stable",
+        "confidence": 0.88,
+        "cameras": 2,
+        "max_analytics_age_s": 0.0,
+        "stale": false,
+        "scenario": "attack_physical_stable"
+      },
+      "fusion": {
+        "network_prediction": "DDoS_PacketIn_Flood",
+        "physical_context": "stable",
+        "final_risk": "high",
+        "recommended_action": "temporary_drop",
+        "reason_codes": [
+          "HIGH_PACKET_IN",
+          "PHYSICAL_STABLE",
+          "SINGLE_SOURCE_DOMINANCE"
+        ],
+        "policy_attack_type": "DDoS_PacketIn_Flood",
+        "cooldown_seconds": 15.0,
+        "false_positive_corrected": false,
+        "safety_critical": false,
+        "explain": "Network anomaly without matching physical traffic \u2192 isolate dominant source temporarily."
+      },
+      "mitigation_status": "CONTAINED_DROP_AND_THROTTLE",
+      "rules": 2,
+      "false_positive_corrected": false
+    },
+    {
+      "scenario": "C_mixed_rush_and_attack",
+      "camera_scenario": "mixed",
+      "network_prediction": "DDoS_PacketIn_Flood",
+      "source_dominance": 0.82,
+      "physical": {
+        "vehicle_count": 63,
+        "queue_length_m": 48.0,
+        "pedestrian_present": true,
+        "incident": false,
+        "physical_label": "mixed_busy",
+        "confidence": 0.91,
+        "cameras": 2,
+        "max_analytics_age_s": 0.0,
+        "stale": false,
+        "scenario": "mixed"
+      },
+      "fusion": {
+        "network_prediction": "DDoS_PacketIn_Flood",
+        "physical_context": "mixed_busy",
+        "final_risk": "high",
+        "recommended_action": "temporary_drop",
+        "reason_codes": [
+          "HIGH_PACKET_IN",
+          "HIGH_PHYSICAL_TRAFFIC",
+          "SINGLE_SOURCE_DOMINANCE",
+          "PEDESTRIAN_PRESENT",
+          "MIXED_RUSH_AND_ATTACK"
+        ],
+        "policy_attack_type": "DDoS_PacketIn_Flood",
+        "cooldown_seconds": 15.0,
+        "false_positive_corrected": false,
+        "safety_critical": true,
+        "explain": "Rush-hour/incident camera context + dominant attacker source \u2192 isolate that source only; keep junction/camera streams prioritized."
+      },
+      "mitigation_status": "CONTAINED_DROP_AND_THROTTLE",
+      "rules": 2,
+      "false_positive_corrected": false
+    }
+  ],
+  "summary": {
+    "A_preserves": true,
+    "A_fp_corrected": true,
+    "B_contains": true,
+    "C_isolates_source": true,
+    "C_physical_rush": true
+  },
+  "pass": true
+}

@@ -59,7 +59,11 @@ $ExcludeFileGlobs = @(
     "*.pyc", "*.pyo", "*.log", "*.zip",
     "*.onnx", "*.npz", "*.npy", "*.h5", "*.parquet", "*.pcap", "*.pcapng",
     "*.docx", "*.pdf", ".DS_Store", "Thumbs.db",
-    "_docx3_extract.txt"
+    "_docx3_extract.txt",
+    # Local RTSP inventories may contain credentials — never ship
+    "1.cameras.json",
+    "cameras.local.json",
+    "*cameras*.local.json"
 )
 
 if (-not $IncludeCheckpoint) {
@@ -79,6 +83,9 @@ function Test-ExcludedFile([string]$FullPath) {
     if ($FullPath -match '[\\/]datasets[\\/]processed[\\/].*\.npz$') { return $true }
     # Console scratch reports ok; skip huge local dumps if any
     if ($FullPath -match '[\\/]results[\\/]console[\\/]') { return $true }
+    # Extra belt: any root/local camera inventory JSON with credentials
+    if ($name -eq "1.cameras.json") { return $true }
+    if ($name -like "cameras.local.json") { return $true }
     return $false
 }
 

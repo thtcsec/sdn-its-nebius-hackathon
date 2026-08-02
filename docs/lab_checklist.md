@@ -122,3 +122,13 @@ wsl -d Ubuntu -u root -- bash /mnt/d/tu_projects/sdn-its-resilience-ai/scripts/s
 ```
 
 See also: [deployment.md](deployment.md), `sdn_its.controller.of_backend`, `scripts/wsl_of_agent.py`.
+
+## Minimum real experiments (to leave “toy” territory)
+
+| Exp | Compare | Must measure | Status |
+|-----|---------|--------------|--------|
+| **A** Containment | none / permanent DROP / temporary DROP+rollback | attack/legit ICMP delivery, install_ms, recovery_ms, dump-flows verify | **Done** — `.\scripts\run_exp_a.ps1` → `artifacts/results/exp_a/exp_a_metrics.json` |
+| **B** Rush-hour false block | RE-τ / classifier / classifier+safety policy | false-block rate, legitimate delivery | TODO |
+| **C** Mixed | rush hour then PacketIn flood | preserve rush hour **and** contain hidden flood | TODO |
+
+Exp A metrics are **data-plane ICMP ratios** (honest proxy). PacketIn/s still needs Ryu. Console: `GET /api/v1/lab/evidence`.

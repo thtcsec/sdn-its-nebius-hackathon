@@ -1,0 +1,205 @@
+{
+  "experiment": "A",
+  "title": "DDoS containment \u2014 reversible mitigation",
+  "generated_at": "2026-08-02T03:16:51Z",
+  "network_evidence": true,
+  "dry_run": false,
+  "topology": "ITSEdgeTopology",
+  "attacker_ip": "10.0.0.15",
+  "legit_ip": "10.0.0.11",
+  "tmc_ip": "10.0.0.1",
+  "ping_count": 20,
+  "arms": [
+    {
+      "arm": "none",
+      "description": "No mitigation",
+      "actuation": {
+        "requested": false,
+        "switch_ack": false,
+        "verified_in_flow_dump": false
+      },
+      "traffic": {
+        "legit_delivery_ratio": 0.95,
+        "attack_delivery_ratio": 1.0,
+        "legit_rtt_avg_ms": 16.519,
+        "attack_rtt_avg_ms": 18.506,
+        "legit": {
+          "src": "veh1",
+          "dst": "10.0.0.1",
+          "transmitted": 20,
+          "received": 19,
+          "delivery_ratio": 0.95,
+          "rtt_avg_ms": 16.519,
+          "wall_s": 20.057,
+          "raw_tail": "\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 19 received, 5% packet loss, time 19053ms\nrtt min/avg/max/mdev = 16.309/16.519/16.717/0.100 ms"
+        },
+        "attack": {
+          "src": "veh5",
+          "dst": "10.0.0.1",
+          "transmitted": 20,
+          "received": 20,
+          "delivery_ratio": 1.0,
+          "rtt_avg_ms": 18.506,
+          "wall_s": 19.05,
+          "raw_tail": "\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 20 received, 0% packet loss, time 19029ms\nrtt min/avg/max/mdev = 18.298/18.506/19.170/0.180 ms"
+        },
+        "packetin_per_s": null,
+        "packetin_note": "Not measured \u2014 of_agent path has no PacketIn counter; use Ryu for PacketIn/s."
+      },
+      "outcome": {
+        "attack_reduction_pct": 0.0,
+        "legitimate_delivery_ratio": 0.95,
+        "sla_violation": false,
+        "rollback_success": null,
+        "recovery_ms": null,
+        "install_ms": null
+      }
+    },
+    {
+      "arm": "permanent",
+      "description": "Permanent DROP (idle_timeout=0) on attacker src",
+      "actuation": {
+        "requested": true,
+        "rule": "priority=200,ip,nw_src=10.0.0.15,actions=drop",
+        "switch_ack": true,
+        "verified_in_flow_dump": true,
+        "install_ms": 3.167,
+        "dump_sample": "NXST_FLOW reply (xid=0x4):\n cookie=0x0, duration=0.053s, table=0, n_packets=1, n_bytes=98, idle_age=0, priority=200,ip,nw_src=10.0.0.15 actions=drop\n cookie=0x0, duration=42.853s, table=0, n_packets=190, n_bytes=16496, idle_age=0, priority=0 actions=NORMAL"
+      },
+      "traffic": {
+        "legit_delivery_ratio": 0.85,
+        "attack_delivery_ratio": 0.0,
+        "legit_rtt_avg_ms": 16.554,
+        "attack_rtt_avg_ms": null,
+        "legit": {
+          "src": "veh1",
+          "dst": "10.0.0.1",
+          "transmitted": 20,
+          "received": 17,
+          "delivery_ratio": 0.85,
+          "rtt_avg_ms": 16.554,
+          "wall_s": 20.093,
+          "raw_tail": "\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 17 received, 15% packet loss, time 19090ms\nrtt min/avg/max/mdev = 16.362/16.554/16.844/0.120 ms"
+        },
+        "attack": {
+          "src": "veh5",
+          "dst": "10.0.0.1",
+          "transmitted": 20,
+          "received": 0,
+          "delivery_ratio": 0.0,
+          "rtt_avg_ms": null,
+          "wall_s": 20.463,
+          "raw_tail": "PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.\n\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 0 received, 100% packet loss, time 19460ms"
+        },
+        "packetin_per_s": null,
+        "packetin_note": "Not measured \u2014 of_agent path has no PacketIn counter; use Ryu for PacketIn/s."
+      },
+      "outcome": {
+        "attack_reduction_pct": 100.0,
+        "legitimate_delivery_ratio": 0.85,
+        "sla_violation": false,
+        "rollback_success": null,
+        "recovery_ms": null,
+        "install_ms": 3.167
+      }
+    },
+    {
+      "arm": "temporary",
+      "description": "Temporary DROP + explicit rollback DELETE (cooldown model; hard_timeout param=8s unused for measure window)",
+      "actuation": {
+        "requested": true,
+        "rule": "priority=200,ip,nw_src=10.0.0.15,actions=drop",
+        "switch_ack": true,
+        "verified_in_flow_dump": true,
+        "install_ms": 4.57,
+        "dump_sample": "NXST_FLOW reply (xid=0x4):\n cookie=0x0, duration=0.053s, table=0, n_packets=0, n_bytes=0, idle_age=0, priority=200,ip,nw_src=10.0.0.15 actions=drop\n cookie=0x0, duration=83.871s, table=0, n_packets=248, n_bytes=21508, idle_age=14, priority=0 actions=NORMAL",
+        "delete_ok": true,
+        "rule_cleared_from_dump": true
+      },
+      "traffic": {
+        "during": {
+          "legit_delivery_ratio": 1.0,
+          "attack_delivery_ratio": 0.0,
+          "legit_rtt_avg_ms": 16.582,
+          "attack_rtt_avg_ms": null,
+          "legit": {
+            "src": "veh1",
+            "dst": "10.0.0.1",
+            "transmitted": 20,
+            "received": 20,
+            "delivery_ratio": 1.0,
+            "rtt_avg_ms": 16.582,
+            "wall_s": 19.05,
+            "raw_tail": "\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 20 received, 0% packet loss, time 19030ms\nrtt min/avg/max/mdev = 16.265/16.582/16.883/0.144 ms"
+          },
+          "attack": {
+            "src": "veh5",
+            "dst": "10.0.0.1",
+            "transmitted": 20,
+            "received": 0,
+            "delivery_ratio": 0.0,
+            "rtt_avg_ms": null,
+            "wall_s": 20.434,
+            "raw_tail": "PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.\n\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 0 received, 100% packet loss, time 19431ms"
+          },
+          "packetin_per_s": null,
+          "packetin_note": "Not measured \u2014 of_agent path has no PacketIn counter; use Ryu for PacketIn/s."
+        },
+        "after_rollback": {
+          "legit_delivery_ratio": 0.95,
+          "attack_delivery_ratio": 1.0,
+          "legit_rtt_avg_ms": 16.461,
+          "attack_rtt_avg_ms": 18.529,
+          "legit": {
+            "src": "veh1",
+            "dst": "10.0.0.1",
+            "transmitted": 20,
+            "received": 19,
+            "delivery_ratio": 0.95,
+            "rtt_avg_ms": 16.461,
+            "wall_s": 20.037,
+            "raw_tail": "\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 19 received, 5% packet loss, time 19034ms\nrtt min/avg/max/mdev = 16.260/16.461/16.779/0.140 ms"
+          },
+          "attack": {
+            "src": "veh5",
+            "dst": "10.0.0.1",
+            "transmitted": 20,
+            "received": 20,
+            "delivery_ratio": 1.0,
+            "rtt_avg_ms": 18.529,
+            "wall_s": 19.052,
+            "raw_tail": "\n--- 10.0.0.1 ping statistics ---\n20 packets transmitted, 20 received, 0% packet loss, time 19029ms\nrtt min/avg/max/mdev = 18.335/18.529/18.897/0.143 ms"
+          },
+          "packetin_per_s": null,
+          "packetin_note": "Not measured \u2014 of_agent path has no PacketIn counter; use Ryu for PacketIn/s."
+        }
+      },
+      "outcome": {
+        "attack_reduction_pct": 100.0,
+        "legitimate_delivery_ratio": 1.0,
+        "legit_after_rollback": 0.95,
+        "attack_after_rollback": 1.0,
+        "sla_violation": false,
+        "rollback_success": true,
+        "recovery_ms": 5.021,
+        "install_ms": 4.57
+      }
+    }
+  ],
+  "summary": {
+    "network_evidence": true,
+    "permanent_verified": true,
+    "temporary_verified": true,
+    "permanent_attack_reduction_pct": 100.0,
+    "temporary_attack_reduction_pct": 100.0,
+    "temporary_rollback_success": true,
+    "temporary_recovery_ms": 5.021,
+    "legit_none": 0.95,
+    "legit_during_temporary": 1.0,
+    "caveats": [
+      "Metrics are ICMP delivery ratios (data-plane), not controller PacketIn/s.",
+      "Attacker is veh5=10.0.0.15; legitimate is veh1=10.0.0.11 \u2192 tmc=10.0.0.1.",
+      "THROTTLE_PACKET_IN is not exercised here (needs Ryu PacketIn path)."
+    ]
+  }
+}

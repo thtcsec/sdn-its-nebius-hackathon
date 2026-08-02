@@ -32,6 +32,7 @@ class FlowRule:
         return max(0.0, self.cooldown_seconds - (time.time() - self.created_at))
 
     def to_dict(self) -> dict[str, Any]:
+        act = self.parameters.get("actuation") or {}
         return {
             "rule_id": self.rule_id,
             "dpid": self.dpid,
@@ -43,6 +44,13 @@ class FlowRule:
             "cooldown_seconds": self.cooldown_seconds,
             "remaining_cooldown_sec": round(self.remaining_cooldown, 1),
             "parameters": self.parameters,
+            "requested_at": act.get("requested_at", self.created_at),
+            "installed_at": act.get("installed_at"),
+            "switch_ack": act.get("switch_ack"),
+            "verified_in_flow_dump": act.get("verified_in_flow_dump"),
+            "cookie": act.get("cookie"),
+            "install_ms": act.get("install_ms"),
+            "actuation_state": act.get("actuation_state", "in_memory_intended"),
         }
 
 
@@ -60,6 +68,13 @@ class ContainmentEngine:
         self.of_push_callback = of_push_callback
 
     def _install(self, rule: FlowRule) -> FlowRule:
+        rule.parameters.setdefault(
+            "actuation",
+            {
+                "requested_at": time.time(),
+                "actuation_state": "in_memory_intended",
+            },
+        )
         with self.lock:
             self.active_rules[rule.rule_id] = rule
         print(
@@ -67,7 +82,25 @@ class ContainmentEngine:
             f"on DPID {rule.dpid} (cooldown: {rule.cooldown_seconds}s)"
         )
         if self.of_push_callback:
-            self.of_push_callback(action="ADD", rule=rule)
+            result = self.of_push_callback(action="ADD", rule=rule)
+            if isinstance(result, dict):
+                act = rule.parameters["actuation"]
+                act.update(
+                    {
+                        "installed_at": result.get("installed_at"),
+                        "switch_ack": result.get("switch_ack") or result.get("ok"),
+                        "verified_in_flow_dump": result.get("verified_in_flow_dump"),
+                        "cookie": result.get("cookie"),
+                        "install_ms": result.get("install_ms"),
+                        "bridge": result.get("bridge"),
+                        "flow": result.get("flow"),
+                        "actuation_state": (
+                            "switch_verified"
+                            if result.get("verified_in_flow_dump")
+                            else ("switch_ack" if result.get("ok") else "push_failed")
+                        ),
+                    }
+                )
         return rule
 
     def create_drop_rule(

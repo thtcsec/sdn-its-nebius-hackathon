@@ -13,11 +13,18 @@ from sdn_its.controller.ryu_controller import RyuControllerAdapter
 from sdn_its.mitigation.containment import FlowRule
 
 
-def mock_openflow_push(action: str, rule: FlowRule) -> None:
+def mock_openflow_push(action: str, rule: FlowRule) -> dict[str, Any]:
     print(
         f"[OpenFlow Switch Channel] {action} Rule [{rule.rule_id}] -> "
         f"DPID={rule.dpid}, Match={rule.src_ip}, Action={rule.action}"
     )
+    return {
+        "ok": False,
+        "switch_ack": False,
+        "verified_in_flow_dump": False,
+        "backend": "mock",
+        "note": "NO NETWORK EVIDENCE",
+    }
 
 
 def make_queue_backend(adapter: RyuControllerAdapter | None = None) -> Callable:
@@ -25,7 +32,7 @@ def make_queue_backend(adapter: RyuControllerAdapter | None = None) -> Callable:
     ryu = adapter or RyuControllerAdapter()
     ryu.connected = True
 
-    def _push(action: str, rule: FlowRule) -> None:
+    def _push(action: str, rule: FlowRule) -> dict[str, Any]:
         payload = {
             "action": action,
             "rule_id": rule.rule_id,
@@ -39,6 +46,13 @@ def make_queue_backend(adapter: RyuControllerAdapter | None = None) -> Callable:
         else:
             ryu.revoke_flow(str(rule.dpid), cookie=None)
         print(f"[OpenFlow Queue] {action} logged ({len(ryu.flow_log)} mods)")
+        return {
+            "ok": True,
+            "switch_ack": False,
+            "verified_in_flow_dump": False,
+            "backend": "queue",
+            "note": "In-memory queue — not switch-verified",
+        }
 
     _push.adapter = ryu  # type: ignore[attr-defined]
     return _push
@@ -105,7 +119,7 @@ def make_http_agent_backend(base_url: str | None = None) -> Callable:
         print(f"[OpenFlow HTTP] agent not reachable at {url}: {exc}")
         state["connected"] = False
 
-    def _push(action: str, rule: FlowRule) -> None:
+    def _push(action: str, rule: FlowRule) -> dict[str, Any]:
         payload = {
             "action": action,
             "rule_id": rule.rule_id,
@@ -122,10 +136,13 @@ def make_http_agent_backend(base_url: str | None = None) -> Callable:
             mods = list(state["last_mods"])
             mods.append(result)
             state["last_mods"] = mods[-8:]
-            print(f"[OpenFlow HTTP] {action} -> {result.get('bridge')} ok={result.get('ok')}")
+            state["last_install_ms"] = result.get("install_ms")
+            print(f"[OpenFlow HTTP] {action} -> {result.get('bridge')} ok={result.get('ok')} verified={result.get('verified_in_flow_dump')}")
+            return result if isinstance(result, dict) else {"ok": False}
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
             state["connected"] = False
             print(f"[OpenFlow HTTP] push failed: {exc}")
+            return {"ok": False, "error": str(exc), "switch_ack": False, "verified_in_flow_dump": False}
 
     _push.adapter = state  # type: ignore[attr-defined]
     return _push

@@ -153,6 +153,62 @@ def register_routes(app: Flask) -> None:
         controller = app.extensions["sdn_controller"]
         return jsonify(controller.lab_snapshot()), 200
 
+    @app.route("/api/v1/lab/evidence", methods=["GET"])
+    def lab_evidence():
+        """Traffic / Detection / Actuation / Outcome board (+ Exp A file if present)."""
+        from sdn_its.lab.evidence import build_evidence_board
+
+        controller = app.extensions["sdn_controller"]
+        return jsonify(build_evidence_board(controller)), 200
+
+    @app.route("/api/v1/camera", methods=["GET"])
+    def camera_status():
+        from sdn_its.camera.store import get_camera_store
+
+        return jsonify(get_camera_store().snapshot()), 200
+
+    @app.route("/api/v1/camera/reload", methods=["POST"])
+    def camera_reload():
+        """Reload allow-list from configs/cameras.yaml (no env sprawl)."""
+        from sdn_its.camera.store import get_camera_store
+
+        store = get_camera_store(reload=True)
+        return jsonify({"status": "ok", "snapshot": store.snapshot()}), 200
+
+    @app.route("/api/v1/camera/scenario", methods=["POST"])
+    def camera_scenario():
+        from sdn_its.camera.store import get_camera_store
+
+        data = request.get_json(force=True, silent=True) or {}
+        scenario = str(data.get("scenario") or "idle")
+        store = get_camera_store()
+        store.set_scenario(scenario)
+        return jsonify({"status": "ok", "scenario": store.get_scenario(), "aggregate": store.aggregate_context()}), 200
+
+    @app.route("/api/v1/camera/fusion_preview", methods=["POST"])
+    def camera_fusion_preview():
+        """Dry-run fusion without installing rules — for decision panel / demos."""
+        from sdn_its.camera.fusion import FusionEngine
+        from sdn_its.camera.store import get_camera_store
+
+        data = request.get_json(force=True, silent=True) or {}
+        store = get_camera_store()
+        if data.get("camera_scenario"):
+            store.set_scenario(str(data["camera_scenario"]))
+        physical = store.aggregate_context()
+        net = str(data.get("network_prediction") or data.get("attack_type") or "Normal")
+        dominance = float(data.get("source_dominance", 0.5))
+        decision = FusionEngine().fuse(
+            network_prediction=net,
+            physical=physical,
+            source_dominance=dominance,
+            distributed_sources=data.get("distributed_sources", dominance < 0.45),
+            packet_in_delta_pct=data.get("packet_in_delta_pct"),
+        )
+        out = decision.to_dict()
+        out["physical"] = physical
+        return jsonify(out), 200
+
     @app.route("/api/v1/empirical", methods=["GET"])
     def empirical_metrics():
         from sdn_its.ai.empirical import load_empirical_metrics
@@ -173,10 +229,28 @@ def register_routes(app: Flask) -> None:
     @app.route("/api/v1/active_rules", methods=["GET"])
     def get_active_rules():
         controller = app.extensions["sdn_controller"]
+        raw = controller.flow_mgr.get_all_active_rules()
+        rules = (
+            controller.annotate_rules(raw)
+            if hasattr(controller, "annotate_rules")
+            else raw
+        )
+        evidence = (
+            controller.network_evidence_available()
+            if hasattr(controller, "network_evidence_available")
+            else False
+        )
         return jsonify(
             {
-                "count": len(controller.flow_mgr.active_rules),
-                "active_rules": controller.flow_mgr.get_all_active_rules(),
+                "count": len(rules),
+                "intended_rules_count": len(rules),
+                "network_evidence": evidence,
+                "actuation_note": (
+                    "switch_verified"
+                    if evidence
+                    else "in_memory_intended — NOT verified on switch (mock/disconnected)"
+                ),
+                "active_rules": rules,
             }
         ), 200
 
@@ -226,25 +300,52 @@ def register_routes(app: Flask) -> None:
             allow_scenario_override=allow_override,
             allow_simulation_fallback=allow_override,
         )
+        window_id = data.get("window_id") or f"WIN-{int(time.time() * 1000) % 10_000_000}"
+        inference_id = result.get("inference_id") or f"INF-{window_id}"
+        result["window_id"] = window_id
+        result["inference_id"] = inference_id
         if controller is not None:
             controller.stats["infer_calls"] = controller.stats.get("infer_calls", 0) + 1
             controller.runtime_settings["tau"] = result["threshold_tau"]
             if result.get("latency_ms") is not None:
-                controller.latency_samples_ms.append(float(result["latency_ms"]))
+                samples = getattr(controller, "infer_latency_samples_ms", None)
+                if samples is None:
+                    samples = controller.latency_samples_ms
+                samples.append(float(result["latency_ms"]))
+                if len(samples) > 500:
+                    del samples[:-500]
 
         alert_result = None
-        if auto and result.get("is_anomaly") and result.get("attack_type") not in ("Normal", "RushHour_Burst"):
-            if controller is not None:
-                alert_result = controller.handle_alert(
-                    {
-                        "alert_id": f"INF-{int(time.time())}",
-                        "dpid": data.get("dpid", "0000000000000001"),
-                        "src_ip": data.get("src_ip", "10.0.0.15"),
-                        "attack_type": result["attack_type"],
-                        "reconstruction_error": result["reconstruction_error"],
-                        "confidence": 0.9,
-                    }
-                )
+        # auto_alert: policy on anomaly OR rush-hour (preserve path) OR explicit force
+        force_alert = bool(data.get("force_alert", False))
+        attack = result.get("attack_type") or "Normal"
+        should_alert = auto and (
+            force_alert
+            or result.get("is_anomaly")
+            or attack == "RushHour_Burst"
+            or (allow_override and attack != "Normal")
+        )
+        if should_alert and attack != "Normal" and controller is not None:
+            cooldown = controller.runtime_settings.get("ddos_cooldown", 12.0)
+            if "LOFT" in str(attack):
+                cooldown = controller.runtime_settings.get("loft_cooldown", 15.0)
+            if attack == "RushHour_Burst":
+                cooldown = 0.0
+            alert_result = controller.handle_alert(
+                {
+                    "alert_id": f"INF-{int(time.time() * 1000) % 100000}",
+                    "window_id": window_id,
+                    "inference_id": inference_id,
+                    "dpid": data.get("dpid", "0000000000000001"),
+                    "src_ip": data.get("src_ip", "10.0.0.15"),
+                    "attack_type": attack,
+                    "prediction": result.get("predicted_label") or attack,
+                    "ground_truth": data.get("ground_truth") or result.get("ground_truth"),
+                    "reconstruction_error": result["reconstruction_error"],
+                    "confidence": float(result.get("confidence") or 0.9),
+                    "cooldown_seconds": cooldown,
+                }
+            )
         result["alert"] = alert_result
         result["lab_mode"] = bool((controller.runtime_settings if controller else {}).get("lab_mode"))
         return jsonify(result), 200
@@ -304,12 +405,25 @@ def register_routes(app: Flask) -> None:
                 if result["attack_type"] == "RushHour_Burst":
                     cooldown = 0.0
                 if result["attack_type"] != "Normal" or allow_override:
+                    wid = f"REP-WIN-{int(time.time() * 1000) % 100000}"
+                    iid = f"REP-INF-{wid}"
+                    result["window_id"] = wid
+                    result["inference_id"] = iid
+                    controller.stats["infer_calls"] = controller.stats.get("infer_calls", 0) + 1
+                    if result.get("latency_ms") is not None:
+                        getattr(controller, "infer_latency_samples_ms", controller.latency_samples_ms).append(
+                            float(result["latency_ms"])
+                        )
                     alert_out = controller.handle_alert(
                         {
                             "alert_id": f"REP-{int(time.time() * 1000) % 100000}",
+                            "window_id": wid,
+                            "inference_id": iid,
                             "dpid": "0000000000000001",
                             "src_ip": data.get("src_ip", "10.0.0.15"),
                             "attack_type": result["attack_type"],
+                            "prediction": result.get("predicted_label") or result["attack_type"],
+                            "ground_truth": data.get("ground_truth") or result.get("ground_truth"),
                             "reconstruction_error": result["reconstruction_error"],
                             "confidence": 0.95,
                             "cooldown_seconds": cooldown,
@@ -320,9 +434,33 @@ def register_routes(app: Flask) -> None:
     @app.route("/api/v1/latency_cdf", methods=["GET"])
     def latency_cdf():
         controller = app.extensions["sdn_controller"]
-        samples = list(controller.latency_samples_ms)
+        kind = (request.args.get("kind") or "policy").lower()
+        if kind in ("infer", "inference", "model"):
+            samples = list(getattr(controller, "infer_latency_samples_ms", []) or [])
+            latency_kind = "inference_in_process"
+        elif kind in ("all", "mixed"):
+            # Explicit mixed — avoid accidental overclaim
+            samples = list(getattr(controller, "policy_latency_samples_ms", controller.latency_samples_ms) or [])
+            samples = samples + list(getattr(controller, "infer_latency_samples_ms", []) or [])
+            latency_kind = "mixed_policy_and_infer_NOT_e2e"
+        else:
+            samples = list(getattr(controller, "policy_latency_samples_ms", controller.latency_samples_ms) or [])
+            latency_kind = "policy_in_process"
+        note = (
+            "In-process software timing only. Not switch install latency, "
+            "not PacketIn→mitigation E2E, not ITS network RTT."
+        )
         if not samples:
-            return jsonify({"count": 0, "percentiles": {}, "samples": []}), 200
+            return jsonify(
+                {
+                    "count": 0,
+                    "percentiles": {},
+                    "samples": [],
+                    "kind": kind,
+                    "latency_kind": latency_kind,
+                    "note": note,
+                }
+            ), 200
         import numpy as np
 
         arr = np.sort(np.asarray(samples, dtype=float))
@@ -333,6 +471,9 @@ def register_routes(app: Flask) -> None:
                 "mean_ms": float(arr.mean()),
                 "percentiles": pcts,
                 "samples": arr[-100:].tolist(),
+                "kind": kind,
+                "latency_kind": latency_kind,
+                "note": note,
             }
         ), 200
 

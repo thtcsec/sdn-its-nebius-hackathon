@@ -43,10 +43,12 @@ class ITSEdgeTopology(Topo):
         print("[*] Building Mininet ITS Edge Network Topology...")
 
         # 1. Add Open vSwitch (OVS) Roadside Units / Access Points
-        s1 = self.addSwitch('s1', dpid='0000000000000001', cls=OVSKernelSwitch)  # Core Intersection RSU
-        s2 = self.addSwitch('s2', dpid='0000000000000002', cls=OVSKernelSwitch)  # West Intersection RSU
-        s3 = self.addSwitch('s3', dpid='0000000000000003', cls=OVSKernelSwitch)  # East Intersection RSU
-        s4 = self.addSwitch('s4', dpid='0000000000000004', cls=OVSKernelSwitch)  # Highway Gateway RSU
+        # failMode=standalone: forward without a remote controller (of_agent / ovs-ofctl lab)
+        sw_kw = {"cls": OVSKernelSwitch, "failMode": "standalone"}
+        s1 = self.addSwitch('s1', dpid='0000000000000001', **sw_kw)  # Core Intersection RSU
+        s2 = self.addSwitch('s2', dpid='0000000000000002', **sw_kw)  # West Intersection RSU
+        s3 = self.addSwitch('s3', dpid='0000000000000003', **sw_kw)  # East Intersection RSU
+        s4 = self.addSwitch('s4', dpid='0000000000000004', **sw_kw)  # Highway Gateway RSU
 
         # 2. Add Infrastructure Servers & Edge Computing Nodes
         tmc = self.addHost('tmc', ip='10.0.0.1/24', mac='00:00:00:00:00:01')
