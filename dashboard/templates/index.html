@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SDN-ITS Resilience | Ops Console</title>
+    <title>AI-Assisted SDN-ITS Resilience | IEDE Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -958,11 +958,10 @@
 <div class="shell">
     <header class="brand-bar">
         <div>
-            <div class="brand-mark" data-i18n="brand.mark">Tsinghua IEDE · Research prototype</div>
-            <h1 class="brand-title">SDN-ITS Resilience</h1>
+            <div class="brand-mark" data-i18n="brand.mark">Tsinghua IEDE · Transportation · AI · Security · IoT · Edge</div>
+            <h1 class="brand-title">AI-Assisted SDN-ITS Resilience</h1>
             <p class="brand-sub" data-i18n="brand.sub">
-                Evidence console: telemetry windows → TCN-GRU → Detect / Contain / Rollback.
-                Lab mode default — MODEL vs SIMULATION is always labeled. Not a production ITS controller.
+                V2X reliability · edge telemetry · safety-aware mitigation — evidence console (prototype), not a production ITS controller.
             </p>
         </div>
         <div class="header-actions">
@@ -1221,17 +1220,18 @@
                 <div class="scenario-row">
                     <button class="scenario-btn ddos" type="button" onclick="triggerAlert('DDoS_PacketIn_Flood')">
                         <span class="k" data-i18n="scen.a.k">Attack A</span>
-                        <span data-i18n="scen.a">PacketIn flood (DDoS)</span>
+                        <span data-i18n="scen.a">PacketIn flood (network)</span>
                     </button>
                     <button class="scenario-btn loft" type="button" onclick="triggerAlert('LOFT_LowRate_Attack')">
                         <span class="k" data-i18n="scen.b.k">Attack B</span>
-                        <span data-i18n="scen.b">LOFT low-rate probe</span>
+                        <span data-i18n="scen.b">LOFT low-rate (network)</span>
                     </button>
                     <button class="scenario-btn rush" type="button" onclick="triggerAlert('RushHour_Burst')">
                         <span class="k" data-i18n="scen.c.k">Benign</span>
-                        <span data-i18n="scen.c">Rush-hour surge (no block)</span>
+                        <span data-i18n="scen.c">Rush-hour surge (network label)</span>
                     </button>
                 </div>
+                <div class="ev-note">Network inject buttons ≠ camera. Camera track counts feed fusion separately (panel below).</div>
 
                 <div class="toolbar">
                     <div>
@@ -1303,13 +1303,13 @@
             </div>
             <div class="panel-body">
                 <div class="cam-scenario-row">
-                    <button type="button" class="scenario-btn rush" data-cam-scen="rush">Cam · rush</button>
-                    <button type="button" class="scenario-btn ddos" data-cam-scen="attack_physical_stable">Cam · stable</button>
-                    <button type="button" class="scenario-btn loft" data-cam-scen="mixed">Cam · mixed</button>
-                    <button type="button" class="scenario-btn" data-cam-scen="idle">Cam · idle</button>
+                    <button type="button" class="scenario-btn rush" data-cam-scen="rush">Cam · rush (synth)</button>
+                    <button type="button" class="scenario-btn ddos" data-cam-scen="attack_physical_stable">Cam · stable (synth)</button>
+                    <button type="button" class="scenario-btn loft" data-cam-scen="mixed">Cam · mixed (synth)</button>
+                    <button type="button" class="scenario-btn" data-cam-scen="idle">Cam · live detector</button>
                 </div>
                 <div class="cam-cards" id="cam-cards"></div>
-                <div class="ev-note" id="cam-note">RTSP edge-energy = visual activity proxy (not vehicle detection). Preview = one overwritten JPEG.</div>
+                <div class="ev-note" id="cam-note">YOLOv8 vehicle count on CUDA when mode=rtsp_detector · preview may show boxes.</div>
             </div>
         </article>
         <article class="panel" id="panel-fusion">
@@ -1873,7 +1873,7 @@
                 `scenario · ${cam.scenario || "—"} · ${agg.physical_label || "—"}`;
             const cfg = cam.config || {};
             document.getElementById("cam-note").textContent =
-                `Allow-list ${cfg.loaded ?? "?"} / inventory ${cfg.inventory_total ?? "?"} · mode=${(cam.aggregate||{}).physical_mode || "—"} · frames overwritten only (no archive)`;
+                `Allow-list ${cfg.loaded ?? "?"} / inventory ${cfg.inventory_total ?? "?"} · mode=${(cam.aggregate||{}).physical_mode || "—"} · detector=${(cam.detector||{}).device || "off"} · frames overwritten only`;
             cards.innerHTML = (cam.cameras || []).map((c) => {
                 const ctx = c.context || {};
                 const q = c.quality || {};
@@ -1883,17 +1883,22 @@
                 const preview = c.preview_url
                     ? `<img class="cam-preview" alt="preview ${c.camera_id}" src="${c.preview_url}?t=${bust}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'cam-preview-missing',textContent:'preview 404 — waiting for ffmpeg grab'}))" />`
                     : `<div class="cam-preview-missing">no frame yet · need ffmpeg + live RTSP</div>`;
+                const classes = ctx.counts_by_class || {};
+                const classTxt = Object.keys(classes).length
+                    ? Object.entries(classes).map(([k, v]) => `${k}:${v}`).join(" ")
+                    : "";
                 const metricLine = ctx.is_vehicle_count || ctx.vehicle_count_is_real
-                    ? `Vehicles: ${ctx.vehicle_count ?? "—"} · Queue: ${ctx.queue_length_m ?? "—"} m`
-                    : `Activity proxy: ${va.value ?? "—"} (${ctx.activity_band || va.activity_band || "—"}) · NOT vehicle_count`;
+                    ? `Tracks: ${ctx.visible_vehicle_tracks ?? ctx.vehicle_count ?? "—"} · occ=${ctx.occupancy_ratio ?? "—"} · q≈${ctx.queue_length_proxy_m ?? "—"}m · rel=${ctx.context_reliability ?? "—"} · ${ctx.analytics_source || ctx.source || "—"}`
+                    : `Activity proxy: ${va.value ?? "—"} (${ctx.activity_band || va.activity_band || "—"}) · NOT tracks`;
                 return `<div class="cam-card">
                     <div class="cam-id">${(c.label || c.camera_id)} · ${c.connected ? "LIVE" : "DOWN"}</div>
                     ${preview}
                     <div>${c.role || "cam"} · ${c.codec || "—"} ${c.resolution || ""}</div>
                     <div>RTSP · ${c.rtsp_configured ? (c.latency_ms != null ? c.latency_ms + " ms" : "probing") : "synthetic"}</div>
                     <div>stream=${q.stream_available ? "ok" : "no"} · frame=${q.frame_fresh ? "ok" : "no"} · scene=${q.scene_valid ? "ok" : "no"} · analytics=${q.analytics_valid ? "ok" : "no"}</div>
-                    <div>${metricLine} · src=${ctx.source || "—"}</div>
-                    <div>Pedestrian: ${ctx.pedestrian_present ? "YES" : "NO"} · Incident: ${ctx.incident ? "YES" : "NO"}</div>
+                    <div>${metricLine}</div>
+                    ${classTxt ? `<div>${classTxt}${ctx.detector_device != null ? ` · GPU=${ctx.detector_device} · ${ctx.detector_infer_ms ?? "—"}ms` : ""}</div>` : ""}
+                    <div>Pedestrians: ${ctx.pedestrian_count ?? (ctx.pedestrian_present ? "≥1" : "0")} · flow_count=${ctx.vehicle_flow_count ?? "n/a"}</div>
                     <div class="prio-${prio}">Priority: ${c.network_priority || "NORMAL"}</div>
                 </div>`;
             }).join("") || `<div class="ev-note">No cameras in allow-list — check configs/cameras.yaml + 1.cameras.json</div>`;
@@ -1901,7 +1906,7 @@
                 || {};
             const phys = fus.physical || agg;
             const physMetric = (phys.is_vehicle_count || phys.vehicle_count_is_real)
-                ? `veh=${phys.vehicle_count ?? "—"} · queue=${phys.queue_length_m ?? "—"}m`
+                ? `tracks=${phys.visible_vehicle_tracks ?? phys.vehicle_count ?? agg.visible_vehicle_tracks ?? "—"} · occ=${phys.occupancy_ratio ?? agg.occupancy_ratio ?? "—"} · q≈${phys.queue_length_proxy_m ?? "—"}m · rel=${phys.context_reliability ?? agg.context_reliability ?? "—"}`
                 : `proxy_band=${phys.activity_band || agg.activity_band || "—"} · energy=${(phys.visual_activity || agg.visual_activity || {}).value ?? "—"}`;
             document.getElementById("fus-net").textContent =
                 `pred=${fus.network_prediction || "—"} · reasons=${(fus.reason_codes || []).slice(0, 4).join(", ") || "—"}`;

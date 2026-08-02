@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sdn-its-resilience-ai"
 version = "0.2.0"
-description = "AI-Assisted Resilience Framework for SDN-Enabled Intelligent Transportation Systems"
+description = "AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems: A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware Mitigation"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -34,7 +34,7 @@ dev = ["pytest>=7.0", "ruff>=0.4.0", "huggingface_hub>=0.20.0"]
 export = ["onnx>=1.14"]
 data = ["huggingface_hub>=0.20.0", "kaggle>=1.6"]
 report = ["python-docx>=1.0.0", "playwright>=1.40.0"]
-camera = ["opencv-python-headless>=4.8.0", "Pillow>=10.0.0"]
+camera = ["opencv-python-headless>=4.8.0", "Pillow>=10.0.0", "ultralytics>=8.3.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

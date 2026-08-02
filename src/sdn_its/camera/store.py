@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import ROOT, load_camera_config, load_selected_cameras
+from .detector import get_detector, reset_detector
 from .models import CameraCard, CameraHealth, StreamQuality, TrafficContext, VisualActivity
 from .rtsp_probe import grab_latest_frame, probe_stream
 
@@ -26,6 +27,7 @@ def get_camera_store(*, reload: bool = False) -> CameraContextStore:
         if reload and _STORE is not None:
             _STORE.stop()
             _STORE = None
+            reset_detector()
         if _STORE is None:
             _STORE = CameraContextStore.from_config()
             _STORE.start()
@@ -58,20 +60,33 @@ class CameraContextStore:
         self._frame_max = int(self._cfg.get("frame_max_bytes") or 2_500_000)
         self._ffprobe_t = float(self._cfg.get("ffprobe_timeout_s") or 12)
         self._ffmpeg_t = float(self._cfg.get("ffmpeg_timeout_s") or 20)
+        self._detector_cfg = dict(self._cfg.get("detector") or {})
+        # Resolve relative weights under project root
+        w = self._detector_cfg.get("weights")
+        if w and not Path(str(w)).is_absolute():
+            self._detector_cfg["weights"] = str(ROOT / w)
+        self._use_detector = self._physical_mode in {"rtsp_detector", "detector"} and bool(
+            self._detector_cfg.get("enabled", True)
+        )
         self._proxy: dict[str, dict[str, Any]] = {}
         self._frame_dir.mkdir(parents=True, exist_ok=True)
+        (ROOT / "models" / "detectors").mkdir(parents=True, exist_ok=True)
         for cam in cameras or _default_cameras():
             self._health[cam.camera_id] = cam
             self._ctx[cam.camera_id] = TrafficContext(
                 camera_id=cam.camera_id,
+                visible_vehicle_tracks=4,
                 vehicle_count=4,
+                vehicle_flow_count=None,
                 queue_length_m=5.0,
                 mean_speed_kmh=38.0,
-                confidence=0.7,
+                context_reliability=0.5,
+                confidence=0.0,
                 source="synthetic",
                 is_vehicle_count=True,
                 activity_band="low",
                 analytics_valid=True,
+                reliability_components={"synthetic": True},
             )
             self._hydrate_frame_unlocked(cam.camera_id)
 
@@ -119,21 +134,38 @@ class CameraContextStore:
             contexts = [c.context for c in cards]
         if not contexts:
             return {
+                "visible_vehicle_tracks": 0,
+                "vehicle_flow_count": None,
                 "vehicle_count": 0,
                 "queue_length_m": 0.0,
                 "pedestrian_present": False,
                 "incident": False,
                 "physical_label": "unknown",
-                "confidence": 0.0,
+                "context_reliability": None,
+                "confidence": None,
                 "cameras": 0,
                 "stale": True,
             }
         for c in contexts:
             c.refresh_age()
         any_real_vc = any(c.is_vehicle_count for c in contexts)
-        vehicle_count = sum(int(c.vehicle_count or 0) for c in contexts) if any_real_vc else None
-        queue_vals = [float(c.queue_length_m or 0) for c in contexts if c.is_vehicle_count]
+        vehicle_count = (
+            sum(int(c.visible_vehicle_tracks if c.visible_vehicle_tracks is not None else (c.vehicle_count or 0)) for c in contexts)
+            if any_real_vc
+            else None
+        )
+        queue_vals = [
+            float(c.queue_length_proxy_m if c.queue_length_proxy_m is not None else (c.queue_length_m or 0))
+            for c in contexts
+            if c.is_vehicle_count
+        ]
         queue = max(queue_vals) if queue_vals else None
+        occ_vals = [float(c.occupancy_ratio) for c in contexts if c.is_vehicle_count and c.occupancy_ratio is not None]
+        occupancy = max(occ_vals) if occ_vals else None
+        ped_counts = [int(c.pedestrian_count or 0) for c in contexts if c.is_vehicle_count]
+        ped_n = max(ped_counts) if ped_counts else (1 if any(c.pedestrian_present for c in contexts) else 0)
+        rel_vals = [float(c.context_reliability or 0) for c in contexts if c.is_vehicle_count]
+        context_reliability = round(sum(rel_vals) / len(rel_vals), 3) if rel_vals else None
         bands = [c.activity_band for c in contexts]
         band = "unknown"
         for b in ("high", "medium", "low"):
@@ -142,7 +174,6 @@ class CameraContextStore:
                 break
         ped = any(c.pedestrian_present for c in contexts)
         incident = any(c.incident for c in contexts)
-        conf = sum(c.confidence for c in contexts) / len(contexts)
         ages = [c.analytics_age_s for c in contexts]
         label = "stable"
         for c in contexts:
@@ -162,12 +193,20 @@ class CameraContextStore:
             for c in contexts
             if c.visual_activity and c.visual_activity.value is not None
         ]
+        sources = [c.analytics_source or c.source for c in contexts if c.is_vehicle_count]
         return {
+            "visible_vehicle_tracks": vehicle_count,
+            "vehicle_flow_count": None,
             "vehicle_count": vehicle_count,
             "queue_length_m": round(queue, 1) if queue is not None else None,
+            "queue_length_proxy_m": round(queue, 1) if queue is not None else None,
+            "occupancy_ratio": round(occupancy, 3) if occupancy is not None else None,
+            "pedestrian_count": int(ped_n),
             "is_vehicle_count": any_real_vc,
             "vehicle_count_is_real": any_real_vc,
+            "context_reliability": context_reliability,
             "activity_band": band,
+            "source": sources[0] if sources else None,
             "visual_activity": {
                 "metric": "visual_activity_proxy",
                 "value": round(max(energies), 2) if energies else None,
@@ -178,7 +217,7 @@ class CameraContextStore:
             "pedestrian_present": ped,
             "incident": incident,
             "physical_label": label,
-            "confidence": round(conf, 3),
+            "confidence": None,  # deprecated — use context_reliability
             "cameras": len(contexts),
             "live_rtsp": live_n,
             "stream_available": live_n > 0,
@@ -190,13 +229,15 @@ class CameraContextStore:
             "scenario": self.get_scenario(),
             "physical_mode": self._physical_mode,
             "honesty": (
-                "RTSP edge-energy is a visual activity proxy, not vehicle detection. "
-                "Exp B/C synthetic scenarios prove fusion rules, not camera FP reduction."
+                "detector_tracker_v1: IoU tracks across probe frames; occupancy/queue are zone proxies. "
+                "Does NOT yet prove surveyed queue meters, FP reduction on labeled video, or Mininet "
+                "camera-priority under attack (see Exp D)."
             ),
+            "detector": get_detector(self._detector_cfg).status() if self._use_detector else {"enabled": False},
         }
 
     def _frame_path(self, camera_id: str) -> Path:
-        # camera_id is allow-listed (cam-<hex>); never take a free-form path from the client
+        # camera_id is allow-listed (cam1..camN); never take a free-form path from the client
         safe = "".join(ch for ch in camera_id if ch.isalnum() or ch in {"-", "_"})
         return self._frame_dir / f"latest_{safe}.jpg"
 
@@ -221,9 +262,13 @@ class CameraContextStore:
             return None
 
     def list_cards(self) -> list[dict[str, Any]]:
+        def _cam_key(cid: str) -> tuple[int, str]:
+            digits = "".join(ch for ch in cid if ch.isdigit())
+            return (int(digits) if digits else 10**9, cid)
+
         with self._lock:
             out: list[dict[str, Any]] = []
-            for cid in sorted(self._health):
+            for cid in sorted(self._health, key=_cam_key):
                 self._hydrate_frame_unlocked(cid)
                 row = self._card_unlocked(cid).to_dict()
                 p = self._frame_path(cid)
@@ -237,9 +282,8 @@ class CameraContextStore:
         return {
             "enabled": True,
             "research_role": (
-                "Allow-listed RTSP → stream quality + visual_activity_proxy for fusion. "
-                "Not vehicle detection / not a video wall / not an archive. "
-                "vehicle_count only when is_vehicle_count=true (synthetic or real detector)."
+                "Allow-listed RTSP → YOLO + IoU tracker (detector_tracker_v1) for fusion. "
+                "Not a video wall / not surveyed queue meters / not labeled-FP proof."
             ),
             "scenario": self.get_scenario(),
             "aggregate": self.aggregate_context(),
@@ -255,11 +299,15 @@ class CameraContextStore:
                     "inventory_total",
                     "physical_mode",
                     "sample_frames",
+                    "select_mode",
+                    "anonymize_labels",
+                    "local_override",
                     "fallback",
                     "error",
                     "note",
                 )
             },
+            "detector": get_detector(self._detector_cfg).status() if self._use_detector else {"enabled": False},
             "bounds": {
                 "max_cameras": self._cfg.get("max_cameras", 3),
                 "probe_interval_s": self._probe_interval,
@@ -358,6 +406,30 @@ class CameraContextStore:
                     continue
                 self._apply_probe_result(cam_id, info, frame_info)
 
+        # Serial YOLO on GPU (avoid concurrent CUDA from parallel workers)
+        if self._use_detector:
+            det = get_detector(self._detector_cfg)
+            for cam_id, _info, frame_info in results:
+                if not cam_id or not frame_info.get("ok"):
+                    continue
+                path = Path(frame_info.get("path") or self._frame_path(cam_id))
+                det_out = det.detect(path, camera_id=cam_id)
+                with self._lock:
+                    proxy = self._proxy.get(cam_id)
+                    if isinstance(proxy, dict):
+                        proxy["detection"] = det_out
+                        if det_out.get("ok"):
+                            h = self._health.get(cam_id)
+                            if h:
+                                h.quality.analytics_valid = True
+                                h.quality.scene_valid = True
+                                h.quality.note = (
+                                    f"{det_out.get('source')} tracks={det_out.get('visible_vehicle_tracks')} "
+                                    f"rel={det_out.get('context_reliability')} "
+                                    f"occ={det_out.get('occupancy_ratio')} "
+                                    f"dev={det_out.get('device')} {det_out.get('infer_ms')}ms"
+                                )
+
     def _emit_synthetic(self) -> None:
         """Force one context publish tick (Exp B/C / tests)."""
         self._tick += 1
@@ -377,8 +449,11 @@ class CameraContextStore:
                 ctx = _synth_context(cid, scenario, self._tick, phase=i)
                 self.publish(ctx)
                 continue
-            if mode == "rtsp_proxy" and h.connected and isinstance(proxy, dict) and proxy.get("visual_activity"):
-                va_raw = proxy["visual_activity"]
+
+            det = (proxy or {}).get("detection") if isinstance(proxy, dict) else None
+            va_raw = (proxy or {}).get("visual_activity") if isinstance(proxy, dict) else None
+            va = None
+            if isinstance(va_raw, dict):
                 va = VisualActivity(
                     metric=str(va_raw.get("metric") or "visual_activity_proxy"),
                     value=va_raw.get("value"),
@@ -386,6 +461,54 @@ class CameraContextStore:
                     is_vehicle_count=False,
                     activity_band=str(va_raw.get("activity_band") or proxy.get("activity_band") or "unknown"),
                 )
+
+            # Prefer real YOLO counts when physical_mode=rtsp_detector
+            if (
+                mode in {"rtsp_detector", "detector"}
+                and h.connected
+                and isinstance(det, dict)
+                and det.get("ok")
+                and det.get("is_vehicle_count")
+            ):
+                vc = int(
+                    det.get("visible_vehicle_tracks")
+                    if det.get("visible_vehicle_tracks") is not None
+                    else (det.get("vehicle_count") or 0)
+                )
+                qproxy = float(
+                    det.get("queue_length_proxy_m")
+                    if det.get("queue_length_proxy_m") is not None
+                    else (det.get("queue_length_m_est") or 0.0)
+                )
+                band = str(det.get("activity_band") or ("high" if vc >= 25 else "medium" if vc >= 12 else "low"))
+                cong = "high" if band == "high" else ("medium" if band == "medium" else "low")
+                ctx = TrafficContext(
+                    camera_id=cid,
+                    visible_vehicle_tracks=vc,
+                    vehicle_flow_count=det.get("vehicle_flow_count"),
+                    vehicle_count=vc,
+                    queue_length_m=qproxy,
+                    queue_length_proxy_m=qproxy,
+                    occupancy_ratio=det.get("occupancy_ratio"),
+                    mean_speed_kmh=18.0 if band == "high" else 32.0,
+                    pedestrian_present=bool(det.get("pedestrian_present")),
+                    pedestrian_count=int(det.get("pedestrian_count") or 0),
+                    incident=False,
+                    congestion_level=cong,
+                    context_reliability=float(det.get("context_reliability") or 0.0),
+                    reliability_components=dict(det.get("reliability_components") or {}),
+                    confidence=0.0,
+                    source=str(det.get("source") or "detector_tracker_v1"),
+                    analytics_source=str(det.get("source") or "detector_tracker_v1"),
+                    is_vehicle_count=True,
+                    visual_activity=va,
+                    activity_band=band,
+                    analytics_valid=True,
+                    counts_by_class=dict(det.get("counts_by_class") or {}),
+                    detector_device=str(det.get("device")) if det.get("device") is not None else None,
+                    detector_infer_ms=det.get("infer_ms"),
+                )
+            elif mode in {"rtsp_proxy", "rtsp_detector"} and h.connected and va is not None:
                 band = va.activity_band
                 cong = "high" if band == "high" else ("medium" if band == "medium" else "low")
                 ctx = TrafficContext(
@@ -403,8 +526,7 @@ class CameraContextStore:
                     activity_band=band,
                     analytics_valid=bool(h.quality.analytics_valid),
                 )
-            elif mode == "rtsp_proxy" and h.connected:
-                # Stream up but no usable frame analytics yet
+            elif mode in {"rtsp_proxy", "rtsp_detector"} and h.connected:
                 ctx = TrafficContext(
                     camera_id=cid,
                     vehicle_count=None,
@@ -430,11 +552,12 @@ class CameraContextStore:
 
 
 def _default_cameras() -> list[CameraHealth]:
+    """Synthetic placeholders only when inventory is missing — generic cam1/cam2."""
     return [
         CameraHealth(
-            camera_id="cam-j04",
-            label="Junction 04 · synthetic",
-            junction="J04",
+            camera_id="cam1",
+            label="cam1",
+            junction="",
             codec="H.264",
             resolution="1280x720",
             fps_cfg=15.0,
@@ -444,9 +567,9 @@ def _default_cameras() -> list[CameraHealth]:
             network_priority="HIGH",
         ),
         CameraHealth(
-            camera_id="cam-j04b",
-            label="Junction 04 · pedestrian (synthetic)",
-            junction="J04",
+            camera_id="cam2",
+            label="cam2",
+            junction="",
             codec="H.264",
             resolution="1280x720",
             fps_cfg=12.0,
@@ -463,9 +586,17 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
 
     def _vc(**kwargs: Any) -> TrafficContext:
         band = kwargs.pop("activity_band", None)
-        vc = int(kwargs.get("vehicle_count") or 0)
+        vc = int(kwargs.get("vehicle_count") or kwargs.get("visible_vehicle_tracks") or 0)
         if band is None:
             band = "high" if vc >= 25 else ("medium" if vc >= 12 else "low")
+        kwargs.setdefault("visible_vehicle_tracks", vc)
+        kwargs.setdefault("vehicle_count", vc)
+        kwargs.setdefault("vehicle_flow_count", None)
+        kwargs.setdefault("context_reliability", 0.5)
+        kwargs.setdefault(
+            "reliability_components",
+            {"synthetic": True, "note": "scripted scenario — not detector scores"},
+        )
         return TrafficContext(
             is_vehicle_count=True,
             analytics_valid=True,
@@ -483,7 +614,7 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
             pedestrian_present=False,
             incident=False,
             congestion_level="high",
-            confidence=0.9,
+            confidence=0.0,
         )
     if scenario in {"attack_physical_stable", "attack"}:
         return _vc(
@@ -492,7 +623,7 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
             queue_length_m=6.0,
             mean_speed_kmh=40.0,
             congestion_level="low",
-            confidence=0.88,
+            confidence=0.0,
         )
     if scenario == "mixed":
         return _vc(
@@ -502,7 +633,7 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
             mean_speed_kmh=10.0,
             pedestrian_present=True,
             congestion_level="high",
-            confidence=0.91,
+            confidence=0.0,
         )
     if scenario == "incident":
         return _vc(
@@ -513,7 +644,7 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
             pedestrian_present=True,
             incident=True,
             congestion_level="high",
-            confidence=0.93,
+            confidence=0.0,
         )
     return _vc(
         camera_id=camera_id,
@@ -521,5 +652,5 @@ def _synth_context(camera_id: str, scenario: str, tick: int, phase: int = 0) -> 
         queue_length_m=5.0 + wobble,
         mean_speed_kmh=36.0,
         congestion_level="low",
-        confidence=0.75,
+        confidence=0.0,
     )

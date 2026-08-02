@@ -78,8 +78,13 @@ console_preview_*.json
 # Local camera inventory (may contain RTSP credentials) — never commit
 1.cameras.json
 **/cameras.local.json
+configs/cameras.local.yaml
 tmp/camera_probe/
 tmp/camera_frames/
+yolov8*.pt
+models/detectors/*.pt
+!models/detectors/.gitkeep
+!configs/cameras.local.yaml.example
 
 # Experiment run dumps (keep YAML + .gitkeep structure)
 experiments/*/results/*

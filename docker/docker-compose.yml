@@ -1,13 +1,8 @@
-# Research console + optional telemetry feeder.
+# Legacy path — prefer repo-root docker-compose.yml:
+#   docker compose up -d --build
 #
-#   cd docker
-#   docker compose up --build
-#   → http://127.0.0.1:8080/
-#
-# With cameras (host must have ../1.cameras.json):
-#   docker compose -f docker-compose.yml -f docker-compose.cameras.yml up --build
-#
-# See docs/docker.md
+# Still works:
+#   cd docker && docker compose up -d --build
 
 services:
   controller:

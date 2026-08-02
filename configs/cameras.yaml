@@ -1,40 +1,44 @@
-# Camera selection for the research console (no secrets here).
-# Inventory JSON may contain RTSP credentials — keep it local / gitignored.
+# Camera selection for the research console (no secrets / no site names here).
+# Inventory JSON (gitignored) holds RTSP URLs. Do NOT commit real camera IDs or place names.
 #
-# Design:
-# - Select a small allow-list (not all cameras in inventory).
-# - Metadata-first: vehicle/queue/incident for fusion — not a video archive.
-# - At most one overwritten JPEG per selected cam when sample_frames=true.
+# Prefer:
+#   select_mode: first_n     → take first max_cameras entries that have a stream URL
+# Optional override (gitignored):
+#   configs/cameras.local.yaml  with explicit select: [{id: ...}, ...]
 
 enabled: true
 inventory: 1.cameras.json
 
-# Only these IDs are loaded into the app (probe-live set, Aug 2026).
-select:
-  - id: 6dd7f379-f42e-4f23-8783-b7379614e68d   # NVL-NVC (busy junction) — primary
-    role: primary
-    network_priority: HIGH
-  - id: 45097883-d94f-4981-ab48-1b66626119d3   # Công An Xã Phú Hữu
-    role: secondary
-    network_priority: NORMAL
-  - id: 05c601b4-b6f1-42fe-a8bc-0532967fd35a   # Quán Ngói Đỏ
-    role: secondary
-    network_priority: NORMAL
+# first_n | explicit
+# - first_n: no hardcoded inventory UUIDs in this repo file
+# - explicit: requires select: below OR configs/cameras.local.yaml
+select_mode: first_n
+select: []
 
 # Bound resource use
 max_cameras: 3
-probe_interval_s: 20
+probe_interval_s: 5
 sample_frames: true
-frame_dir: tmp/camera_frames          # overwritten latest_*.jpg only (no history)
-frame_max_bytes: 2500000              # skip / delete if larger
+frame_dir: tmp/camera_frames
+frame_max_bytes: 2500000
 rtsp_transport: tcp
 ffprobe_timeout_s: 10
 ffmpeg_timeout_s: 18
-# Probe primary first so UI shows live junction sooner
 probe_primary_first: true
 
-# Physical context for fusion:
-# - synthetic: scenario buttons drive vehicle_count (offline demos)
-# - rtsp_proxy: when stream is up, optional edge-energy proxy (NOT a YOLO detector)
-# Scenario buttons still work as overrides via /api/v1/camera/scenario
-physical_mode: rtsp_proxy
+# Display: always cam1..camN (never inventory place names in the console)
+anonymize_labels: true
+
+physical_mode: rtsp_detector
+
+detector:
+  enabled: true
+  weights: models/detectors/yolov8n.pt
+  device: auto
+  conf: 0.35
+  iou: 0.45
+  imgsz: 640
+  annotate_preview: true
+  max_det: 100
+  zone_y0: 0.35
+  meters_per_norm_height: 45.0

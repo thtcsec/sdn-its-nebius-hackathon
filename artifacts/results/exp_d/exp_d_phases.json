@@ -1,0 +1,186 @@
+{
+  "experiment": "D",
+  "title": "Camera tracker \u00d7 fusion phases (graded evidence)",
+  "generated_at": "2026-08-02T09:42:01Z",
+  "honesty": [
+    "detector_live \u2260 congestion observed \u2260 OpenFlow outcome.",
+    "pass_scripted_rules only proves fusion wiring on scripted congestion inputs.",
+    "visible_vehicle_tracks are in-view tracks, not veh/h.",
+    "context_reliability is a heuristic composite, not calibrated accuracy.",
+    "Without --with-of, closed loop stops at in-memory mitigation objects."
+  ],
+  "arms": {
+    "live": {
+      "evidence_grade": "live_observation",
+      "detector_live": false,
+      "physical_context_modified": false,
+      "live_was_congested": false,
+      "physical": {
+        "visible_vehicle_tracks": 19,
+        "vehicle_count": 19,
+        "occupancy_ratio": null,
+        "queue_length_proxy_m": 9.0,
+        "pedestrian_count": 0,
+        "physical_label": "stable",
+        "is_vehicle_count": true,
+        "source": "synthetic",
+        "context_reliability": 0.5
+      },
+      "phases": [],
+      "note": "Unmodified detector aggregate. P1 preserve is NOT expected unless the scene is actually congested. This arm measures observation, not scripted pass."
+    },
+    "scripted": {
+      "evidence_grade": "scripted",
+      "detector_live": false,
+      "physical_context_modified": true,
+      "physical": {
+        "visible_vehicle_tracks": 28,
+        "vehicle_count": 28,
+        "occupancy_ratio": 0.55,
+        "queue_length_proxy_m": 42.0,
+        "pedestrian_count": 0,
+        "physical_label": "rush_hour",
+        "is_vehicle_count": true,
+        "source": "scripted_congestion_context",
+        "context_reliability": 0.5
+      },
+      "phases": [
+        {
+          "phase": "1_congestion_preserve",
+          "network_prediction": "DDoS_PacketIn_Flood",
+          "source_dominance": 0.3,
+          "physical": {
+            "visible_vehicle_tracks": 28,
+            "vehicle_count": 28,
+            "occupancy_ratio": 0.55,
+            "queue_length_proxy_m": 42.0,
+            "pedestrian_count": 0,
+            "physical_label": "rush_hour",
+            "is_vehicle_count": true,
+            "source": "scripted_congestion_context",
+            "context_reliability": 0.5
+          },
+          "fusion": {
+            "network_prediction": "DDoS_PacketIn_Flood",
+            "physical_context": "rush_hour",
+            "final_risk": "medium",
+            "recommended_action": "preserve_rush_hour",
+            "reason_codes": [
+              "HIGH_PACKET_IN",
+              "HIGH_PHYSICAL_TRAFFIC",
+              "DISTRIBUTED_SOURCES",
+              "DISTRIBUTED_SOURCES"
+            ],
+            "policy_attack_type": "RushHour_Burst",
+            "cooldown_seconds": 0.0,
+            "false_positive_corrected": true,
+            "safety_critical": false,
+            "explain": "Packet growth co-occurs with physical congestion below isolate dominance \u2192 treat as legitimate surge (preserve).",
+            "thresholds_used": {
+              "dominance_mixed_isolate": 0.7,
+              "dominance_label_disagree": 0.65,
+              "dominance_stable_contain": 0.55,
+              "distributed_below": 0.45,
+              "tracks_high": 25,
+              "tracks_rush_min": 12,
+              "queue_high_m": 40.0,
+              "pin_high_pct": 100.0
+            }
+          },
+          "mitigation_status": "IGNORED_BENIGN_RUSH_HOUR",
+          "rules": 0,
+          "false_positive_corrected": true
+        },
+        {
+          "phase": "2_attack_into_congestion",
+          "network_prediction": "DDoS_PacketIn_Flood",
+          "source_dominance": 0.82,
+          "physical": {
+            "visible_vehicle_tracks": 28,
+            "vehicle_count": 28,
+            "occupancy_ratio": 0.55,
+            "queue_length_proxy_m": 42.0,
+            "pedestrian_count": 0,
+            "physical_label": "rush_hour",
+            "is_vehicle_count": true,
+            "source": "scripted_congestion_context",
+            "context_reliability": 0.5
+          },
+          "fusion": {
+            "network_prediction": "DDoS_PacketIn_Flood",
+            "physical_context": "rush_hour",
+            "final_risk": "high",
+            "recommended_action": "temporary_drop",
+            "reason_codes": [
+              "HIGH_PACKET_IN",
+              "HIGH_PHYSICAL_TRAFFIC",
+              "SINGLE_SOURCE_DOMINANCE",
+              "MIXED_RUSH_AND_ATTACK"
+            ],
+            "policy_attack_type": "DDoS_PacketIn_Flood",
+            "cooldown_seconds": 15.0,
+            "false_positive_corrected": false,
+            "safety_critical": false,
+            "explain": "Rush-hour/incident camera context + dominant attacker source \u2192 isolate that source only; keep junction/camera streams prioritized.",
+            "thresholds_used": {
+              "dominance_mixed_isolate": 0.7,
+              "dominance_label_disagree": 0.65,
+              "dominance_stable_contain": 0.55,
+              "distributed_below": 0.45,
+              "tracks_high": 25,
+              "tracks_rush_min": 12,
+              "queue_high_m": 40.0,
+              "pin_high_pct": 100.0
+            }
+          },
+          "mitigation_status": "CONTAINED_DROP_AND_THROTTLE",
+          "rules": 2,
+          "false_positive_corrected": false
+        }
+      ],
+      "note": "Explicit congestion inputs for fusion/policy wiring only. pass_scripted_rules does NOT mean live congestion was observed.",
+      "P1_preserves": true,
+      "P2_contains": true
+    }
+  },
+  "phase3_rollback": {
+    "phase": "3_rollback",
+    "evidence_grade": "not_run",
+    "openflow_evidence": false,
+    "of_attempted": false,
+    "missing_metrics": [
+      "ovs-ofctl dump-flows verify",
+      "attack_throughput",
+      "legitimate_throughput",
+      "rtsp_packet_loss",
+      "frame_latency_before_after",
+      "rollback_verification"
+    ],
+    "expected_if_lab": "temporary rules expire; attack host recovers; legit + RTSP remain up",
+    "note": "Closed-loop network outcome is Exp A / WSL Mininet \u2014 not proven by fusion objects alone."
+  },
+  "summary": {
+    "detector_live": false,
+    "physical_context_modified": true,
+    "live_arm_modified": false,
+    "evidence_grade": "scripted",
+    "openflow_evidence": false,
+    "live_was_congested": false,
+    "live_snapshot": {
+      "visible_vehicle_tracks": 19,
+      "vehicle_count": 19,
+      "occupancy_ratio": null,
+      "queue_length_proxy_m": 9.0,
+      "pedestrian_count": 0,
+      "physical_label": "stable",
+      "is_vehicle_count": true,
+      "source": "synthetic",
+      "context_reliability": 0.5
+    },
+    "pass_scripted_rules": true,
+    "pass_live_observation_congestion": false,
+    "pass_live_P1_preserve": false,
+    "pass_closed_loop_network": false
+  },
+  "pass": true
+}

@@ -1,47 +1,77 @@
 {
   "experiment": "B_C_sensitivity",
-  "generated_at": "2026-08-02T04:47:00Z",
-  "honesty": "Handcrafted thresholds; this table is a sensitivity check, not a validated ROC. Production would need labeled multimodal traces.",
+  "generated_at": "2026-08-02T09:41:44Z",
+  "honesty": "Thresholds are injected into FusionEngine (FusionThresholds). Trade-off appears when mid-dominance cases flip: low isolate thr \u2192 temporary_drop on rush+mid-dom; high isolate thr \u2192 preserve_rush_hour; low stable-contain thr \u2192 temporary_drop on stable+mid-dom; high stable-contain thr \u2192 rate_limit. Not a ROC on labeled video.",
+  "method": {
+    "swept": [
+      "dominance_mixed_isolate",
+      "dominance_stable_contain"
+    ],
+    "fixed_probe_dominance": 0.62,
+    "cases": [
+      "rush+DDoS",
+      "stable+DDoS"
+    ]
+  },
   "rows": [
     {
-      "dominance_threshold_probe": 0.55,
-      "A_rush_distributed_action": "preserve_rush_hour",
-      "A_fp_corrected": true,
-      "mixed_at_dom=thr_action": "temporary_drop",
-      "B_stable_at_dom=thr_action": "temporary_drop",
+      "threshold": 0.55,
+      "probe_dominance": 0.62,
+      "rush_dom=probe_action": "temporary_drop",
+      "rush_dom=0.30_action": "preserve_rush_hour",
+      "stable_dom=0.60_action": "temporary_drop",
+      "expect_isolate_at_probe": true,
       "false_preserve_risk": false,
+      "expect_stable_contain_at_0.60": true,
       "false_contain_risk": false,
-      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+      "missed_contain_risk": false,
+      "tradeoff_note": "Lower dominance_mixed_isolate \u2192 more temporary_drop on rush+mid-dom (fewer false-preserve, more aggressive isolate). Higher dominance_stable_contain \u2192 fewer contains on stable+mid-dom."
     },
     {
-      "dominance_threshold_probe": 0.65,
-      "A_rush_distributed_action": "preserve_rush_hour",
-      "A_fp_corrected": true,
-      "mixed_at_dom=thr_action": "temporary_drop",
-      "B_stable_at_dom=thr_action": "temporary_drop",
+      "threshold": 0.65,
+      "probe_dominance": 0.62,
+      "rush_dom=probe_action": "preserve_rush_hour",
+      "rush_dom=0.30_action": "preserve_rush_hour",
+      "stable_dom=0.60_action": "rate_limit",
+      "expect_isolate_at_probe": false,
       "false_preserve_risk": false,
+      "expect_stable_contain_at_0.60": false,
       "false_contain_risk": false,
-      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+      "missed_contain_risk": false,
+      "tradeoff_note": "Lower dominance_mixed_isolate \u2192 more temporary_drop on rush+mid-dom (fewer false-preserve, more aggressive isolate). Higher dominance_stable_contain \u2192 fewer contains on stable+mid-dom."
     },
     {
-      "dominance_threshold_probe": 0.75,
-      "A_rush_distributed_action": "preserve_rush_hour",
-      "A_fp_corrected": true,
-      "mixed_at_dom=thr_action": "temporary_drop",
-      "B_stable_at_dom=thr_action": "temporary_drop",
+      "threshold": 0.75,
+      "probe_dominance": 0.62,
+      "rush_dom=probe_action": "preserve_rush_hour",
+      "rush_dom=0.30_action": "preserve_rush_hour",
+      "stable_dom=0.60_action": "rate_limit",
+      "expect_isolate_at_probe": false,
       "false_preserve_risk": false,
+      "expect_stable_contain_at_0.60": false,
       "false_contain_risk": false,
-      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+      "missed_contain_risk": false,
+      "tradeoff_note": "Lower dominance_mixed_isolate \u2192 more temporary_drop on rush+mid-dom (fewer false-preserve, more aggressive isolate). Higher dominance_stable_contain \u2192 fewer contains on stable+mid-dom."
     },
     {
-      "dominance_threshold_probe": 0.85,
-      "A_rush_distributed_action": "preserve_rush_hour",
-      "A_fp_corrected": true,
-      "mixed_at_dom=thr_action": "temporary_drop",
-      "B_stable_at_dom=thr_action": "temporary_drop",
+      "threshold": 0.85,
+      "probe_dominance": 0.62,
+      "rush_dom=probe_action": "preserve_rush_hour",
+      "rush_dom=0.30_action": "preserve_rush_hour",
+      "stable_dom=0.60_action": "rate_limit",
+      "expect_isolate_at_probe": false,
       "false_preserve_risk": false,
+      "expect_stable_contain_at_0.60": false,
       "false_contain_risk": false,
-      "note": "false_preserve_risk: rush+high-dom still preserve (missed isolate); false_contain_risk: stable+dom fails to contain"
+      "missed_contain_risk": false,
+      "tradeoff_note": "Lower dominance_mixed_isolate \u2192 more temporary_drop on rush+mid-dom (fewer false-preserve, more aggressive isolate). Higher dominance_stable_contain \u2192 fewer contains on stable+mid-dom."
     }
-  ]
+  ],
+  "tradeoff": {
+    "false_preserve_count": 0,
+    "false_contain_count": 0,
+    "missed_contain_count": 0,
+    "actions_at_probe_vary": true,
+    "actions_stable_vary": true
+  }
 }

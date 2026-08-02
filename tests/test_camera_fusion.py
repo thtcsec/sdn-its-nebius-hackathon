@@ -12,7 +12,7 @@ for p in (PROJECT_ROOT, SRC):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from sdn_its.camera.fusion import FusionEngine
+from sdn_its.camera.fusion import FusionEngine, FusionThresholds
 from sdn_its.camera.store import get_camera_store
 from sdn_its.controller import ResilienceSDNController
 
@@ -25,6 +25,7 @@ class TestCameraFusion(unittest.TestCase):
             physical={
                 "physical_label": "rush_hour",
                 "is_vehicle_count": True,
+                "visible_vehicle_tracks": 40,
                 "vehicle_count": 40,
                 "queue_length_m": 50,
                 "activity_band": "high",
@@ -39,6 +40,54 @@ class TestCameraFusion(unittest.TestCase):
         )
         self.assertEqual(d.recommended_action, "preserve_rush_hour")
         self.assertTrue(d.false_positive_corrected)
+
+    def test_threshold_sweep_changes_actions(self):
+        """Mid-dominance cases must flip when FusionThresholds change (not NETWORK_ONLY fallback)."""
+        rush = {
+            "physical_label": "rush_hour",
+            "is_vehicle_count": True,
+            "visible_vehicle_tracks": 40,
+            "queue_length_proxy_m": 50,
+            "stale": False,
+            "analytics_valid": True,
+        }
+        stable = {
+            "physical_label": "stable",
+            "is_vehicle_count": True,
+            "visible_vehicle_tracks": 5,
+            "queue_length_proxy_m": 4,
+            "stale": False,
+            "analytics_valid": True,
+        }
+        low = FusionEngine(FusionThresholds(dominance_mixed_isolate=0.55)).fuse(
+            network_prediction="DDoS_PacketIn_Flood",
+            physical=rush,
+            source_dominance=0.62,
+            packet_in_delta_pct=400,
+        )
+        high = FusionEngine(FusionThresholds(dominance_mixed_isolate=0.75)).fuse(
+            network_prediction="DDoS_PacketIn_Flood",
+            physical=rush,
+            source_dominance=0.62,
+            packet_in_delta_pct=400,
+        )
+        self.assertEqual(low.recommended_action, "temporary_drop")
+        self.assertEqual(high.recommended_action, "preserve_rush_hour")
+
+        contain = FusionEngine(FusionThresholds(dominance_stable_contain=0.55)).fuse(
+            network_prediction="DDoS_PacketIn_Flood",
+            physical=stable,
+            source_dominance=0.60,
+            packet_in_delta_pct=400,
+        )
+        soft = FusionEngine(FusionThresholds(dominance_stable_contain=0.75)).fuse(
+            network_prediction="DDoS_PacketIn_Flood",
+            physical=stable,
+            source_dominance=0.60,
+            packet_in_delta_pct=400,
+        )
+        self.assertEqual(contain.recommended_action, "temporary_drop")
+        self.assertEqual(soft.recommended_action, "rate_limit")
 
     def test_stable_camera_contains_flood(self):
         eng = FusionEngine()

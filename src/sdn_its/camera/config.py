@@ -1,6 +1,8 @@
 """Load a small allow-listed camera set from configs/cameras.yaml + inventory JSON.
 
-Secrets stay in the inventory file (gitignored). No per-camera env vars required.
+No site names or inventory UUIDs are baked into application code.
+Committed config uses select_mode=first_n; optional cameras.local.yaml for explicit IDs.
+Console labels are always cam1..camN when anonymize_labels is true.
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ from .models import CameraHealth
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CFG = ROOT / "configs" / "cameras.yaml"
+LOCAL_CFG = ROOT / "configs" / "cameras.local.yaml"
 
 
 def load_camera_config(path: Path | None = None) -> dict[str, Any]:
@@ -23,13 +26,24 @@ def load_camera_config(path: Path | None = None) -> dict[str, Any]:
         return {"enabled": False, "select": [], "inventory": None}
     data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
     data["_config_path"] = str(cfg_path)
+    # Merge optional local override (explicit select list, never committed)
+    local_path = LOCAL_CFG
+    if local_path.is_file():
+        try:
+            local = yaml.safe_load(local_path.read_text(encoding="utf-8")) or {}
+            if local.get("select"):
+                data["select"] = local["select"]
+                data["select_mode"] = str(local.get("select_mode") or "explicit")
+            data["_local_override"] = str(local_path)
+        except (OSError, yaml.YAMLError):
+            pass
     return data
 
 
 def os_environ_cfg() -> str | None:
     import os
 
-    return os.environ.get("SDN_CAMERAS_CONFIG")  # optional single override path
+    return os.environ.get("SDN_CAMERAS_CONFIG")
 
 
 def resolve_inventory(cfg: dict[str, Any]) -> Path | None:
@@ -42,18 +56,55 @@ def resolve_inventory(cfg: dict[str, Any]) -> Path | None:
     return p if p.is_file() else None
 
 
+def _rows_with_stream(inventory: list[Any]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for row in inventory:
+        if not isinstance(row, dict):
+            continue
+        url = row.get("streamUrl") or row.get("rtsp") or row.get("url")
+        if url:
+            out.append(row)
+    return out
+
+
+def _build_select_entries(cfg: dict[str, Any], inventory: list[Any]) -> list[dict[str, Any]]:
+    """Resolve which inventory rows to load — never hardcode UUIDs in Python."""
+    mode = str(cfg.get("select_mode") or "first_n").lower()
+    max_n = int(cfg.get("max_cameras") or 3)
+    select = list(cfg.get("select") or [])
+
+    if mode == "explicit" and select:
+        return select[:max_n]
+
+    # first_n (default): first inventory rows that expose an RTSP URL
+    entries: list[dict[str, Any]] = []
+    for i, row in enumerate(_rows_with_stream(inventory)[:max_n]):
+        entries.append(
+            {
+                "id": str(row.get("id") or ""),
+                "role": "primary" if i == 0 else "secondary",
+                "network_priority": "HIGH" if i == 0 else "NORMAL",
+            }
+        )
+    return entries
+
+
 def load_selected_cameras(cfg: dict[str, Any] | None = None) -> tuple[list[CameraHealth], dict[str, Any]]:
     """Return CameraHealth list (≤ max_cameras) and load meta for /api/v1/camera."""
     cfg = cfg or load_camera_config()
+    anonymize = bool(cfg.get("anonymize_labels", True))
     meta: dict[str, Any] = {
         "config_path": cfg.get("_config_path"),
+        "local_override": cfg.get("_local_override"),
         "inventory": cfg.get("inventory"),
         "enabled": bool(cfg.get("enabled", True)),
+        "select_mode": cfg.get("select_mode", "first_n"),
         "selected_ids": [],
         "missing_ids": [],
         "physical_mode": cfg.get("physical_mode", "synthetic"),
         "sample_frames": bool(cfg.get("sample_frames", False)),
-        "note": "Allow-list only — full inventory is not loaded into the app.",
+        "anonymize_labels": anonymize,
+        "note": "Cameras loaded from inventory; labels are cam1..camN (no place names in UI).",
     }
     if not cfg.get("enabled", True):
         return [], meta
@@ -68,30 +119,37 @@ def load_selected_cameras(cfg: dict[str, Any] | None = None) -> tuple[list[Camer
     except (OSError, json.JSONDecodeError) as exc:
         meta["error"] = str(exc)
         return [], meta
+    if not isinstance(inventory, list):
+        meta["error"] = "inventory must be a JSON list"
+        return [], meta
 
     by_id = {str(row.get("id")): row for row in inventory if isinstance(row, dict)}
-    select = list(cfg.get("select") or [])
+    select = _build_select_entries(cfg, inventory)
     max_n = int(cfg.get("max_cameras") or 3)
     cameras: list[CameraHealth] = []
 
-    for entry in select[:max_n]:
+    for idx, entry in enumerate(select[:max_n], start=1):
         if isinstance(entry, str):
-            cam_id, role, prio = entry, "secondary", "NORMAL"
+            inv_id, role, prio = entry, ("primary" if idx == 1 else "secondary"), (
+                "HIGH" if idx == 1 else "NORMAL"
+            )
         else:
-            cam_id = str(entry.get("id") or "")
-            role = str(entry.get("role") or "secondary")
-            prio = str(entry.get("network_priority") or ("HIGH" if role == "primary" else "NORMAL"))
-        row = by_id.get(cam_id)
+            inv_id = str(entry.get("id") or "")
+            role = str(entry.get("role") or ("primary" if idx == 1 else "secondary"))
+            prio = str(
+                entry.get("network_priority") or ("HIGH" if role == "primary" else "NORMAL")
+            )
+        row = by_id.get(inv_id)
         if not row:
-            meta["missing_ids"].append(cam_id)
+            meta["missing_ids"].append(inv_id)
             continue
         url = row.get("streamUrl") or row.get("rtsp") or row.get("url")
-        short = cam_id.split("-")[0] if cam_id else f"cam{len(cameras)}"
-        camera_id = f"cam-{short}"
+        camera_id = f"cam{idx}"
+        label = camera_id if anonymize else str(row.get("name") or camera_id)
         health = CameraHealth(
             camera_id=camera_id,
-            label=str(row.get("name") or camera_id),
-            junction=str(row.get("address") or row.get("name") or "")[:80],
+            label=label,
+            junction="" if anonymize else str(row.get("address") or row.get("name") or "")[:80],
             rtsp_url=str(url) if url else None,
             connected=False,
             codec=None,
@@ -100,15 +158,15 @@ def load_selected_cameras(cfg: dict[str, Any] | None = None) -> tuple[list[Camer
             network_priority=prio,
             mode="rtsp_health" if url else "disabled",
             last_error=None,
-            inventory_id=cam_id,
+            inventory_id=inv_id,  # in-memory only; redacted in CameraHealth.to_dict
             role=role,
         )
         cameras.append(health)
         meta["selected_ids"].append(
             {
-                "inventory_id": cam_id,
+                "slot": idx,
                 "camera_id": camera_id,
-                "name": health.label,
+                "name": label,
                 "role": role,
                 "has_rtsp": bool(url),
             }

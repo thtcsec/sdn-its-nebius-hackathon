@@ -2,9 +2,9 @@
 (function (global) {
   const STR = {
     en: {
-      "brand.mark": "Tsinghua IEDE · Research prototype",
+      "brand.mark": "Tsinghua IEDE · Transportation · AI · Security · IoT · Edge",
       "brand.sub":
-        "Evidence console: telemetry windows → TCN-GRU → Detect / Contain / Rollback. Lab mode default — MODEL vs SIMULATION is always labeled. Not a production ITS controller.",
+        "V2X reliability · edge telemetry · safety-aware mitigation — evidence console (prototype), not a production ITS controller.",
       "btn.settings": "Settings",
       "btn.lang": "VI",
       "btn.lang.title": "Switch to Vietnamese",
@@ -187,9 +187,9 @@
       "lab.after": " · model-driven",
     },
     vi: {
-      "brand.mark": "Tsinghua IEDE · Research prototype",
+      "brand.mark": "Tsinghua IEDE · Transportation · AI · Security · IoT · Edge",
       "brand.sub":
-        "Console bằng chứng: cửa sổ telemetry → TCN-GRU → Detect / Contain / Rollback. Mặc định Lab mode — luôn gắn nhãn MODEL vs SIMULATION. Không phải controller ITS production.",
+        "Độ tin cậy V2X · edge telemetry · mitigation an toàn — console prototype, không phải controller ITS production.",
       "btn.settings": "Cài đặt",
       "btn.lang": "EN",
       "btn.lang.title": "Chuyển sang English",

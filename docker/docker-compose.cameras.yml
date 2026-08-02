@@ -1,7 +1,8 @@
 # Overlay: mount local RTSP inventory (gitignored).
-#   docker compose -f docker-compose.yml -f docker-compose.cameras.yml up --build
+# From repo root:
+#   docker compose -f docker-compose.yml -f docker/docker-compose.cameras.yml up -d --build
 
 services:
   controller:
     volumes:
-      - ../1.cameras.json:/app/1.cameras.json:ro
+      - ./1.cameras.json:/app/1.cameras.json:ro

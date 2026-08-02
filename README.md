@@ -1,14 +1,18 @@
-# Reversible Mitigation Testbed for SDN-Enabled ITS Edge Networks
+# AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems
+
+**A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware Mitigation**
+
+**Proposed Category:** Transportation · AI · Internet Security · IoT · Cloud/Edge Computing
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Academic Context](https://img.shields.io/badge/Tsinghua%20IEDE-Autumn%202026-purple.svg)](docs/IEDE_Report_Summary.md)
 
-> **Research testbed** (IEDE) — reproducible loop for *safety-aware, reversible* SDN mitigation:  
-> telemetry window → inference → policy decision → (optional) OpenFlow install → cooldown rollback.  
-> Dashboard is an **evidence console**, not a SOC product. Default OpenFlow on Windows is **mock**.  
-> **Author:** Trinh Hoang Tu · **Advisor:** Prof. Kris Singh (Tsinghua visiting / SRII)
+> **Official IEDE title unchanged** (see [docs/IEDE_Report_Summary.md](docs/IEDE_Report_Summary.md)).  
+> This repo is the **research prototype / evidence console** for that proposal:  
+> telemetry window → inference → policy → (optional) OpenFlow → cooldown rollback.  
+> Default OpenFlow on Windows is **mock**. Author: Trinh Hoang Tu · Advisor: Prof. Kris Singh.
 
 ---
 
@@ -26,18 +30,23 @@ Honesty & reproduce: [docs/REPRODUCE.md](docs/REPRODUCE.md) · [docs/EVIDENCE.md
 
 ### Camera-assisted fusion (physical context)
 
-Not a video wall and **not** a pile of `CAMERA_*` env vars. Selection is an allow-list:
+Not a video wall and **not** a pile of `CAMERA_*` env vars / hardcoded site cameras.
 
-- `configs/cameras.yaml` — which inventory IDs to load (max 3)
-- `1.cameras.json` — local inventory with RTSP URLs (**gitignored**; may hold credentials)
+- `configs/cameras.yaml` — `select_mode: first_n` (no inventory UUIDs in git)
+- Optional `configs/cameras.local.yaml` (**gitignored**) for explicit IDs
+- `1.cameras.json` — local inventory with RTSP URLs (**gitignored**)
+- Console labels are always **cam1 / cam2 / cam3** (place names never shown)
 - Worker probes RTSP health + quality (`stream_available` / `frame_fresh` / `scene_valid` / `analytics_valid`)
-- Live RTSP uses **visual activity proxy** (edge energy) — not `vehicle_count` until a real detector
-- Optional single overwritten JPEG preview (`GET /api/v1/camera/<id>/preview`; no archive)
+- Live RTSP: **YOLOv8 + IoU tracker** (`detector_tracker_v1`) — tracks, occupancy, queue proxy
+- Fallback: edge-energy proxy only when detector off/fails
+- Optional annotated JPEG preview (`GET /api/v1/camera/<id>/preview`)
 
 ```powershell
-# Edit select: in configs/cameras.yaml, keep inventory file local
+pip install -e ".[camera]"
+# Keep CUDA torch (do not let ultralytics pull torch+cpu):
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 .\.venv\Scripts\python.exe scripts\exp_bc_camera_fusion.py
-.\.venv\Scripts\python.exe scripts\exp_bc_sensitivity.py
+.\.venv\Scripts\python.exe scripts\exp_d_camera_containment.py
 ```
 
 Console: **Camera context** + preview thumbnails + **Fusion decision** (`GET /api/v1/camera`, `POST /api/v1/camera/reload`).
@@ -108,12 +117,11 @@ Demo injects that force labels: Settings → disable Lab mode → enable scenari
 ### Docker (console)
 
 ```powershell
-cd docker
-docker compose up --build
+docker compose up -d --build
 # → http://127.0.0.1:8080/
 
-# With local camera inventory (../1.cameras.json must exist; never commit it):
-docker compose -f docker-compose.yml -f docker-compose.cameras.yml up --build
+# With local camera inventory (./1.cameras.json must exist; never commit it):
+docker compose -f docker-compose.yml -f docker/docker-compose.cameras.yml up -d --build
 ```
 
 Details: [docs/docker.md](docs/docker.md). Image includes `ffmpeg` for RTSP probe/preview.

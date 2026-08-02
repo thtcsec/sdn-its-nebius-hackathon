@@ -1,0 +1,11 @@
+# Optional local allow-list (gitignored). Copy from cameras.local.yaml.example.
+# Use only when select_mode: explicit in cameras.yaml.
+#
+# select:
+#   - id: <inventory-uuid>
+#     role: primary
+#     network_priority: HIGH
+#   - id: <inventory-uuid>
+#     role: secondary
+
+select: []

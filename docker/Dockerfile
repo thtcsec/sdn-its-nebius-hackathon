@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# ffmpeg/ffprobe for RTSP health + single-frame preview; libs for Pillow
+# ffmpeg/ffprobe for RTSP health + single-frame preview
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ffmpeg \
@@ -19,8 +19,12 @@ COPY scripts ./scripts
 COPY artifacts ./artifacts
 COPY models ./models
 
-RUN pip install --no-cache-dir -e ".[camera]" \
-    && pip install --no-cache-dir Pillow>=10.0.0
+# Console image: core deps only (CPU torch from PyPI). YOLO/CUDA stays on the host GPU path.
+# Optional: docker build --build-arg INSTALL_CAMERA=1 ...
+ARG INSTALL_CAMERA=0
+RUN pip install --no-cache-dir -e . \
+    && pip install --no-cache-dir "Pillow>=10.0.0" \
+    && if [ "$INSTALL_CAMERA" = "1" ]; then pip install --no-cache-dir -e ".[camera]"; fi
 
 EXPOSE 8080
 

@@ -55,13 +55,22 @@ Refresh with `scripts/sync_artifacts.ps1` after any eval run.
 
 ## Camera fusion (not a video wall)
 
-**Honest boundary:** live RTSP currently feeds a **visual activity proxy** (edge energy),
-not a vehicle detector. Provenance fields:
+**Honest boundary:** with `physical_mode: rtsp_detector`, frames run **YOLOv8 + IoU tracker**
+(`detector_tracker_v1`) and export:
 
-- `visual_activity` / `activity_band` / `is_vehicle_count: false` for RTSP proxy
-- `vehicle_count` / `queue_length_m` only when `is_vehicle_count: true` (synthetic Exp B/C or future detector)
-- Stream quality: `stream_available` · `frame_fresh` · `scene_valid` · `analytics_valid`
-- Preview: `GET /api/v1/camera/<id>/preview` (one overwritten JPEG, no archive)
+- `visible_vehicle_tracks` (in-view tracks — **not** veh/h; `vehicle_flow_count` reserved for line-crossing)
+- `occupancy_ratio` / `queue_length_proxy_m` (zone proxies — **not** surveyed meters)
+- `context_reliability` + `reliability_components` (heuristic composite — **not** calibrated accuracy)
+- `pedestrian_count`, `source`
+
+Exp D (`scripts/exp_d_camera_containment.py`) separates:
+
+- `detector_live` / `physical_context_modified` / `evidence_grade`
+- `pass_scripted_rules` ≠ live congestion observed ≠ OpenFlow outcome
+
+Sensitivity (`scripts/exp_bc_sensitivity.py`) **injects** `FusionThresholds` and reports trade-offs.
+
+**PacketIn flood** = network inject. **Cam · *** = physical override. Independent fusion inputs.
 
 Fusion is **rule-based** and explainable (`reason_codes`). Thresholds are handcrafted;
 see `scripts/exp_bc_sensitivity.py` → `artifacts/results/exp_bc/exp_bc_sensitivity.json`.
