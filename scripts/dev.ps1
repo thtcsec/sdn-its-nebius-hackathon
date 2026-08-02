@@ -19,6 +19,19 @@ if (-not (Test-Path $PythonExec)) {
 
 $env:PYTHONPATH = "$ProjectRoot\src;$ProjectRoot"
 
+# Free port 8080 if a previous demo left python listeners around
+Write-Host "[*] Clearing stale listeners on :8080 (if any)..." -ForegroundColor DarkGray
+Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty OwningProcess -Unique |
+    Where-Object { $_ -and $_ -ne 0 } |
+    ForEach-Object {
+        try {
+            Stop-Process -Id $_ -Force -ErrorAction Stop
+            Write-Host "    stopped pid $_" -ForegroundColor DarkGray
+        } catch {}
+    }
+Start-Sleep -Seconds 1
+
 # 1. Start SDN Resilience Controller
 Write-Host "[*] Step 1: Starting SDN Controller REST API on http://127.0.0.1:8080..." -ForegroundColor Green
 $ControllerJob = Start-Job -ScriptBlock {
@@ -28,7 +41,18 @@ $ControllerJob = Start-Job -ScriptBlock {
     & $py -m api.app --port 8080
 } -ArgumentList $PythonExec, $ProjectRoot
 
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 3
+# Smoke: new UI markers must be present (catches stale template cache / wrong process)
+try {
+    $html = (Invoke-WebRequest -Uri "http://127.0.0.1:8080/" -UseBasicParsing -TimeoutSec 8).Content
+    if ($html -notmatch "btn-lang") {
+        Write-Host "[!] Dashboard HTML looks stale (missing VI/EN button). Hard-refresh browser after restart." -ForegroundColor Red
+    } else {
+        Write-Host "[+] Dashboard HTML includes i18n / settings help markers." -ForegroundColor Green
+    }
+} catch {
+    Write-Host "[!] API not reachable yet: $($_.Exception.Message)" -ForegroundColor Yellow
+}
 
 # 2. Open Web Browser
 Write-Host "[*] Step 2: Opening Command Center Dashboard in Browser..." -ForegroundColor Green

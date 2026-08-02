@@ -1,0 +1,30 @@
+{
+  "arch": "tcn_gru",
+  "checkpoint": "models/checkpoints/tcn_gru_best.pt",
+  "npz_path": "datasets/processed/insdn_windows.npz",
+  "csv_path": "datasets/sample/canonical_flows.csv",
+  "n_test": 7500,
+  "binary_accuracy": 0.20693333333333333,
+  "binary_precision": 0.8452380952380952,
+  "binary_recall": 0.011821511821511822,
+  "binary_f1": 0.023316912972085387,
+  "roc_auc": 0.9609760498314716,
+  "idl_ms": 6.69771934391432,
+  "t_response_ms": 10.19771934391432,
+  "inference_ms": 0.4977193439143201,
+  "tau": 360.7731018066406,
+  "confusion_matrix": [
+    [
+      1181,
+      313
+    ],
+    [
+      27,
+      5979
+    ]
+  ],
+  "labels": [
+    "Normal",
+    "DDoS_PacketIn_Flood"
+  ]
+}

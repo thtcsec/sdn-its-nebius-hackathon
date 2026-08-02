@@ -21,6 +21,7 @@ import torch.optim as optim
 from sdn_its.ai.tcn_gru import TCNGRUResilienceModel
 from sdn_its.ai.temporal_transformer import TemporalTransformerModel
 from sdn_its.telemetry import LABEL_MAPPING, TelemetryDataLoader
+from sdn_its.telemetry.schema import FEATURE_COLUMNS
 
 DEFAULT_NPZ = "datasets/processed/insdn_windows.npz"
 DEFAULT_CSV = "datasets/sample/canonical_flows.csv"
@@ -170,23 +171,33 @@ def train_model(
                 tau = model.calibrate_threshold(normal_val_x, k=k_sigma)
             else:
                 tau = 0.5
-            torch.save(
-                {
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                    "val_loss": val_total,
-                    "tau_threshold": tau,
-                    "mu_re": model.mu_re.item(),
-                    "std_re": model.std_re.item(),
-                    "label_mapping": LABEL_MAPPING,
-                    "csv_path": csv_path,
-                    "npz_path": npz_path,
-                    "arch": arch,
-                    "seed": seed,
-                },
-                best_model_path,
-            )
+            ckpt_payload = {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "val_loss": val_total,
+                "tau_threshold": tau,
+                "mu_re": model.mu_re.item(),
+                "std_re": model.std_re.item(),
+                "label_mapping": LABEL_MAPPING,
+                "feature_columns": list(FEATURE_COLUMNS),
+                "csv_path": csv_path,
+                "npz_path": npz_path,
+                "arch": arch,
+                "seed": seed,
+                "k_sigma": k_sigma,
+            }
+            # Persist fitted StandardScaler so live inference matches training
+            if getattr(loader, "scaler", None) is not None and hasattr(loader.scaler, "mean_"):
+                ckpt_payload["scaler_mean"] = loader.scaler.mean_.astype("float32")
+                ckpt_payload["scaler_scale"] = loader.scaler.scale_.astype("float32")
+                try:
+                    import joblib
+
+                    joblib.dump(loader.scaler, os.path.join(save_dir, "scaler.joblib"))
+                except Exception:
+                    pass
+            torch.save(ckpt_payload, best_model_path)
         else:
             epochs_without_improve += 1
             if early_stopping_patience and epochs_without_improve >= early_stopping_patience:

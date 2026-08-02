@@ -1,0 +1,9 @@
+                     precision    recall  f1-score   support
+
+             Normal       0.76      0.14      0.23     55526
+DDoS_PacketIn_Flood       0.12      0.89      0.21      9194
+LOFT_LowRate_Attack       0.00      0.00      0.00     15271
+
+           accuracy                           0.20     79991
+          macro avg       0.29      0.34      0.15     79991
+       weighted avg       0.54      0.20      0.18     79991

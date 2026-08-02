@@ -1,0 +1,34 @@
+{
+  "arch": "transformer",
+  "checkpoint": "models/checkpoints/transformer_best.pt",
+  "npz_path": "datasets/processed/insdn_windows.npz",
+  "csv_path": "datasets/sample/canonical_flows.csv",
+  "n_test": 7500,
+  "binary_accuracy": 0.2044,
+  "binary_precision": 0.7746478873239436,
+  "binary_recall": 0.009157509157509158,
+  "binary_f1": 0.018101036695738027,
+  "cls_binary_accuracy": 0.962,
+  "cls_binary_precision": 0.959665756066206,
+  "cls_binary_recall": 0.9943389943389943,
+  "cls_binary_f1": 0.9766947420067054,
+  "roc_auc": 0.9788333598574561,
+  "idl_ms": 6.386539352776529,
+  "t_response_ms": 9.886539352776529,
+  "inference_ms": 0.18653935277652894,
+  "tau": 10.303336143493652,
+  "confusion_matrix": [
+    [
+      1243,
+      251
+    ],
+    [
+      34,
+      5972
+    ]
+  ],
+  "labels": [
+    "Normal",
+    "DDoS_PacketIn_Flood"
+  ]
+}

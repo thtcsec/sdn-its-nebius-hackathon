@@ -1,0 +1,12 @@
+{
+  "source": "cic",
+  "rows": 80000,
+  "windows": 79991,
+  "seq_len": 10,
+  "label_counts": {
+    "0": 55531,
+    "2": 15274,
+    "1": 9195
+  },
+  "canonical_sample": "datasets\\sample\\canonical_flows.csv"
+}

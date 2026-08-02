@@ -15,14 +15,19 @@ def load_model(
     device: torch.device | None = None,
 ) -> tuple[TCNGRUResilienceModel, float]:
     device = device or torch.device("cpu")
-    model = TCNGRUResilienceModel(num_features=10, num_classes=len(LABEL_MAPPING))
-    tau = 0.5
-    import os
+    from pathlib import Path
 
-    if os.path.exists(checkpoint_path):
-        ckpt = torch.load(checkpoint_path, map_location=device)
-        model.load_state_dict(ckpt["model_state_dict"])
-        tau = float(ckpt.get("tau_threshold", 0.5))
+    path = Path(checkpoint_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"checkpoint not found: {checkpoint_path}")
+
+    ckpt = torch.load(path, map_location=device, weights_only=False)
+    if "model_state_dict" not in ckpt:
+        raise KeyError(f"checkpoint missing model_state_dict: {checkpoint_path}")
+
+    model = TCNGRUResilienceModel(num_features=10, num_classes=len(LABEL_MAPPING))
+    model.load_state_dict(ckpt["model_state_dict"])
+    tau = float(ckpt.get("tau_threshold", 0.5))
     model.to(device)
     model.eval()
     return model, tau

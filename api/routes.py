@@ -38,15 +38,17 @@ def _load_runtime_settings(controller=None) -> dict:
             "tau": 53.12,
             "ddos_cooldown": 12.0,
             "loft_cooldown": 15.0,
-            "ambient_re": True,
+            "ambient_re": False,
             "auto_refresh": True,
             "adapt_tau": True,
             "dataset_mode": "sample",
             "role_mode": "research",
-            "theme": "light",
+            "theme": "research",
             "compare_mode": False,
             "webhook_url": "",
             "webhook_enabled": False,
+            "lab_mode": True,
+            "scenario_override": False,
         },
         "features": {
             "live_infer": True,
@@ -145,6 +147,18 @@ def register_routes(app: Flask) -> None:
         controller = app.extensions["sdn_controller"]
         return jsonify(status_payload(controller)), 200
 
+    @app.route("/api/v1/lab", methods=["GET"])
+    def lab_status():
+        """Lab / OpenFlow agent snapshot + recent mitigation OF results."""
+        controller = app.extensions["sdn_controller"]
+        return jsonify(controller.lab_snapshot()), 200
+
+    @app.route("/api/v1/empirical", methods=["GET"])
+    def empirical_metrics():
+        from sdn_its.ai.empirical import load_empirical_metrics
+
+        return jsonify(load_empirical_metrics()), 200
+
     @app.route("/api/v1/settings", methods=["GET", "POST"])
     def settings():
         controller = app.extensions.get("sdn_controller")
@@ -202,7 +216,16 @@ def register_routes(app: Flask) -> None:
             adapt = bool(data.get("adapt_tau", True))
             auto = bool(data.get("auto_alert", False))
 
-        result = scorer.score(window=data.get("window"), scenario=scenario, adapt_tau=adapt)
+        allow_override = True
+        if controller is not None:
+            allow_override = controller.allow_scenario_override()
+        result = scorer.score(
+            window=data.get("window"),
+            scenario=scenario,
+            adapt_tau=adapt,
+            allow_scenario_override=allow_override,
+            allow_simulation_fallback=allow_override,
+        )
         if controller is not None:
             controller.stats["infer_calls"] = controller.stats.get("infer_calls", 0) + 1
             controller.runtime_settings["tau"] = result["threshold_tau"]
@@ -223,6 +246,7 @@ def register_routes(app: Flask) -> None:
                     }
                 )
         result["alert"] = alert_result
+        result["lab_mode"] = bool((controller.runtime_settings if controller else {}).get("lab_mode"))
         return jsonify(result), 200
 
     @app.route("/api/v1/telemetry", methods=["GET"])
@@ -230,8 +254,17 @@ def register_routes(app: Flask) -> None:
         """Ambient live score for dashboard RE chart."""
         from sdn_its.ai.live_scorer import get_live_scorer
 
+        controller = app.extensions.get("sdn_controller")
         scenario = request.args.get("scenario", "normal")
-        result = get_live_scorer().score(scenario=scenario, adapt_tau=True)
+        allow_override = True
+        if controller is not None:
+            allow_override = controller.allow_scenario_override()
+        result = get_live_scorer().score(
+            scenario=scenario,
+            adapt_tau=True,
+            allow_scenario_override=allow_override,
+            allow_simulation_fallback=allow_override,
+        )
         return jsonify(result), 200
 
     @app.route("/api/v1/replay", methods=["GET", "POST"])
@@ -254,25 +287,34 @@ def register_routes(app: Flask) -> None:
         data = request.get_json(force=True, silent=True) or {}
         scenario = data.get("scenario", "normal")
         do_alert = bool(data.get("alert", False))
-        result = get_live_scorer().score(scenario=scenario, adapt_tau=(scenario == "normal"))
+        allow_override = controller.allow_scenario_override()
+        result = get_live_scorer().score(
+            scenario=scenario,
+            adapt_tau=(scenario == "normal"),
+            allow_scenario_override=allow_override,
+            allow_simulation_fallback=allow_override,
+        )
         alert_out = None
         if do_alert:
-            cooldown = controller.runtime_settings.get("ddos_cooldown", 12.0)
-            if "LOFT" in result["attack_type"]:
-                cooldown = controller.runtime_settings.get("loft_cooldown", 15.0)
-            if result["attack_type"] == "RushHour_Burst":
-                cooldown = 0.0
-            alert_out = controller.handle_alert(
-                {
-                    "alert_id": f"REP-{int(time.time() * 1000) % 100000}",
-                    "dpid": "0000000000000001",
-                    "src_ip": data.get("src_ip", "10.0.0.15"),
-                    "attack_type": result["attack_type"],
-                    "reconstruction_error": result["reconstruction_error"],
-                    "confidence": 0.95,
-                    "cooldown_seconds": cooldown,
-                }
-            )
+            # In lab mode only alert when model/classifier says anomaly
+            if allow_override or result.get("is_anomaly") or result.get("attack_type") != "Normal":
+                cooldown = controller.runtime_settings.get("ddos_cooldown", 12.0)
+                if "LOFT" in str(result["attack_type"]):
+                    cooldown = controller.runtime_settings.get("loft_cooldown", 15.0)
+                if result["attack_type"] == "RushHour_Burst":
+                    cooldown = 0.0
+                if result["attack_type"] != "Normal" or allow_override:
+                    alert_out = controller.handle_alert(
+                        {
+                            "alert_id": f"REP-{int(time.time() * 1000) % 100000}",
+                            "dpid": "0000000000000001",
+                            "src_ip": data.get("src_ip", "10.0.0.15"),
+                            "attack_type": result["attack_type"],
+                            "reconstruction_error": result["reconstruction_error"],
+                            "confidence": 0.95,
+                            "cooldown_seconds": cooldown,
+                        }
+                    )
         return jsonify({"score": result, "alert": alert_out, "label": data.get("label")}), 200
 
     @app.route("/api/v1/latency_cdf", methods=["GET"])
@@ -294,32 +336,58 @@ def register_routes(app: Flask) -> None:
             }
         ), 200
 
-    @app.route("/api/v1/export/report", methods=["POST"])
+    @app.route("/api/v1/export/report", methods=["GET", "POST"])
     def export_report():
-        from sdn_its.ai.live_scorer import get_live_scorer
-        from sdn_its.ai.report import write_markdown_report
+        """Preview (GET) or write+download metadata (POST) for console Markdown report."""
+        from sdn_its.ai.report import build_console_report_markdown, write_console_report
 
         controller = app.extensions["sdn_controller"]
-        data = request.get_json(force=True, silent=True) or {}
-        name = data.get("name", f"console_report_{int(time.time())}")
-        out_rel = data.get("path", f"results/{name}.md")
-        metrics = {
-            "alerts": controller.stats.get("total_alerts_received"),
-            "mitigations": controller.stats.get("mitigations_applied"),
-            "fp_avoided": controller.stats.get("false_positives_avoided"),
-            "infer_calls": controller.stats.get("infer_calls"),
-            "active_rules": len(controller.flow_mgr.active_rules),
-            "tau": get_live_scorer().status()["tau"],
-            "latency_n": len(controller.latency_samples_ms),
-        }
-        if controller.latency_samples_ms:
-            import numpy as np
+        if request.method == "GET":
+            markdown, metrics = build_console_report_markdown(controller)
+            return jsonify(
+                {
+                    "status": "ok",
+                    "preview": True,
+                    "markdown": markdown,
+                    "metrics": metrics,
+                    "filename": f"console_preview_{int(time.time())}.md",
+                }
+            ), 200
 
-            arr = np.asarray(controller.latency_samples_ms)
-            metrics["latency_p50_ms"] = float(np.percentile(arr, 50))
-            metrics["latency_p95_ms"] = float(np.percentile(arr, 95))
-        path = write_markdown_report(metrics, out_rel, title="SDN-ITS Console Snapshot")
-        return jsonify({"status": "ok", "path": str(path.relative_to(PROJECT_ROOT))}), 200
+        data = request.get_json(force=True, silent=True) or {}
+        name = data.get("name", f"console_{int(time.time())}")
+        # sanitize filename segment
+        safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in str(name))[:80]
+        out_rel = data.get("path", f"results/console/{safe}.md")
+        path, markdown, metrics = write_console_report(controller, out_rel)
+        rel = str(path.relative_to(PROJECT_ROOT)).replace("\\", "/")
+        return jsonify(
+            {
+                "status": "ok",
+                "path": rel,
+                "filename": path.name,
+                "markdown": markdown,
+                "metrics": metrics,
+                "download_url": f"/api/v1/export/report/file?path={rel}",
+            }
+        ), 200
+
+    @app.route("/api/v1/export/report/file", methods=["GET"])
+    def export_report_file():
+        """Download a report written under results/ (path query, relative to project root)."""
+        from flask import send_file
+
+        rel = (request.args.get("path") or "").replace("\\", "/").lstrip("/")
+        if not rel.startswith("results/") or ".." in rel or rel.endswith("/"):
+            return jsonify({"error": "invalid path — must be under results/"}), 400
+        path = (PROJECT_ROOT / rel).resolve()
+        try:
+            path.relative_to((PROJECT_ROOT / "results").resolve())
+        except ValueError:
+            return jsonify({"error": "path escapes results/"}), 400
+        if not path.is_file():
+            return jsonify({"error": f"file not found: {rel}"}), 404
+        return send_file(path, as_attachment=True, download_name=path.name)
 
     @app.route("/api/v1/export/onnx", methods=["POST"])
     def export_onnx_route():

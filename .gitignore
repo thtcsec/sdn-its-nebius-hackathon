@@ -24,47 +24,56 @@ wheels/
 .installed.cfg
 *.egg
 
-# PyTorch Checkpoints & Datasets (keep sample/)
+# PyTorch checkpoints & large datasets (keep folder placeholders + sample/)
 models/checkpoints/*
 !models/checkpoints/.gitkeep
 models/quantized/*
 !models/quantized/.gitkeep
 models/exported/**/*
 !models/exported/**/.gitkeep
+!models/exported/**/*.json
 datasets/raw/*
 !datasets/raw/.gitkeep
 datasets/processed/*
 !datasets/processed/.gitkeep
+!datasets/processed/last_prepare.json
 datasets/synthetic/*
 !datasets/synthetic/.gitkeep
 
-# Jupyter Notebook Checkpoints
+# Jupyter
 .ipynb_checkpoints
 
 # Environments & IDE
 .venv/
+.venv-lab/
 venv/
 ENV/
 env/
 .idea/
 .vscode/
 
-# Logs & Temporary files
+# Logs
 *.log
 logs/*
 !logs/.gitkeep
-results/*.csv
-results/*.png
-!results/.gitkeep
-extracted_report.txt
+
+# Large / binary report dumps (keep markdown docs)
 *.docx
 *.zip
+extracted_report.txt
 tmp/
 temp_dummy_dataset.csv
-
 .env
 
-# Experiment run artifacts (keep folder structure)
+# Ephemeral console reports (keep paper metrics under results/*/)
+results/console/
+results/_*.txt
+results/unit_test_report.*
+results/console_*.md
+results/console_*.json
+results/*.csv
+
+# Experiment run dumps (keep YAML + .gitkeep structure)
 experiments/*/results/*
 !experiments/*/results/.gitkeep
 experiments/*/plots/*
@@ -72,8 +81,6 @@ experiments/*/plots/*
 experiments/*/logs/*
 !experiments/*/logs/.gitkeep
 
-# Ephemeral console/API reports
-results/unit_test_report.*
-results/console_*.md
-results/console_*.json
-
+# OS junk
+.DS_Store
+Thumbs.db

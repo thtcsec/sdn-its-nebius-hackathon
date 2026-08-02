@@ -50,18 +50,22 @@ class ResilienceSDNController:
             "ddos_cooldown": 12.0,
             "loft_cooldown": 15.0,
             "poll_ms": 1200,
-            "ambient_re": True,
+            # Research-first defaults (demo inject requires turning Lab off)
+            "ambient_re": False,
             "auto_refresh": True,
             "adapt_tau": True,
             "dataset_mode": "sample",
             "role_mode": "research",
-            "theme": "light",
+            "theme": "research",
             "compare_mode": False,
             "webhook_url": "",
             "webhook_enabled": False,
+            "lab_mode": True,
+            "scenario_override": False,
         }
         self.notifier = AlertNotifier()
         self.latency_samples_ms: list[float] = []
+        self.mitigation_log: list[dict[str, Any]] = []
         self.app = app
         if self.app is not None:
             self.app.extensions["sdn_controller"] = self
@@ -77,16 +81,43 @@ class ResilienceSDNController:
             f"DPID={rule.dpid}, Match={rule.src_ip}, Action={rule.action}"
         )
 
-    def openflow_status(self) -> dict[str, Any]:
-        st = backend_status(self._of_callback)
+    def openflow_status(self, *, refresh: bool = False) -> dict[str, Any]:
+        st = backend_status(self._of_callback, refresh=refresh)
         st["configured_backend"] = self.of_backend_name
         return st
 
+    def allow_scenario_override(self) -> bool:
+        """Demo inject may force attack labels; Lab mode disables that."""
+        if bool(self.runtime_settings.get("lab_mode")):
+            return False
+        return bool(self.runtime_settings.get("scenario_override", True))
+
+    def lab_snapshot(self) -> dict[str, Any]:
+        of = self.openflow_status(refresh=True)
+        return {
+            "lab_mode": bool(self.runtime_settings.get("lab_mode")),
+            "scenario_override": self.allow_scenario_override(),
+            "of_backend": self.of_backend_name,
+            "openflow": of,
+            "agent_connected": bool(of.get("connected")),
+            "active_rules": len(self.flow_mgr.active_rules),
+            "mitigation_log": list(self.mitigation_log)[-40:],
+            "stats": dict(self.stats),
+        }
+
     def update_runtime_settings(self, patch: dict[str, Any]) -> dict[str, Any]:
+        patch = dict(patch or {})
         allowed = set(self.runtime_settings.keys())
-        for k, v in (patch or {}).items():
+        for k, v in patch.items():
             if k in allowed:
                 self.runtime_settings[k] = v
+        # Turning on lab_mode hard-disables scenario cheat + ambient fake RE by default
+        if "lab_mode" in patch and bool(patch.get("lab_mode")):
+            self.runtime_settings["scenario_override"] = False
+            if "ambient_re" not in patch:
+                self.runtime_settings["ambient_re"] = False
+            if "theme" not in patch and self.runtime_settings.get("theme") == "light":
+                self.runtime_settings["theme"] = "research"
         if "tau" in patch:
             try:
                 from sdn_its.ai.live_scorer import get_live_scorer
@@ -149,15 +180,37 @@ class ResilienceSDNController:
         if len(self.latency_samples_ms) > 500:
             self.latency_samples_ms = self.latency_samples_ms[-500:]
 
+        of_after = self.openflow_status(refresh=True)
+        last_mods = list(of_after.get("last_mods") or [])
         payload = {
             "status": "SUCCESS",
             "alert_id": alert_id,
+            "attack_type": attack_type,
             "mitigation_status": result.mitigation_status,
             "applied_rules_count": len(result.applied_rules),
             "applied_rules": result.applied_rules,
             "cooldown_seconds": cooldown,
             "policy_latency_ms": round(elapsed_ms, 3),
+            "of_backend": self.of_backend_name,
+            "of_connected": bool(of_after.get("connected")),
+            "of_last_mods": last_mods[-3:],
         }
+        self.mitigation_log.append(
+            {
+                "ts": time.time(),
+                "alert_id": alert_id,
+                "attack_type": attack_type,
+                "src_ip": src_ip,
+                "mitigation_status": result.mitigation_status,
+                "rules": result.applied_rules,
+                "policy_latency_ms": round(elapsed_ms, 3),
+                "of_backend": self.of_backend_name,
+                "of_ok": bool(of_after.get("connected")) if result.applied_rules else None,
+                "of_last_mods": last_mods[-2:],
+            }
+        )
+        if len(self.mitigation_log) > 200:
+            self.mitigation_log = self.mitigation_log[-200:]
 
         if result.applied_rules or result.false_positive_avoided:
             self.stats["webhook_events"] += 1

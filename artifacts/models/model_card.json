@@ -1,0 +1,34 @@
+﻿{
+    "updated_utc":  "2026-08-02T02:46:05.8077569Z",
+    "arch":  "TCN-GRU",
+    "scaler_path":  "models/checkpoints/scaler.joblib",
+    "feature_order":  [
+                          "flow_duration",
+                          "packet_rate",
+                          "byte_rate",
+                          "pkt_iat_mean",
+                          "pkt_iat_std",
+                          "packet_len_mean",
+                          "packet_in_count",
+                          "tcp_flags_syn_count",
+                          "flow_active_ratio",
+                          "rsu_channel_occupancy"
+                      ],
+    "version":  "0.2.0",
+    "primary_metrics_ref":  "artifacts/results/exp_insdn/metrics.json",
+    "name":  "tcn_gru_resilience",
+    "checkpoint_path":  "models/checkpoints/tcn_gru_best.pt",
+    "checkpoint_present":  true,
+    "label_mapping":  {
+                          "2":  "LOFT_LowRate_Attack",
+                          "3":  "RSU_Link_Fault",
+                          "4":  "RushHour_Burst",
+                          "1":  "DDoS_PacketIn_Flood",
+                          "0":  "Normal"
+                      },
+    "notes":  [
+                  "Prefer classifier-head binary metrics over RE-threshold alone.",
+                  "Synthetic 100% multiclass is not strong evidence — cite InSDN/CIC tables.",
+                  "Checkpoint *.pt excluded from default zip; train or use -IncludeCheckpoint."
+              ]
+}

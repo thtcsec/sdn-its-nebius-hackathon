@@ -1,140 +1,151 @@
-# AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems (`sdn-its-resilience-ai`)
+# AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
-[![SDN Framework](https://img.shields.io/badge/SDN-Ryu%20%7C%20ONOS-green.svg)](https://ryu.readthedocs.io/)
-[![Simulation](https://img.shields.io/badge/Simulation-Mininet--WiFi%20%7C%20SUMO-orange.svg)](https://mininet-wifi.github.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Academic Context](https://img.shields.io/badge/Tsinghua%20IEDE-Autumn%202026-purple.svg)](docs/IEDE_Report_Summary.md)
 
-> **A Lightweight Research Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware SDN Mitigation**  
-> **Research Proposal Project** | Tsinghua University Innovation and Entrepreneurship Development Education  
-> **Author:** Trinh Hoang Tu  
-> **Project Advisor:** Prof. Kris Singh (Visiting Professor at Tsinghua University; CEO at SRII, Silicon Valley)
+> **Research prototype** (IEDE) — flow-level telemetry → TCN-GRU detection → temporary OpenFlow contain/rollback.  
+> **Not** a production ITS / SOC product.  
+> **Author:** Trinh Hoang Tu · **Advisor:** Prof. Kris Singh (Tsinghua visiting / SRII)
 
 ---
 
-## Executive Summary
+## What this is / is not
 
-Intelligent Transportation Systems (ITS) depend on V2X, RSUs, edge nodes, and SDN. Centralized control creates **control-plane overload** (`packet_in` floods / LOFT), **safety-critical latency** constraints, and a **resilience gap** when permanent blocking disrupts legitimate rush-hour traffic.
+| Is | Is not |
+|----|--------|
+| Closed-loop **Detect → Contain → Rollback** research framework | Live RSU / vehicle deployment |
+| Train/eval on **InSDN** + cross-dataset **CIC** adaptation | Proof that synthetic 100% multiclass = real attacks |
+| Ops console with **Lab mode**, GT vs prediction, MODEL/SIMULATION badges | Silent fake scores presented as inference |
+| Optional real **OVS** via WSL `of_agent` | Default Windows path (that is **mock** OpenFlow) |
+| Tracked **artifacts/results** metrics for reviewers | A zip of screenshots without code/evidence |
 
-This repository is structured as a **research framework** (not a flat student script dump):
-
-1. **Flow-level telemetry** (non-DPI counters)  
-2. **Hybrid TCN-GRU** anomaly detection with adaptive \(\tau = \mu_{RE} + k\sigma_{RE}\)  
-3. **Detect → Contain → Rollback** mitigation with cooldown  
-
-Pipeline: **Vehicle → RSU → OVS → Controller → Telemetry → AI → Mitigation → Rollback**
-
-Docs: [architecture](docs/ARCHITECTURE.md) · [dataset](docs/dataset.md) · [lab](docs/lab_checklist.md) · [experiments](docs/experiments.md) · [api](docs/api.md) · [deployment](docs/deployment.md)
+Honesty & reproduce: [docs/REPRODUCE.md](docs/REPRODUCE.md) · [docs/EVIDENCE.md](docs/EVIDENCE.md) · [docs/lab_checklist.md](docs/lab_checklist.md)
 
 ---
 
-## Repository Structure
+## Repository layout
 
 ```text
 sdn-its-resilience-ai/
-├── docs/                 # Architecture, API, datasets, experiments, roadmap
-├── configs/              # YAML configs (train / evaluate / controller / simulation)
-├── datasets/             # raw / processed / synthetic / sample (no large commits)
-├── src/sdn_its/
-│   ├── ai/               # TCN-GRU + Transformer train / eval / quantize / infer
-│   ├── telemetry/        # Features, window buffer, normalizer
-│   ├── controller/       # Flow manager, REST glue, Ryu/OVS stubs
-│   ├── mitigation/       # Containment, rollback, cooldown, policy
-│   ├── simulation/       # Topology, traffic generator, Scapy
-│   └── utils/
-├── api/                  # Flask routes, schemas, middleware
-├── dashboard/            # Command Center UI
-├── benchmark/            # CPU / latency / memory / throughput
-├── experiments/          # exp01_normal … exp05_drl
-├── models/               # checkpoints / quantized / exported
-├── notebooks/
-├── visualization/
-├── results/  logs/  assets/
-├── scripts/              # setup, demo, experiments, packaging
-├── tests/
-├── docker/
-└── .github/workflows/
+├── artifacts/            # Paper-facing mirrors (metrics, model_card) — tracked
+├── results/              # Eval outputs (tcn_gru, cross_dataset, ablation, …)
+├── datasets/
+│   ├── sample/           # Small CSVs in git
+│   ├── manifests/        # Inventory + prepare commands
+│   ├── raw/ processed/   # Large dumps — gitignored; download locally
+├── src/sdn_its/          # AI, telemetry, controller, mitigation, simulation
+├── api/  dashboard/      # Flask + evidence console
+├── benchmark/            # Micro-benchmarks (in repo)
+├── experiments/          # exp01–exp05 YAML + folders
+├── models/               # checkpoints/ (weights gitignored; .gitkeep + exports meta)
+├── notebooks/  visualization/  docker/  .github/
+├── docs/                 # Architecture, reproduce, evidence, lab
+├── scripts/              # train helpers, lab, package.ps1, sync_artifacts.ps1
+├── reproduce.ps1         # Rebuild primary tables
+└── tests/
 ```
 
 ---
 
 ## Quickstart
 
-```bash
+```powershell
 git clone https://github.com/thtcsec/sdn-its-resilience-ai.git
 cd sdn-its-resilience-ai
 py -m venv .venv
-# Windows: .\.venv\Scripts\activate
+.\.venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
-### 1-click demo (Windows)
+### Ops console (research defaults)
 
 ```powershell
 .\scripts\dev.ps1
+# → http://127.0.0.1:8080/
 ```
 
-Or cross-platform:
+Defaults: **Lab mode on**, no scenario label cheat, no ambient fake RE, research theme.  
+Evidence bar must show `MODEL · LOADED` before treating numbers as real.  
+If checkpoint missing → `DEGRADED` (inference disabled), not silent fake scores.
 
-```bash
-python scripts/run_demo.py
-```
+Demo injects that force labels: Settings → disable Lab mode → enable scenario override (UI marks `OVERRIDDEN`).
 
-Open `http://127.0.0.1:8080/`.
+### Train / evaluate (preferred evidence path)
 
-### Train / evaluate / quantize
-
-```bash
-# Download REAL InSDN (~141MB, Hugging Face — no Kaggle token)
+```powershell
 python scripts/download_dataset.py --name insdn --prefer hf --prepare
-
-# Train on full processed windows (~50k from InSDN) — preferred over 800-row sample
 python -m sdn_its.ai.train --npz datasets/processed/insdn_windows.npz --epochs 15
 python -m sdn_its.ai.evaluate --npz datasets/processed/insdn_windows.npz
-python -m sdn_its.ai.quantize
+.\scripts\sync_artifacts.ps1
+.\reproduce.ps1   # optional full refresh + run_manifest
+```
 
-# Optional ablation: Temporal Transformer
-python -m sdn_its.ai.train --arch transformer --npz datasets/processed/insdn_windows.npz --epochs 15
-python -m sdn_its.ai.compare --npz datasets/processed/insdn_windows.npz
+Cross-dataset:
 
-# Cross-dataset holdout (InSDN → CIC-IDS2017, no Kaggle token)
+```powershell
 python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare
 python scripts/run_cross_dataset.py
+python scripts/adapt_to_cic.py --epochs 5 --adapt-ratio 0.2
+.\scripts\sync_artifacts.ps1
 ```
 
-Dataset docs: [docs/dataset.md](docs/dataset.md) · lab: [docs/lab_checklist.md](docs/lab_checklist.md) · config: [configs/dataset.yaml](configs/dataset.yaml)
+### Real OpenFlow lab (optional but strong)
 
-### Experiments / sweeps / export
-
-```bash
-python scripts/run_experiment.py --exp exp02_ddos
-python scripts/run_experiment.py --exp exp05_drl
-python scripts/run_sweep.py --epochs 3 --samples 800
-python -m sdn_its.ai.export_onnx --format both
-python -m benchmark.run_all
+```powershell
+$env:SDN_OF_BACKEND = "http"
+# WSL: sudo python scripts/wsl_of_agent.py --port 8089
+# then Mininet topology + dump-flows — see docs/lab_checklist.md
 ```
 
-Ops console extras: Settings (theme / role / online τ / webhook), scenario **Replay**, live infer, feature attribution, export report.
+### Package for submission
 
-### Tests
-
-```bash
-pytest -q
+```powershell
+.\scripts\sync_artifacts.ps1
+.\scripts\package.ps1                     # source + metrics (no *.pt)
+.\scripts\package.ps1 -IncludeCheckpoint  # include weights
 ```
 
 ---
 
-## Empirical Performance (summary)
+## Tracked empirical snapshot (classifier head)
 
-| Metric | FP32 | INT8 |
-|--------|------|------|
-| Model size | 0.981 MB | **0.174 MB** (−82%) |
-| Anomaly accuracy | **97.33%** | **97.33%** |
-| \(T_{\text{response}}\) | ~9.9 ms | ~10.7 ms |
+Canonical copies live under `artifacts/results/` (refresh via `sync_artifacts.ps1`).
 
-Full tables and methodology: [docs/benchmark.md](docs/benchmark.md), [docs/IEDE_Report_Summary.md](docs/IEDE_Report_Summary.md).
+| Eval | Where |
+|------|--------|
+| InSDN in-domain | `artifacts/results/exp_insdn/metrics.json` |
+| CIC zero-shot / adapted | `artifacts/results/cross_dataset/` |
+| Ablation JSON | `artifacts/results/ablation/` |
+
+**Cite classifier-head Acc/F1/AUC from those files.**  
+Legacy synthetic “97.33% / 100% multiclass” figures in older summary docs are **not** the primary claim — see [docs/REPRODUCE.md](docs/REPRODUCE.md).
+
+Micro-benchmarks / latency methodology: [docs/benchmark.md](docs/benchmark.md).
+
+---
+
+## Docs index
+
+| Doc | Content |
+|-----|---------|
+| [docs/REPRODUCE.md](docs/REPRODUCE.md) | Rebuild tables, modes, citing rules |
+| [docs/EVIDENCE.md](docs/EVIDENCE.md) | Console badges, artifact checklist |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System layers |
+| [docs/dataset.md](docs/dataset.md) | InSDN / CIC prepare |
+| [docs/lab_checklist.md](docs/lab_checklist.md) | Mininet / OVS |
+| [docs/api.md](docs/api.md) | REST |
+| [docs/roadmap.md](docs/roadmap.md) | Done / next |
+
+---
+
+## Tests
+
+```powershell
+$env:CUDA_VISIBLE_DEVICES=""
+pytest -q
+```
 
 ---
 

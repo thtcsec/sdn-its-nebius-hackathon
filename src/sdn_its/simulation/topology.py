@@ -80,8 +80,16 @@ class ITSEdgeTopology(Topo):
         self.addLink(veh6, s4, bw=20, delay='5ms', loss=1, cls=TCLink)
 
 
-def create_its_topology(controller_ip: str = '127.0.0.1', controller_port: int = 6653):
-    """Initializes and runs the Mininet ITS network emulation session."""
+def create_its_topology(
+    controller_ip: str = "127.0.0.1",
+    controller_port: int = 6653,
+    duration: int = 0,
+    no_cli: bool = False,
+):
+    """Initializes and runs the Mininet ITS network emulation session.
+
+    duration>0 + no_cli: headless lab mode (keeps topo up then stops).
+    """
     if not MININET_AVAILABLE:
         print("[!] Mininet is not natively supported on Windows.")
         print("    Run this script on Linux / WSL2 / Mininet-WiFi container to instantiate the emulation environment.")
@@ -89,33 +97,56 @@ def create_its_topology(controller_ip: str = '127.0.0.1', controller_port: int =
         print("    - Switches: s1 (Core), s2 (West RSU), s3 (East RSU), s4 (Highway RSU)")
         print("    - Hosts: tmc (10.0.0.1), edge1, edge2, veh1..veh6 (10.0.0.11..16)")
         print("    - Remote SDN Controller target:", f"{controller_ip}:{controller_port}")
-        return
+        return None
+
+    import time
 
     print("=" * 65)
     print("  INSTANTIATING MININET ITS EDGE NETWORK TOPOLOGY")
     print("=" * 65)
 
     topo = ITSEdgeTopology()
-    controller = RemoteController('c0', ip=controller_ip, port=controller_port)
-    net = Mininet(topo=topo, controller=controller, link=TCLink, switch=OVSKernelSwitch)
+    # Default/OVS bridge mode works without a live Ryu process for ovs-ofctl lab agent
+    if controller_port <= 0:
+        net = Mininet(topo=topo, controller=None, link=TCLink, switch=OVSKernelSwitch)
+    else:
+        controller = RemoteController("c0", ip=controller_ip, port=controller_port)
+        net = Mininet(topo=topo, controller=controller, link=TCLink, switch=OVSKernelSwitch)
 
-    print("[*] Starting network & connecting switches to SDN Controller...")
+    print("[*] Starting network & connecting switches...")
     net.start()
-
     print("[+] Network topology initialized successfully!")
-    print("[*] Launching Mininet Interactive Command Line Interface (CLI)...")
-    CLI(net)
+    print("[*] Bridges: s1 s2 s3 s4 | hosts: tmc edge1 edge2 veh1..veh6")
+
+    if no_cli or duration > 0:
+        hold = duration if duration > 0 else 60
+        print(f"[*] Headless lab mode — holding topology for {hold}s (Ctrl+C to stop)")
+        try:
+            time.sleep(hold)
+        except KeyboardInterrupt:
+            print("[*] Interrupted")
+    else:
+        print("[*] Launching Mininet Interactive CLI...")
+        CLI(net)
 
     print("[*] Stopping network topology...")
     net.stop()
+    return net
 
 
-topos = {'its_topology': (lambda: ITSEdgeTopology())}
+topos = {"its_topology": (lambda: ITSEdgeTopology())}
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Mininet ITS Network Topology Launcher")
     parser.add_argument("--controller_ip", type=str, default="127.0.0.1", help="Remote SDN Controller IP")
-    parser.add_argument("--controller_port", type=int, default=6653, help="OpenFlow port (6653 default)")
+    parser.add_argument("--controller_port", type=int, default=0, help="OpenFlow port (0 = no remote controller)")
+    parser.add_argument("--duration", type=int, default=0, help="Headless hold seconds (0 = CLI)")
+    parser.add_argument("--no-cli", action="store_true", help="Do not open Mininet CLI")
     args = parser.parse_args()
 
-    create_its_topology(controller_ip=args.controller_ip, controller_port=args.controller_port)
+    create_its_topology(
+        controller_ip=args.controller_ip,
+        controller_port=args.controller_port,
+        duration=args.duration,
+        no_cli=args.no_cli,
+    )

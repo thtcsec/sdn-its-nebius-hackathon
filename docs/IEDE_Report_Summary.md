@@ -5,6 +5,10 @@
 **Author:** Trinh Hoang Tu
 **Project Advisor:** Professor Kris Singh (Visiting Professor at Tsinghua University; CEO at SRII, Silicon Valley)  
 
+> **Evidence note (repo):** Prefer classifier-head metrics under `artifacts/results/` (InSDN / CIC).  
+> Synthetic multiclass figures below are historical prototype numbers — not the primary claim.  
+> See [REPRODUCE.md](REPRODUCE.md) and [EVIDENCE.md](EVIDENCE.md). Console defaults to **Lab mode**.
+
 ---
 
 ## Executive Summary & Research Motivation

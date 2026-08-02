@@ -43,6 +43,14 @@ class TestOfBackend(unittest.TestCase):
         st = backend_status(cb2)
         self.assertGreaterEqual(st["flow_mods"], 1)
 
+    def test_http_backend_resolves(self):
+        # Agent may be offline — backend still constructs and reports status shape
+        name, cb = resolve_of_backend("http")
+        self.assertEqual(name, "http")
+        st = backend_status(cb)
+        self.assertEqual(st["backend"], "http")
+        self.assertIn("connected", st)
+
     def test_ovs_soft_table(self):
         ovs = OVSManager()
         self.assertIn("s1", ovs.list_bridges())

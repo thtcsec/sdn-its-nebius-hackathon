@@ -14,6 +14,10 @@ def create_app(controller: ResilienceSDNController | None = None) -> Flask:
     template_folder = str(PROJECT_ROOT / "dashboard" / "templates")
     static_folder = str(PROJECT_ROOT / "dashboard" / "static")
     app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+    # Always re-read dashboard HTML/JS when files change (dev.ps1 runs with debug=False)
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    app.jinja_env.auto_reload = True
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
     if controller is None:
         controller = ResilienceSDNController(create_flask=False)

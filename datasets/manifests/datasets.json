@@ -1,0 +1,29 @@
+﻿{
+    "datasets":  [
+                     {
+                         "notes":  "Small canonical sample for smoke train / console",
+                         "path":  "datasets/sample/canonical_flows.csv",
+                         "id":  "canonical_sample",
+                         "role":  "demo_csv"
+                     },
+                     {
+                         "path":  "datasets/sample/insdn_shaped_sample.csv",
+                         "id":  "insdn_shaped_sample",
+                         "role":  "demo_csv"
+                     },
+                     {
+                         "path":  "datasets/processed/insdn_windows.npz",
+                         "in_default_zip":  false,
+                         "prepare":  "python scripts/download_dataset.py --name insdn --prepare",
+                         "id":  "insdn_windows",
+                         "role":  "train_eval"
+                     },
+                     {
+                         "path":  "datasets/processed/cic_windows.npz",
+                         "in_default_zip":  false,
+                         "prepare":  "python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare",
+                         "id":  "cic_windows",
+                         "role":  "cross_dataset"
+                     }
+                 ]
+}

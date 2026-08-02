@@ -16,6 +16,8 @@ OpenFlow backend (optional):
 ```powershell
 $env:SDN_OF_BACKEND = "mock"   # default print-only
 $env:SDN_OF_BACKEND = "queue"  # in-memory flow-mod log (dry-run)
+$env:SDN_OF_BACKEND = "http"   # real OVS via WSL of_agent
+$env:OF_AGENT_URL = "http://127.0.0.1:8089"
 ```
 
 ## Docker Compose

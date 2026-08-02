@@ -22,21 +22,48 @@ def status_payload(controller) -> dict[str, Any]:
     uptime_sec = time.time() - controller.stats["start_time"]
     runtime = getattr(controller, "runtime_settings", {}) or {}
     tau = runtime.get("tau")
+    scorer_mode = None
+    model_loaded = None
+    preprocess_mode = None
+    load_error = None
     try:
         from sdn_its.ai.live_scorer import get_live_scorer
 
-        tau = get_live_scorer().status().get("tau", tau)
+        st = get_live_scorer().status()
+        tau = st.get("tau", tau)
+        scorer_mode = st.get("mode")
+        model_loaded = st.get("loaded")
+        preprocess_mode = st.get("preprocess_mode")
+        load_error = st.get("load_error")
     except Exception:
         pass
+
+    of: dict[str, Any] = {}
+    try:
+        of = controller.openflow_status(refresh=False)
+    except Exception:
+        of = getattr(controller, "openflow_status", lambda: {})()
+
     return {
         "status": "ONLINE",
         "service": "SDN ITS AI Resilience Controller",
         "uptime_seconds": round(uptime_sec, 1),
         "stats": controller.stats,
-        "openflow": getattr(controller, "openflow_status", lambda: {})(),
+        "openflow": of,
         "active_mitigations_count": len(controller.flow_mgr.active_rules),
         "tau": tau,
         "role_mode": runtime.get("role_mode", "research"),
         "theme": runtime.get("theme", "light"),
         "dataset_mode": runtime.get("dataset_mode", "sample"),
+        "lab_mode": bool(runtime.get("lab_mode")),
+        "scenario_override": (
+            controller.allow_scenario_override()
+            if hasattr(controller, "allow_scenario_override")
+            else bool(runtime.get("scenario_override", True))
+        ),
+        "scorer_mode": scorer_mode,
+        "model_loaded": model_loaded,
+        "preprocess_mode": preprocess_mode,
+        "load_error": load_error,
+        "of_backend": of.get("configured_backend") or of.get("backend"),
     }

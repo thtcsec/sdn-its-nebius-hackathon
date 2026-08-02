@@ -1,0 +1,33 @@
+{
+  "protocol": "insdn_pretrain_cic_adapt_holdout",
+  "device": "cuda",
+  "checkpoint_in": "models/checkpoints/tcn_gru_best.pt",
+  "checkpoint_out": "models\\checkpoints\\tcn_gru_cic_adapted.pt",
+  "adapt_ratio": 0.2,
+  "n_adapt": 15998,
+  "n_holdout": 63993,
+  "epochs": 8,
+  "lr": 0.0003,
+  "coral_weight": 0.5,
+  "mse_weight": 0.0,
+  "seconds": 13.69,
+  "zero_shot_holdout": {
+    "cls_binary_accuracy": 0.7153438657353148,
+    "cls_binary_precision": 0.5248522529293206,
+    "cls_binary_recall": 0.7810482436073407,
+    "cls_binary_f1": 0.6278195488721805,
+    "roc_auc": 0.7428631571224721,
+    "n_test": 63993
+  },
+  "adapted_holdout": {
+    "cls_binary_accuracy": 0.9860297220008438,
+    "cls_binary_precision": 0.9799601247379991,
+    "cls_binary_recall": 0.9744801992781251,
+    "cls_binary_f1": 0.9772124796084829,
+    "roc_auc": 0.9980548445051827,
+    "n_test": 63993
+  },
+  "delta_f1": 0.3493929307363024,
+  "delta_acc": 0.270685856265529,
+  "delta_roc": 0.2551916873827106
+}

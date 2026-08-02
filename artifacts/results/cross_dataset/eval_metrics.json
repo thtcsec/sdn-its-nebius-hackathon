@@ -1,0 +1,38 @@
+{
+  "protocol": "train_scaler_on_insdn_eval_on_cic",
+  "train_npz": "datasets/processed/insdn_windows.npz",
+  "test_npz": "datasets/processed/cic_windows.npz",
+  "checkpoint": "models/checkpoints/tcn_gru_best.pt",
+  "arch": "tcn_gru",
+  "n_test": 79991,
+  "cls_binary_accuracy": 0.37139178157542724,
+  "cls_binary_precision": 0.31582776921759975,
+  "cls_binary_recall": 0.9048436541998773,
+  "cls_binary_f1": 0.4682255147688696,
+  "re_binary_accuracy": 0.32884949556825144,
+  "roc_auc": 0.5212192881708102,
+  "inference_ms": 0.09774637142423838,
+  "tau": 194.11143493652344,
+  "confusion_matrix": [
+    [
+      7571,
+      47955,
+      0
+    ],
+    [
+      1038,
+      8156,
+      0
+    ],
+    [
+      1290,
+      13981,
+      0
+    ]
+  ],
+  "labels": [
+    "Normal",
+    "DDoS_PacketIn_Flood",
+    "LOFT_LowRate_Attack"
+  ]
+}

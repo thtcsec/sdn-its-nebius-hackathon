@@ -21,6 +21,11 @@ python scripts/run_cross_dataset.py \
   --test-npz datasets/processed/cic_windows.npz \
   --checkpoint models/checkpoints/tcn_gru_best.pt
 # → results/cross_dataset/eval_metrics.json
+
+# Optional: fine-tune on 20% CIC + light CORAL, eval on 80% holdout
+python scripts/adapt_to_cic.py --epochs 5 --adapt-ratio 0.2
+# → models/checkpoints/tcn_gru_cic_adapted.pt
+# → results/cross_dataset/adapted_metrics.json
 ```
 
 ## Recommended research path (not the 800-row demo)

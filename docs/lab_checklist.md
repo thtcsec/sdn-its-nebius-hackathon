@@ -1,6 +1,10 @@
 # SDN Lab Checklist (WSL2 / Ubuntu)
 
-This is the **real OpenFlow path**. Windows native demo stays on `SDN_OF_BACKEND=mock` (or `queue` for dry-run logging).
+This is the **real OpenFlow path**. Windows default remains `SDN_OF_BACKEND=mock`
+(in-memory / print only). Console **Lab mode** does not make OpenFlow real by itself —
+set `SDN_OF_BACKEND=http` and run `scripts/wsl_of_agent.py` (or Ryu) for switch evidence.
+
+Repo posture: [REPRODUCE.md](REPRODUCE.md) · [EVIDENCE.md](EVIDENCE.md).
 
 ## 0. Prerequisites
 
@@ -93,6 +97,28 @@ curl http://127.0.0.1:8080/api/v1/status
 |------------------|-------|----------|
 | `mock` (default) | Windows demo | Print-only OpenFlow channel |
 | `queue` | Windows / CI | In-memory flow-mod log |
+| `http` / `wsl` | Windows API → WSL agent | **Real ovs-ofctl** on Mininet bridges |
 | `ryu` | WSL2/Linux | Adapter + live datapaths / Ryu app |
 
-See also: [deployment.md](deployment.md), `sdn_its.controller.of_backend`, `sdn_its.controller.ryu_app`.
+## Recommended wired lab (light — no extra torch in WSL)
+
+Disk/RAM impact: **~0 extra GB** if Mininet/OVS already installed; agent is a small Python script.
+`.venv-lab` (os-ken) ≈ **100–150 MB** optional. Do **not** install CUDA torch in WSL (~2–3 GB) unless you need GPU infer there.
+
+```powershell
+# Terminal A — WSL root: agent + ITS topology (90s)
+wsl -d Ubuntu -u root -- bash /mnt/d/tu_projects/sdn-its-resilience-ai/scripts/run_wsl_lab.sh 90
+
+# Terminal B — Windows: API talks to WSL of_agent
+$env:SDN_OF_BACKEND = "http"
+$env:OF_AGENT_URL = "http://127.0.0.1:8089"
+.\.venv\Scripts\python.exe -m api.app --port 8080
+```
+
+Smoke (all in WSL):
+
+```bash
+wsl -d Ubuntu -u root -- bash /mnt/d/tu_projects/sdn-its-resilience-ai/scripts/smoke_wsl_lab.sh
+```
+
+See also: [deployment.md](deployment.md), `sdn_its.controller.of_backend`, `scripts/wsl_of_agent.py`.

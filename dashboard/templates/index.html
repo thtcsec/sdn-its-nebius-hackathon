@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='i18n.js') }}"></script>
     <style>
         :root {
             --ink: #1a1f1c;
@@ -88,19 +89,24 @@
         }
 
         .live-block {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px 12px;
             text-align: right;
             font-family: var(--mono);
-            font-size: 12px;
+            font-size: 11px;
         }
 
         .live-state {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             color: var(--teal);
-            margin-bottom: 6px;
+            margin-bottom: 0;
         }
 
         .live-dot {
@@ -120,25 +126,39 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 10px;
+            gap: 8px;
+            max-width: min(520px, 100%);
         }
 
-        .btn-settings {
+        .header-toolbar {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .btn-settings,
+        .btn-lang {
             font-family: var(--mono);
             font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            padding: 8px 12px;
+            padding: 5px 10px;
             border: 1px solid var(--line-strong);
             background: var(--surface);
             color: var(--ink);
             cursor: pointer;
+            line-height: 1.2;
+            white-space: nowrap;
         }
 
-        .btn-settings:hover {
-            border-color: var(--ink);
-            background: #fff;
+        .btn-settings:hover,
+        .btn-lang:hover {
+            border-color: var(--teal);
+            color: var(--teal);
         }
 
         /* ——— Settings drawer ——— */
@@ -222,27 +242,39 @@
         .field {
             display: grid;
             grid-template-columns: 1fr auto;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 10px;
+            gap: 2px 10px;
+            align-items: start;
+            margin-bottom: 14px;
         }
+
+        .field-text { min-width: 0; }
 
         .field label {
             font-size: 13px;
             color: var(--ink-soft);
+            display: block;
+        }
+
+        .field-help {
+            margin: 3px 0 0;
+            font-size: 11px;
+            line-height: 1.35;
+            color: var(--muted);
         }
 
         .field input[type="number"],
         .field input[type="text"],
         .field input[type="url"],
         .field select {
-            width: 110px;
+            width: 118px;
             font-family: var(--mono);
             font-size: 12px;
             padding: 6px 8px;
             border: 1px solid var(--line-strong);
             background: #fff;
             color: var(--ink);
+            grid-row: 1 / span 2;
+            align-self: start;
         }
 
         .field input:disabled {
@@ -252,11 +284,19 @@
 
         .field-check {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 14px;
             font-size: 13px;
         }
+        .field-check-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .field-check .field-help { margin: 0; }
+
 
         .readonly-grid {
             display: grid;
@@ -599,9 +639,19 @@
             .pipeline { grid-template-columns: repeat(4, 1fr); }
             .layout, .bottom { grid-template-columns: 1fr; }
             .brand-bar { grid-template-columns: 1fr; }
-            .live-block { text-align: left; }
+            .header-actions { align-items: flex-start; max-width: none; }
+            .header-toolbar { justify-content: flex-start; }
+            .live-block { justify-content: flex-start; text-align: left; }
         }
 
+
+        html[data-theme="dark"] .field input,
+        html[data-theme="dark"] .field select,
+        html[data-theme="research"] .field input,
+        html[data-theme="research"] .field select {
+            background: var(--paper-2);
+            color: var(--ink);
+        }
 
         html[data-theme="dark"] {
             --ink: #e8ece8;
@@ -626,11 +676,134 @@
                 radial-gradient(ellipse 80% 50% at 100% 0%, rgba(61, 186, 138, 0.1), transparent 55%),
                 radial-gradient(ellipse 60% 40% at 0% 100%, rgba(240, 113, 103, 0.08), transparent 50%);
         }
-        .role-chip {
-            display: inline-flex; align-items: center; gap: 6px;
-            font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
-            text-transform: uppercase; color: var(--muted);
-            border: 1px solid var(--line); padding: 4px 8px; background: var(--surface);
+        html[data-theme="research"] {
+            --ink: #e6e2d8;
+            --ink-soft: #b8b2a4;
+            --muted: #8a8476;
+            --paper: #121410;
+            --paper-2: #1a1c16;
+            --line: #2c2e26;
+            --line-strong: #4a4c40;
+            --surface: #181a14;
+            --teal: #c4a35a;
+            --teal-dim: #3a3220;
+            --alert: #d4684a;
+            --alert-dim: #3a2218;
+            --warn: #c4a35a;
+            --warn-dim: #2e2a18;
+        }
+        html[data-theme="research"] body {
+            background-image:
+                linear-gradient(rgba(196, 163, 90, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(196, 163, 90, 0.04) 1px, transparent 1px),
+                radial-gradient(ellipse 70% 45% at 100% 0%, rgba(196, 163, 90, 0.08), transparent 55%);
+        }
+        .role-chip,
+        .lab-badge {
+            display: inline-flex;
+            align-items: center;
+            font-family: var(--mono);
+            font-size: 10px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            font-weight: 600;
+            border: 1px solid var(--line);
+            padding: 5px 8px;
+            background: var(--surface);
+            color: var(--muted);
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        .lab-badge.on {
+            color: var(--warn); border-color: var(--warn); background: var(--warn-dim);
+        }
+        .lab-badge.demo {
+            color: var(--alert); border-color: var(--alert); background: var(--alert-dim);
+        }
+        .emp-table {
+            width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px;
+        }
+        .emp-table th, .emp-table td {
+            text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
+            color: var(--ink-soft);
+        }
+        .emp-table th { color: var(--muted); font-weight: 500; font-size: 10px; letter-spacing: 0.04em; }
+        .emp-table td.num { color: var(--ink); font-weight: 600; }
+        .ovs-sample {
+            font-family: var(--mono); font-size: 10px; color: var(--ink-soft);
+            max-height: 140px; overflow: auto; white-space: pre-wrap;
+            background: var(--paper-2); border: 1px solid var(--line); padding: 8px; margin-top: 8px;
+        }
+        .lab-meta {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+            font-family: var(--mono); font-size: 11px; margin-bottom: 8px;
+        }
+        .lab-meta div { border: 1px solid var(--line); padding: 6px 8px; background: var(--surface); }
+        .lab-meta b { color: var(--teal); }
+        body.lab-on .scenario-btn { opacity: 0.75; }
+        body.lab-on .scenario-btn::after {
+            content: var(--lab-after, " · model-driven");
+            font-size: 9px; color: var(--muted);
+        }
+        .report-modal-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 80;
+        }
+        .report-modal {
+            position: fixed; z-index: 90;
+            top: 5vh; left: 50%; transform: translateX(-50%);
+            width: min(880px, 94vw); max-height: 90vh;
+            flex-direction: column;
+            background: var(--surface); border: 1px solid var(--line-strong);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        /* Author `display:flex` must not override the HTML hidden attribute */
+        .report-modal[hidden],
+        .report-modal-backdrop[hidden] {
+            display: none !important;
+        }
+        .report-modal:not([hidden]) {
+            display: flex;
+        }
+        .report-modal-backdrop:not([hidden]) {
+            display: block;
+        }
+        .report-modal-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 12px 14px; border-bottom: 1px solid var(--line);
+        }
+        .report-modal-head h2 {
+            font-size: 15px; font-weight: 600; letter-spacing: -0.02em;
+        }
+        .report-modal-actions { display: flex; gap: 8px; }
+        .report-modal-actions button {
+            font-family: var(--mono); font-size: 11px;
+            background: var(--surface); border: 1px solid var(--line-strong);
+            color: var(--ink); padding: 7px 12px; cursor: pointer;
+        }
+        .report-modal-actions button.primary {
+            background: var(--teal); color: #fff; border-color: var(--teal);
+        }
+        .report-modal-body {
+            margin: 0; padding: 14px 16px; overflow: auto; flex: 1;
+            font-family: var(--mono); font-size: 11px; line-height: 1.45;
+            color: var(--ink-soft); white-space: pre-wrap; word-break: break-word;
+            background: var(--paper-2);
+        }
+        .evidence-bar {
+            display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+            font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em;
+        }
+        .ev-chip {
+            border: 1px solid var(--line); background: var(--surface);
+            color: var(--muted); padding: 4px 8px; text-transform: uppercase;
+        }
+        .ev-chip.ok { color: var(--teal); border-color: var(--teal); }
+        .ev-chip.warn { color: var(--warn); border-color: var(--warn); background: var(--warn-dim); }
+        .ev-chip.bad { color: var(--alert); border-color: var(--alert); background: var(--alert-dim); }
+        .sim-banner {
+            margin-bottom: 12px; padding: 8px 12px;
+            border: 1px solid var(--alert); background: var(--alert-dim);
+            font-family: var(--mono); font-size: 11px; color: var(--ink);
         }
         .toolbar {
             display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end;
@@ -695,193 +868,276 @@
 <div class="shell">
     <header class="brand-bar">
         <div>
-            <div class="brand-mark">Tsinghua IEDE · Research Ops</div>
+            <div class="brand-mark" data-i18n="brand.mark">Tsinghua IEDE · Research prototype</div>
             <h1 class="brand-title">SDN-ITS Resilience</h1>
-            <p class="brand-sub">
-                Closed-loop V2X edge telemetry: flow counters → TCN-GRU scoring →
-                Detect / Contain / Rollback on OpenFlow 1.3.
+            <p class="brand-sub" data-i18n="brand.sub">
+                Evidence console: telemetry windows → TCN-GRU → Detect / Contain / Rollback.
+                Lab mode default — MODEL vs SIMULATION is always labeled. Not a production ITS controller.
             </p>
         </div>
         <div class="header-actions">
-            <span class="role-chip" id="role-chip">RESEARCH</span>
-            <button type="button" class="btn-settings" id="btn-settings" aria-haspopup="dialog">
-                Settings
-            </button>
+            <div class="header-toolbar">
+                <span class="lab-badge demo" id="lab-badge" data-i18n-title="set.lab.help" title="Lab mode">DEMO</span>
+                <span class="role-chip" id="role-chip">RESEARCH</span>
+                <button type="button" class="btn-lang" id="btn-lang" title="Switch to Vietnamese">VI</button>
+                <button type="button" class="btn-settings" id="btn-settings" aria-haspopup="dialog" data-i18n="btn.settings">
+                    Settings
+                </button>
+            </div>
             <div class="live-block">
                 <div class="live-state" id="controller-status">
                     <span class="live-dot" aria-hidden="true"></span>
                     <span id="live-label">CONTROLLER ONLINE</span>
                 </div>
-                <div class="live-meta">REST · :8080</div>
-                <div class="live-meta" id="clock">—</div>
+                <span class="live-meta" id="of-meta">OF · mock</span>
+                <span class="live-meta" id="clock">—</span>
             </div>
         </div>
     </header>
 
     <div class="settings-backdrop" id="settings-backdrop" hidden></div>
+    <div class="report-modal-backdrop" id="report-backdrop" hidden></div>
+    <div class="report-modal" id="report-modal" role="dialog" aria-label="Report preview" hidden>
+        <div class="report-modal-head">
+            <h2 data-i18n="report.title">Report preview</h2>
+            <div class="report-modal-actions">
+                <button type="button" class="primary" id="report-download" data-i18n="report.download">Download .md</button>
+                <button type="button" id="report-close" data-i18n="report.close">Close</button>
+            </div>
+        </div>
+        <pre class="report-modal-body" id="report-body">Loading…</pre>
+    </div>
     <aside class="settings-drawer" id="settings-drawer" aria-label="Console settings" hidden>
         <div class="settings-head">
-            <h2>Settings</h2>
-            <button type="button" class="settings-close" id="settings-close">Close</button>
+            <h2 data-i18n="settings.title">Settings</h2>
+            <button type="button" class="settings-close" id="settings-close" data-i18n="settings.close">Close</button>
         </div>
         <div class="settings-body">
             <section class="settings-section">
-                <h3>Console</h3>
+                <h3 data-i18n="settings.console">Console</h3>
                 <div class="field">
-                    <label for="set-poll">Poll interval (ms)</label>
+                    <div class="field-text">
+                        <label for="set-poll" data-i18n="set.poll">Poll interval (ms)</label>
+                        <p class="field-help" data-i18n="set.poll.help"></p>
+                    </div>
                     <input id="set-poll" type="number" min="400" max="10000" step="100">
                 </div>
                 <div class="field">
-                    <label for="set-tau">τ threshold</label>
+                    <div class="field-text">
+                        <label for="set-tau" data-i18n="set.tau">τ threshold</label>
+                        <p class="field-help" data-i18n="set.tau.help"></p>
+                    </div>
                     <input id="set-tau" type="number" min="1" max="500" step="0.1">
                 </div>
                 <div class="field">
-                    <label for="set-ddos-cd">DDoS cooldown (s)</label>
+                    <div class="field-text">
+                        <label for="set-ddos-cd" data-i18n="set.ddos_cd">DDoS cooldown (s)</label>
+                        <p class="field-help" data-i18n="set.ddos_cd.help"></p>
+                    </div>
                     <input id="set-ddos-cd" type="number" min="0" max="300" step="1">
                 </div>
                 <div class="field">
-                    <label for="set-loft-cd">LOFT cooldown (s)</label>
+                    <div class="field-text">
+                        <label for="set-loft-cd" data-i18n="set.loft_cd">LOFT cooldown (s)</label>
+                        <p class="field-help" data-i18n="set.loft_cd.help"></p>
+                    </div>
                     <input id="set-loft-cd" type="number" min="0" max="300" step="1">
                 </div>
-
                 <div class="field">
-                    <label for="set-ksigma">Online k·σ</label>
+                    <div class="field-text">
+                        <label for="set-ksigma" data-i18n="set.ksigma">Online k·σ</label>
+                        <p class="field-help" data-i18n="set.ksigma.help"></p>
+                    </div>
                     <input id="set-ksigma" type="number" min="0.5" max="5" step="0.1">
                 </div>
                 <div class="field">
-                    <label for="set-dataset">Dataset mode</label>
+                    <div class="field-text">
+                        <label for="set-dataset" data-i18n="set.dataset">Dataset mode</label>
+                        <p class="field-help" data-i18n="set.dataset.help"></p>
+                    </div>
                     <select id="set-dataset">
-                        <option value="sample">sample (canonical)</option>
-                        <option value="synthetic">synthetic</option>
-                        <option value="insdn">insdn raw</option>
+                        <option value="sample" data-i18n="opt.sample">sample (canonical)</option>
+                        <option value="synthetic" data-i18n="opt.synthetic">synthetic</option>
+                        <option value="insdn" data-i18n="opt.insdn">insdn raw</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label for="set-role">Role mode</label>
+                    <div class="field-text">
+                        <label for="set-role" data-i18n="set.role">Role mode</label>
+                        <p class="field-help" data-i18n="set.role.help"></p>
+                    </div>
                     <select id="set-role">
-                        <option value="research">Research</option>
-                        <option value="demo">Demo</option>
-                        <option value="debug">Debug</option>
+                        <option value="research" data-i18n="opt.research">Research</option>
+                        <option value="demo" data-i18n="opt.demo">Demo</option>
+                        <option value="debug" data-i18n="opt.debug">Debug</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label for="set-theme">Theme</label>
+                    <div class="field-text">
+                        <label for="set-theme" data-i18n="set.theme">Theme</label>
+                        <p class="field-help" data-i18n="set.theme.help"></p>
+                    </div>
                     <select id="set-theme">
-                        <option value="light">Light ops</option>
-                        <option value="dark">Dark ops</option>
+                        <option value="light" data-i18n="opt.light">Light ops</option>
+                        <option value="dark" data-i18n="opt.dark">Dark ops</option>
+                        <option value="research" data-i18n="opt.research_theme">Research (dense)</option>
                     </select>
                 </div>
                 <div class="field-check">
-                    <label for="set-adapt">Online τ adapt (μ+kσ)</label>
-                    <input id="set-adapt" type="checkbox">
+                    <div class="field-check-row">
+                        <label for="set-lab" data-i18n="set.lab">Lab mode</label>
+                        <input id="set-lab" type="checkbox">
+                    </div>
+                    <p class="field-help" data-i18n="set.lab.help"></p>
                 </div>
                 <div class="field-check">
-                    <label for="set-compare">Before/after compare mode</label>
-                    <input id="set-compare" type="checkbox">
+                    <div class="field-check-row">
+                        <label for="set-scenario-override" data-i18n="set.override">Scenario label override</label>
+                        <input id="set-scenario-override" type="checkbox">
+                    </div>
+                    <p class="field-help" data-i18n="set.override.help"></p>
+                </div>
+                <div class="field-check">
+                    <div class="field-check-row">
+                        <label for="set-adapt" data-i18n="set.adapt">Online τ adapt (μ+kσ)</label>
+                        <input id="set-adapt" type="checkbox">
+                    </div>
+                    <p class="field-help" data-i18n="set.adapt.help"></p>
+                </div>
+                <div class="field-check">
+                    <div class="field-check-row">
+                        <label for="set-compare" data-i18n="set.compare">Before/after compare mode</label>
+                        <input id="set-compare" type="checkbox">
+                    </div>
+                    <p class="field-help" data-i18n="set.compare.help"></p>
                 </div>
                 <div class="field">
-                    <label for="set-webhook">Alert webhook URL</label>
+                    <div class="field-text">
+                        <label for="set-webhook" data-i18n="set.webhook">Alert webhook URL</label>
+                        <p class="field-help" data-i18n="set.webhook.help"></p>
+                    </div>
                     <input id="set-webhook" type="url" placeholder="https://hooks.example/…">
                 </div>
                 <div class="field-check">
-                    <label for="set-webhook-on">Enable webhooks</label>
-                    <input id="set-webhook-on" type="checkbox">
+                    <div class="field-check-row">
+                        <label for="set-webhook-on" data-i18n="set.webhook_on">Enable webhooks</label>
+                        <input id="set-webhook-on" type="checkbox">
+                    </div>
+                    <p class="field-help" data-i18n="set.webhook_on.help"></p>
                 </div>
                 <div class="field-check">
-                    <label for="set-ambient">Ambient RE simulation</label>
-                    <input id="set-ambient" type="checkbox">
+                    <div class="field-check-row">
+                        <label for="set-ambient" data-i18n="set.ambient">Ambient RE simulation</label>
+                        <input id="set-ambient" type="checkbox">
+                    </div>
+                    <p class="field-help" data-i18n="set.ambient.help"></p>
                 </div>
                 <div class="field-check">
-                    <label for="set-refresh">Auto-refresh dashboard</label>
-                    <input id="set-refresh" type="checkbox">
+                    <div class="field-check-row">
+                        <label for="set-refresh" data-i18n="set.refresh">Auto-refresh dashboard</label>
+                        <input id="set-refresh" type="checkbox">
+                    </div>
+                    <p class="field-help" data-i18n="set.refresh.help"></p>
                 </div>
                 <div class="settings-actions">
-                    <button type="button" class="primary" id="settings-save">Apply</button>
-                    <button type="button" class="ghost" id="settings-reset">Reset</button>
+                    <button type="button" class="primary" id="settings-save" data-i18n="settings.apply">Apply</button>
+                    <button type="button" class="ghost" id="settings-reset" data-i18n="settings.reset">Reset</button>
                 </div>
             </section>
 
             <section class="settings-section">
-                <h3>Controller / model (read-only)</h3>
+                <h3 data-i18n="settings.readonly">Controller / model (read-only)</h3>
                 <div class="readonly-grid" id="settings-readonly">
-                    <div><span>Version</span><b id="ro-version">—</b></div>
-                    <div><span>Port</span><b id="ro-port">—</b></div>
-                    <div><span>Seq len L</span><b id="ro-seq">—</b></div>
-                    <div><span>Features</span><b id="ro-feat">—</b></div>
-                    <div><span>k·σ</span><b id="ro-ksigma">—</b></div>
-                    <div><span>Classes</span><b id="ro-classes">—</b></div>
-                    <div style="grid-column: 1 / -1"><span>Train CSV</span><b id="ro-csv">—</b></div>
-                    <div style="grid-column: 1 / -1"><span>InSDN raw</span><b id="ro-raw">—</b></div>
-                    <div style="grid-column: 1 / -1"><span>Default cooldown</span><b id="ro-cooldown">—</b></div>
+                    <div><span data-i18n="ro.version">Version</span><b id="ro-version">—</b></div>
+                    <div><span data-i18n="ro.port">Port</span><b id="ro-port">—</b></div>
+                    <div><span data-i18n="ro.seq">Seq len L</span><b id="ro-seq">—</b></div>
+                    <div><span data-i18n="ro.feat">Features</span><b id="ro-feat">—</b></div>
+                    <div><span data-i18n="ro.ksigma">k·σ</span><b id="ro-ksigma">—</b></div>
+                    <div><span data-i18n="ro.classes">Classes</span><b id="ro-classes">—</b></div>
+                    <div style="grid-column: 1 / -1"><span data-i18n="ro.csv">Train CSV</span><b id="ro-csv">—</b></div>
+                    <div style="grid-column: 1 / -1"><span data-i18n="ro.raw">InSDN raw</span><b id="ro-raw">—</b></div>
+                    <div style="grid-column: 1 / -1"><span data-i18n="ro.cooldown">Default cooldown</span><b id="ro-cooldown">—</b></div>
                 </div>
             </section>
         </div>
     </aside>
 
+    <div class="evidence-bar" id="evidence-bar" aria-label="Evidence status">
+        <span class="ev-chip" id="ev-model">MODEL · —</span>
+        <span class="ev-chip" id="ev-of">OF · —</span>
+        <span class="ev-chip" id="ev-pre">PREPROCESS · —</span>
+        <span class="ev-chip" id="ev-gt">GT · —</span>
+        <span class="ev-chip" id="ev-pred">PRED · —</span>
+        <span class="ev-chip" id="ev-match">MATCH · —</span>
+    </div>
+    <div class="sim-banner" id="sim-banner" data-i18n="sim.banner" hidden>
+        SIMULATION / DEGRADED — numbers may not be real model inference. Check MODEL badge.
+    </div>
+
     <nav class="pipeline" id="pipeline" aria-label="Mitigation pipeline">
-        <div class="pipe-step" data-step="vehicle"><div class="pipe-k">01</div><div class="pipe-v">Vehicle</div></div>
-        <div class="pipe-step" data-step="rsu"><div class="pipe-k">02</div><div class="pipe-v">RSU</div></div>
-        <div class="pipe-step" data-step="ovs"><div class="pipe-k">03</div><div class="pipe-v">OVS</div></div>
-        <div class="pipe-step" data-step="ctrl"><div class="pipe-k">04</div><div class="pipe-v">Controller</div></div>
-        <div class="pipe-step" data-step="tel"><div class="pipe-k">05</div><div class="pipe-v">Telemetry</div></div>
-        <div class="pipe-step" data-step="ai"><div class="pipe-k">06</div><div class="pipe-v">AI Model</div></div>
-        <div class="pipe-step" data-step="mit"><div class="pipe-k">07</div><div class="pipe-v">Mitigation</div></div>
-        <div class="pipe-step" data-step="rb"><div class="pipe-k">08</div><div class="pipe-v">Rollback</div></div>
+        <div class="pipe-step" data-step="vehicle"><div class="pipe-k">01</div><div class="pipe-v" data-i18n="pipe.vehicle">Vehicle</div></div>
+        <div class="pipe-step" data-step="rsu"><div class="pipe-k">02</div><div class="pipe-v" data-i18n="pipe.rsu">RSU</div></div>
+        <div class="pipe-step" data-step="ovs"><div class="pipe-k">03</div><div class="pipe-v" data-i18n="pipe.ovs">OVS</div></div>
+        <div class="pipe-step" data-step="ctrl"><div class="pipe-k">04</div><div class="pipe-v" data-i18n="pipe.ctrl">Controller</div></div>
+        <div class="pipe-step" data-step="tel"><div class="pipe-k">05</div><div class="pipe-v" data-i18n="pipe.tel">Telemetry</div></div>
+        <div class="pipe-step" data-step="ai"><div class="pipe-k">06</div><div class="pipe-v" data-i18n="pipe.ai">AI Model</div></div>
+        <div class="pipe-step" data-step="mit"><div class="pipe-k">07</div><div class="pipe-v" data-i18n="pipe.mit">Mitigation</div></div>
+        <div class="pipe-step" data-step="rb"><div class="pipe-k">08</div><div class="pipe-v" data-i18n="pipe.rb">Rollback</div></div>
     </nav>
 
     <section class="metrics" aria-label="Live metrics">
         <div class="metric">
-            <div class="metric-label">Alerts</div>
+            <div class="metric-label" data-i18n="metric.alerts">Alerts</div>
             <div class="metric-value" id="stat-alerts">0</div>
-            <div class="metric-hint">total received</div>
+            <div class="metric-hint" data-i18n="metric.alerts.hint">total received</div>
         </div>
         <div class="metric">
-            <div class="metric-label">Active rules</div>
+            <div class="metric-label" data-i18n="metric.rules">Active rules</div>
             <div class="metric-value" id="stat-active-rules">0</div>
-            <div class="metric-hint">OpenFlow mitigations</div>
+            <div class="metric-hint" data-i18n="metric.rules.hint">OpenFlow mitigations</div>
         </div>
         <div class="metric">
-            <div class="metric-label">FP avoided</div>
+            <div class="metric-label" data-i18n="metric.fp">FP avoided</div>
             <div class="metric-value" id="stat-fp-avoided">0</div>
-            <div class="metric-hint">rush-hour preserve</div>
+            <div class="metric-hint" data-i18n="metric.fp.hint">rush-hour preserve</div>
         </div>
         <div class="metric">
-            <div class="metric-label">RE score</div>
+            <div class="metric-label" data-i18n="metric.re">RE score</div>
             <div class="metric-value" id="stat-re">—</div>
-            <div class="metric-hint">reconstruction error</div>
+            <div class="metric-hint" data-i18n="metric.re.hint">reconstruction error</div>
         </div>
         <div class="metric">
-            <div class="metric-label">τ threshold</div>
+            <div class="metric-label" data-i18n="metric.tau">τ threshold</div>
             <div class="metric-value" id="stat-tau">53.12</div>
-            <div class="metric-hint">μ + kσ</div>
+            <div class="metric-hint" data-i18n="metric.tau.hint">μ + kσ</div>
         </div>
         <div class="metric">
-            <div class="metric-label">Uptime</div>
+            <div class="metric-label" data-i18n="metric.uptime">Uptime</div>
             <div class="metric-value" id="stat-uptime">0s</div>
-            <div class="metric-hint">controller process</div>
+            <div class="metric-hint" data-i18n="metric.uptime.hint">controller process</div>
         </div>
     </section>
 
     <section class="layout">
         <article class="panel">
             <div class="panel-head">
-                <h2>Reconstruction error vs τ</h2>
-                <span>sliding window · L=10</span>
+                <h2 data-i18n="panel.re">Reconstruction error vs τ</h2>
+                <span data-i18n="panel.re.meta">sliding window · L=10</span>
             </div>
             <div class="panel-body">
                 <div class="chart-wrap"><canvas id="reChart"></canvas></div>
                 <div class="scenario-row">
                     <button class="scenario-btn ddos" type="button" onclick="triggerAlert('DDoS_PacketIn_Flood')">
-                        <span class="k">Attack A</span>
-                        PacketIn flood (DDoS)
+                        <span class="k" data-i18n="scen.a.k">Attack A</span>
+                        <span data-i18n="scen.a">PacketIn flood (DDoS)</span>
                     </button>
                     <button class="scenario-btn loft" type="button" onclick="triggerAlert('LOFT_LowRate_Attack')">
-                        <span class="k">Attack B</span>
-                        LOFT low-rate probe
+                        <span class="k" data-i18n="scen.b.k">Attack B</span>
+                        <span data-i18n="scen.b">LOFT low-rate probe</span>
                     </button>
                     <button class="scenario-btn rush" type="button" onclick="triggerAlert('RushHour_Burst')">
-                        <span class="k">Benign</span>
-                        Rush-hour surge (no block)
+                        <span class="k" data-i18n="scen.c.k">Benign</span>
+                        <span data-i18n="scen.c">Rush-hour surge (no block)</span>
                     </button>
                 </div>
 
@@ -889,21 +1145,21 @@
                     <div>
                         <div class="toolbar-row">
                             <select id="replay-script" aria-label="Replay script">
-                                <option value="full_story">Replay · full story</option>
-                                <option value="ddos_cycle">Replay · DDoS cycle</option>
-                                <option value="loft_cycle">Replay · LOFT cycle</option>
-                                <option value="rush_compare">Replay · rush vs flood</option>
+                                <option value="full_story" data-i18n="replay.full">Replay · full story</option>
+                                <option value="ddos_cycle" data-i18n="replay.ddos">Replay · DDoS cycle</option>
+                                <option value="loft_cycle" data-i18n="replay.loft">Replay · LOFT cycle</option>
+                                <option value="rush_compare" data-i18n="replay.rush">Replay · rush vs flood</option>
                             </select>
-                            <button type="button" class="primary" id="btn-replay">Play</button>
-                            <button type="button" id="btn-replay-stop">Stop</button>
-                            <button type="button" id="btn-export">Export report</button>
-                            <button type="button" id="btn-onnx" class="debug-only">Export ONNX</button>
+                            <button type="button" class="primary" id="btn-replay" data-i18n="btn.play">Play</button>
+                            <button type="button" id="btn-replay-stop" data-i18n="btn.stop">Stop</button>
+                            <button type="button" id="btn-preview-report" data-i18n="btn.preview">Preview report</button>
+                            <button type="button" id="btn-export" data-i18n="btn.export">Export report</button>
+                            <button type="button" id="btn-onnx" class="debug-only" data-i18n="btn.onnx">Export ONNX</button>
                         </div>
                         <div class="replay-track" aria-hidden="true"><i id="replay-fill"></i></div>
-                        <div class="replay-label" id="replay-label">Replay idle</div>
-                        <div class="compare-banner" id="compare-banner">
+                        <div class="replay-label" id="replay-label" data-i18n="replay.idle">Replay idle</div>
+                        <div class="compare-banner" id="compare-banner" data-i18n="compare.banner">
                             COMPARE MODE — permanent-block baseline vs Detect→Contain→Rollback.
-                            Rush-hour should show <b>0 rules</b>; flood should contain then rollback.
                         </div>
                     </div>
                     <div class="split-metrics">
@@ -917,29 +1173,73 @@
 
         <article class="panel">
             <div class="panel-head">
-                <h2>Active OpenFlow rules</h2>
-                <span>stage 2 · contain</span>
+                <h2 data-i18n="panel.rules">Active OpenFlow rules</h2>
+                <span data-i18n="panel.rules.meta">stage 2 · contain</span>
             </div>
             <div class="panel-body">
                 <div style="overflow-x:auto; max-height: 220px;">
                     <table>
                         <thead>
                             <tr>
-                                <th>Rule</th>
-                                <th>DPID</th>
-                                <th>Match</th>
-                                <th>Action</th>
-                                <th>TTL</th>
+                                <th data-i18n="table.rule">Rule</th>
+                                <th data-i18n="table.dpid">DPID</th>
+                                <th data-i18n="table.match">Match</th>
+                                <th data-i18n="table.action">Action</th>
+                                <th data-i18n="table.ttl">TTL</th>
                             </tr>
                         </thead>
                         <tbody id="active-rules-body">
-                            <tr><td class="empty" colspan="5">No active mitigations — forwarding nominal.</td></tr>
+                            <tr><td class="empty" colspan="5" data-i18n="table.empty_rules">No active mitigations — forwarding nominal.</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="rollback" id="rollback-log">
-                    <div>[*] Cooldown daemon armed — expired rules auto-revoke.</div>
+                    <div data-i18n="rollback.armed">[*] Cooldown daemon armed — expired rules auto-revoke.</div>
                 </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="bottom" style="margin-bottom: 14px;">
+        <article class="panel">
+            <div class="panel-head">
+                <h2 data-i18n="panel.emp">Empirical metrics</h2>
+                <span data-i18n="panel.emp.meta">classifier head · cached eval</span>
+            </div>
+            <div class="panel-body">
+                <table class="emp-table" id="emp-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="emp.eval">Eval</th>
+                            <th data-i18n="emp.n">n</th>
+                            <th data-i18n="emp.acc">Acc</th>
+                            <th data-i18n="emp.f1">F1</th>
+                            <th data-i18n="emp.auc">AUC</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emp-body">
+                        <tr><td class="empty" colspan="5" data-i18n="emp.loading">Loading /api/v1/empirical…</td></tr>
+                    </tbody>
+                </table>
+                <div class="lab-meta" style="margin-top:10px;">
+                    <div>ckpts · <b id="emp-ckpts">—</b></div>
+                    <div>notes · <b id="emp-note" data-i18n="emp.note">cls-head preferred over RE-τ</b></div>
+                </div>
+            </div>
+        </article>
+        <article class="panel">
+            <div class="panel-head">
+                <h2 data-i18n="panel.ovs">OpenFlow / OVS lab</h2>
+                <span id="ovs-head-meta">backend · —</span>
+            </div>
+            <div class="panel-body">
+                <div class="lab-meta">
+                    <div>backend · <b id="ovs-backend">—</b></div>
+                    <div>agent · <b id="ovs-agent">—</b></div>
+                    <div>flow mods · <b id="ovs-mods">0</b></div>
+                    <div>bridges · <b id="ovs-bridges">—</b></div>
+                </div>
+                <div class="ovs-sample" id="ovs-sample" data-i18n="ovs.hint">No OVS dump yet — enable SDN_OF_BACKEND=http + WSL of_agent.</div>
             </div>
         </article>
     </section>
@@ -947,8 +1247,8 @@
     <section class="bottom">
         <article class="panel">
             <div class="panel-head">
-                <h2>ITS edge topology</h2>
-                <span>s1 core · s2/s3/s4 RSU</span>
+                <h2 data-i18n="panel.topo">ITS edge topology</h2>
+                <span data-i18n="panel.topo.meta">s1 core · s2/s3/s4 RSU</span>
             </div>
             <div class="panel-body">
                 <svg class="topo-svg" viewBox="0 0 640 280" role="img" aria-label="RSU topology diagram">
@@ -999,16 +1299,16 @@
                 </svg>
                 <div class="topo-legend">
                     <span><b id="rsu-s1-status">NOMINAL</b> · s1</span>
-                    <span>Containment highlights s1 when rules active</span>
-                    <span>Rollback clears highlight after cooldown</span>
+                    <span data-i18n="topo.contain">Containment highlights s1 when rules active</span>
+                    <span data-i18n="topo.rollback">Rollback clears highlight after cooldown</span>
                 </div>
             </div>
         </article>
 
         <article class="panel">
             <div class="panel-head">
-                <h2>Event stream</h2>
-                <span>OpenFlow · policy</span>
+                <h2 data-i18n="panel.events">Event stream</h2>
+                <span data-i18n="panel.events.meta">OpenFlow · policy</span>
             </div>
             <div class="panel-body" style="padding:0;">
                 <div class="term" id="term-log"></div>
@@ -1018,18 +1318,23 @@
 </div>
 
 <script>
-    const STORAGE_KEY = "sdn_its_console_settings_v2";
+    const t = (key, vars) => (window.SDNI18N ? window.SDNI18N.t(key, vars) : key);
+    const applyI18n = () => { if (window.SDNI18N) window.SDNI18N.applyI18n(); };
+
+    const STORAGE_KEY = "sdn_its_console_settings_v4";
     const DEFAULTS = {
         poll_ms: 1200,
         tau: 53.12,
         ddos_cooldown: 12.0,
         loft_cooldown: 15.0,
-        ambient_re: true,
+        ambient_re: false,
         auto_refresh: true,
         adapt_tau: true,
+        lab_mode: true,
+        scenario_override: false,
         dataset_mode: "sample",
         role_mode: "research",
-        theme: "light",
+        theme: "research",
         compare_mode: false,
         webhook_url: "",
         webhook_enabled: false,
@@ -1112,14 +1417,24 @@
 
     function applyChrome() {
         document.documentElement.setAttribute("data-theme", settings.theme || "light");
-        document.body.classList.remove("role-research", "role-demo", "role-debug");
+        document.body.classList.remove("role-research", "role-demo", "role-debug", "lab-on");
         document.body.classList.add(`role-${settings.role_mode || "research"}`);
+        if (settings.lab_mode) document.body.classList.add("lab-on");
         const chip = document.getElementById("role-chip");
         if (chip) chip.textContent = (settings.role_mode || "research").toUpperCase();
+        const badge = document.getElementById("lab-badge");
+        if (badge) {
+            badge.textContent = settings.lab_mode ? "LAB" : "DEMO";
+            badge.classList.toggle("on", !!settings.lab_mode);
+            badge.classList.toggle("demo", !settings.lab_mode);
+        }
         document.getElementById("compare-banner").classList.toggle("on", !!settings.compare_mode);
-        const dark = settings.theme === "dark";
-        reChart.data.datasets[0].borderColor = dark ? "#3dba8a" : "#0b6e4f";
-        reChart.data.datasets[0].backgroundColor = dark ? "rgba(61,186,138,0.12)" : "rgba(11,110,79,0.08)";
+        const dark = settings.theme === "dark" || settings.theme === "research";
+        const accent = settings.theme === "research" ? "#c4a35a" : (dark ? "#3dba8a" : "#0b6e4f");
+        reChart.data.datasets[0].borderColor = accent;
+        reChart.data.datasets[0].backgroundColor = settings.theme === "research"
+            ? "rgba(196,163,90,0.12)"
+            : (dark ? "rgba(61,186,138,0.12)" : "rgba(11,110,79,0.08)");
         reChart.options.scales.y.ticks.color = dark ? "#8a938a" : "#6b756e";
         reChart.options.scales.x.ticks.color = dark ? "#8a938a" : "#6b756e";
         reChart.options.plugins.legend.labels.color = dark ? "#e8ece8" : "#1a1f1c";
@@ -1151,6 +1466,8 @@
         document.getElementById("set-dataset").value = settings.dataset_mode;
         document.getElementById("set-role").value = settings.role_mode;
         document.getElementById("set-theme").value = settings.theme;
+        document.getElementById("set-lab").checked = !!settings.lab_mode;
+        document.getElementById("set-scenario-override").checked = !!settings.scenario_override;
         document.getElementById("set-adapt").checked = !!settings.adapt_tau;
         document.getElementById("set-compare").checked = !!settings.compare_mode;
         document.getElementById("set-webhook").value = settings.webhook_url || "";
@@ -1179,6 +1496,13 @@
         settings.dataset_mode = document.getElementById("set-dataset").value;
         settings.role_mode = document.getElementById("set-role").value;
         settings.theme = document.getElementById("set-theme").value;
+        settings.lab_mode = document.getElementById("set-lab").checked;
+        settings.scenario_override = document.getElementById("set-scenario-override").checked;
+        if (settings.lab_mode) {
+            settings.scenario_override = false;
+            document.getElementById("set-scenario-override").checked = false;
+            if (!document.getElementById("set-ambient").checked) settings.ambient_re = false;
+        }
         settings.adapt_tau = document.getElementById("set-adapt").checked;
         settings.compare_mode = document.getElementById("set-compare").checked;
         settings.webhook_url = document.getElementById("set-webhook").value.trim();
@@ -1193,9 +1517,13 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(settings),
             });
-            logTerm(`Settings synced · poll=${settings.poll_ms}ms · τ=${settings.tau} · theme=${settings.theme}`, "t-ok");
+            logTerm(
+                `${t("log.settings_ok")} · lab=${settings.lab_mode ? "on" : "off"} · override=${settings.scenario_override} · theme=${settings.theme}`,
+                "t-ok"
+            );
+            refreshLabPanels();
         } catch (_) {
-            logTerm("Settings saved locally (server sync failed)", "t-warn");
+            logTerm(t("log.settings_local"), "t-warn");
         }
         closeSettings();
     }
@@ -1209,8 +1537,9 @@
         openSettings();
         applyTauToUI();
         applyChrome();
+        applyI18n();
         restartTimers();
-        logTerm("Settings reset to defaults", "t-warn");
+        logTerm(`${t("settings.reset")} · defaults`, "t-warn");
     }
 
     function fillReadonly(s) {
@@ -1304,6 +1633,111 @@
         } catch (_) {}
     }
 
+    function pct(v) {
+        if (v == null || Number.isNaN(Number(v))) return "—";
+        return `${(Number(v) * 100).toFixed(1)}%`;
+    }
+
+    function setChip(id, text, cls) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove("ok", "warn", "bad");
+        if (cls) el.classList.add(cls);
+    }
+
+    function updateEvidenceBar(info) {
+        const mode = info.mode || (info.model_loaded ? "MODEL" : "DEGRADED");
+        const simBanner = document.getElementById("sim-banner");
+        if (mode === "MODEL") {
+            setChip("ev-model", "MODEL · LOADED", "ok");
+            simBanner.hidden = true;
+        } else if (mode === "SIMULATION") {
+            setChip("ev-model", "SIMULATION · NOT MODEL", "bad");
+            simBanner.hidden = false;
+            simBanner.textContent = info.banner || t("sim.banner");
+        } else {
+            setChip("ev-model", "DEGRADED · NO CHECKPOINT", "bad");
+            simBanner.hidden = false;
+            simBanner.textContent = info.banner || t("sim.banner");
+        }
+        const ofb = info.of_backend || "mock";
+        const ofCls = ofb === "mock" ? "warn" : (info.of_connected ? "ok" : "warn");
+        setChip("ev-of", `OF · ${ofb}${info.of_connected ? " · LIVE" : ""}`, ofCls);
+        const pre = info.preprocess_mode || "—";
+        const preCls = pre.includes("MISMATCH") || pre === "simulated" ? "warn" : (pre.includes("fitted") ? "ok" : "");
+        setChip("ev-pre", `PREPROCESS · ${pre}`, preCls);
+        if (info.ground_truth != null) setChip("ev-gt", `GT · ${info.ground_truth}`, "");
+        if (info.prediction != null) setChip("ev-pred", `PRED · ${info.prediction}`, "");
+        if (info.correct === true) setChip("ev-match", "MATCH · CORRECT", "ok");
+        else if (info.correct === false) setChip("ev-match", "MATCH · INCORRECT", "bad");
+        else if (info.scenario_override) setChip("ev-match", "MATCH · OVERRIDDEN (DEMO)", "warn");
+        else setChip("ev-match", "MATCH · —", "");
+    }
+
+    async function refreshLabPanels() {
+        try {
+            const [lab, emp] = await Promise.all([
+                fetch("/api/v1/lab").then((r) => r.json()),
+                fetch("/api/v1/empirical").then((r) => r.json()),
+            ]);
+            if (lab.lab_mode != null) {
+                settings.lab_mode = !!lab.lab_mode;
+                settings.scenario_override = !!lab.scenario_override;
+                applyChrome();
+            }
+            const of = lab.openflow || {};
+            document.getElementById("ovs-backend").textContent = lab.of_backend || of.backend || "—";
+            document.getElementById("ovs-agent").textContent = lab.agent_connected ? "connected" : "offline";
+            document.getElementById("ovs-mods").textContent = String(of.flow_mods ?? 0);
+            document.getElementById("ovs-head-meta").textContent = `backend · ${lab.of_backend || "—"}`;
+            document.getElementById("of-meta").textContent =
+                `OF · ${lab.of_backend || "mock"}${lab.agent_connected ? " · agent ok" : ""}`;
+            const bridges = of.bridges || {};
+            const brNames = Object.keys(bridges);
+            document.getElementById("ovs-bridges").textContent = brNames.length
+                ? brNames.map((b) => `${b}:${bridges[b].n_flows ?? "?"}`).join(" ")
+                : (of.datapaths || []).join(" ") || "—";
+            const samples = [];
+            brNames.forEach((b) => {
+                (bridges[b].sample || []).forEach((ln) => samples.push(`${b}  ${ln}`));
+            });
+            (of.last_mods || []).slice(-3).forEach((m) => {
+                samples.push(`mod ${m.action || "?"} ${m.bridge || ""} ok=${m.ok} ${m.flow || m.src_ip || ""}`);
+            });
+            document.getElementById("ovs-sample").textContent = samples.length
+                ? samples.slice(0, 12).join("\n")
+                : t("ovs.hint");
+
+            const rows = [
+                ["InSDN in-domain", emp.insdn_in_domain],
+                ["CIC zero-shot", emp.cic_zero_shot],
+                ["CIC adapted", emp.cic_adapted],
+            ];
+            document.getElementById("emp-body").innerHTML = rows.map(([name, m]) => {
+                if (!m) return "";
+                return `<tr>
+                    <td>${name}</td>
+                    <td class="num">${m.n_test ?? "—"}</td>
+                    <td class="num">${pct(m.cls_binary_accuracy)}</td>
+                    <td class="num">${pct(m.cls_binary_f1)}</td>
+                    <td class="num">${pct(m.roc_auc)}</td>
+                </tr>`;
+            }).join("");
+            const ck = emp.checkpoints || {};
+            document.getElementById("emp-ckpts").textContent = Object.entries(ck)
+                .map(([k, v]) => `${k.split("_").pop()}:${v ? "✓" : "—"}`)
+                .join(" ");
+            if (emp.cic_adapted?.delta_f1 != null) {
+                document.getElementById("emp-note").textContent =
+                    `ΔF1 adapted=${(emp.cic_adapted.delta_f1 * 100).toFixed(1)}pp · cls-head`;
+            }
+            (lab.mitigation_log || []).slice(-3).forEach((e) => {
+                /* already in term via trigger; skip spam */
+            });
+        } catch (_) {}
+    }
+
     async function updateDashboard() {
         document.getElementById("clock").textContent = new Date().toLocaleString();
         try {
@@ -1319,17 +1753,35 @@
             document.getElementById("stat-fp-avoided").textContent = status.stats.false_positives_avoided;
             document.getElementById("stat-uptime").textContent = `${Math.round(status.uptime_seconds)}s`;
             document.getElementById("live-label").textContent =
-                status.status === "ONLINE" ? "CONTROLLER ONLINE" : status.status;
+                status.status === "ONLINE" ? t("live.online") : (status.status || t("live.offline"));
+            if (status.lab_mode != null) {
+                settings.lab_mode = !!status.lab_mode;
+                settings.scenario_override = !!status.scenario_override;
+                applyChrome();
+            }
+            if (status.openflow) {
+                const of = status.openflow;
+                document.getElementById("of-meta").textContent =
+                    `OF · ${of.configured_backend || of.backend || "mock"}${of.connected ? " · agent ok" : ""}`;
+            }
             if (status.tau) {
                 settings.tau = status.tau;
                 applyTauToUI();
             }
+            updateEvidenceBar({
+                mode: status.scorer_mode,
+                model_loaded: status.model_loaded,
+                preprocess_mode: status.preprocess_mode,
+                of_backend: status.of_backend || (status.openflow && (status.openflow.configured_backend || status.openflow.backend)),
+                of_connected: status.openflow && status.openflow.connected,
+            });
+            refreshLabPanels();
 
             const tbody = document.getElementById("active-rules-body");
             const s1Status = document.getElementById("rsu-s1-status");
 
             if (rules.count === 0) {
-                tbody.innerHTML = `<tr><td class="empty" colspan="5">No active mitigations — forwarding nominal.</td></tr>`;
+                tbody.innerHTML = `<tr><td class="empty" colspan="5">${t("table.empty_rules")}</td></tr>`;
                 setNodeState("node-s1", "node-ok");
                 setNodeState("node-ctrl", "node-active");
                 s1Status.textContent = "NOMINAL";
@@ -1376,24 +1828,29 @@
             }
             refreshLatency();
         } catch (e) {
-            document.getElementById("live-label").textContent = "CONTROLLER OFFLINE";
-            logTerm("Poll failed — is the API up?", "t-err");
+            document.getElementById("live-label").textContent = t("live.offline");
+            logTerm(t("log.poll_fail"), "t-err");
         }
     }
 
     async function liveTick() {
         if (!settings.live_infer && !settings.ambient_re) return;
         if (pipeMode === "contain") return;
+        // Lab mode: never invent RE; only poll real telemetry
+        if (settings.lab_mode && !settings.live_infer) return;
         try {
             const url = settings.live_infer
                 ? `/api/v1/telemetry?scenario=normal`
                 : null;
             if (!url) {
+                if (settings.lab_mode) return;
                 const drift = lastRE + (Math.random() - 0.5) * 3.5;
                 pushRE(Math.max(4, Math.min(settings.tau * 0.85, drift)));
                 return;
             }
             const sc = await fetch(url).then((r) => r.json());
+            updateEvidenceBar(sc);
+            if (sc.inference_disabled) return;
             if (sc.reconstruction_error != null) {
                 pushRE(Number(sc.reconstruction_error));
                 if (sc.threshold_tau) {
@@ -1402,7 +1859,12 @@
                 }
                 if (sc.attribution) renderAttribution(sc.attribution);
             }
+            if (sc.banner && sc.mode !== "MODEL") {
+                /* banner already via evidence bar */
+            }
         } catch (_) {
+            if (settings.lab_mode) return;
+            updateEvidenceBar({ mode: "SIMULATION", model_loaded: false, banner: "TELEMETRY POLL FAILED — local drift (not model)" });
             const drift = lastRE + (Math.random() - 0.5) * 3.5;
             pushRE(Math.max(4, Math.min(settings.tau * 0.85, drift)));
         }
@@ -1427,27 +1889,55 @@
         }
 
         setPipeline("detect");
-        let reError = Math.max(settings.tau * 1.5, 84.5);
+        let reError = null;
+        let resolvedType = attackType;
+        let sc = {};
         try {
-            const sc = await fetch("/api/v1/infer", {
+            sc = await fetch("/api/v1/infer", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ scenario, adapt_tau: false }),
             }).then((r) => r.json());
+            updateEvidenceBar(sc);
             if (sc.reconstruction_error != null) reError = sc.reconstruction_error;
             if (sc.attribution) renderAttribution(sc.attribution);
             if (sc.top_features?.length) {
                 logTerm(`Top features · ${sc.top_features.map((t) => t[0]).join(", ")}`, "t-info");
             }
+            logTerm(
+                `GT=${sc.ground_truth || "?"} · PRED=${sc.prediction || sc.predicted_label || "?"} · correct=${sc.correct} · source=${sc.source} · mode=${sc.mode}`,
+                sc.correct === false ? "t-err" : "t-info"
+            );
+            // Policy label: model prediction in lab; demo may still override
+            if (settings.lab_mode || sc.scenario_override === false) {
+                resolvedType = sc.attack_type || sc.predicted_label || attackType;
+            }
+            if (sc.inference_disabled) {
+                logTerm(t("log.degraded"), "t-err");
+                setPipeline("idle");
+                return;
+            }
         } catch (_) {}
 
-        if (attackType === "RushHour_Burst") reError = Math.min(reError, settings.tau * 0.45);
-        pushRE(reError);
-        logTerm(`Scenario inject · ${attackType} · src=${srcIp} · RE=${reError.toFixed(1)}`, cls);
+        if (!settings.lab_mode && attackType === "RushHour_Burst" && sc.simulated) {
+            reError = Math.min(reError, settings.tau * 0.45);
+        }
+        if (reError != null) pushRE(reError);
+        logTerm(
+            `${settings.lab_mode ? "Lab inject" : "Scenario inject"} · policy=${resolvedType} · src=${srcIp} · RE=${reError == null ? "—" : Number(reError).toFixed(1)}`,
+            cls
+        );
         if (settings.compare_mode) {
             logTerm(attackType === "RushHour_Burst"
                 ? "COMPARE · expect IGNORE (no permanent block)"
                 : "COMPARE · expect CONTAIN then auto-rollback", "t-warn");
+        }
+
+        // In lab mode skip alert if model says Normal
+        if (settings.lab_mode && (resolvedType === "Normal" || !sc.is_anomaly)) {
+            logTerm(t("log.lab_normal"), "t-ok");
+            setPipeline("idle");
+            return;
         }
 
         try {
@@ -1458,22 +1948,24 @@
                     alert_id: `ALT-${Math.floor(Math.random() * 9000 + 1000)}`,
                     dpid: "0000000000000001",
                     src_ip: srcIp,
-                    attack_type: attackType,
+                    attack_type: resolvedType,
                     reconstruction_error: reError,
                     confidence: 0.98,
                     cooldown_seconds: cooldown,
                 }),
             });
             const data = await resp.json();
+            const ruleIds = (data.applied_rules || []).map((r) => r.rule_id || r).join(",") || "—";
+            const ofMods = (data.of_last_mods || []).map((m) => `ok=${m.ok}`).join(" ") || "";
             logTerm(
-                `Policy · ${data.mitigation_status} · rules=${data.applied_rules_count} · ${data.policy_latency_ms || "?"}ms`,
+                `Policy · ${data.mitigation_status} · rules=${data.applied_rules_count} · ${ruleIds} · ${data.policy_latency_ms || "?"}ms · OF ${data.of_backend || "?"}${ofMods ? " " + ofMods : ""}`,
                 data.applied_rules_count > 0 ? "t-warn" : "t-ok"
             );
             if (data.applied_rules_count > 0) setPipeline("contain");
             else setPipeline("idle");
             updateDashboard();
         } catch (e) {
-            logTerm("Failed to POST /api/v1/anomaly_alert", "t-err");
+            logTerm(t("log.alert_fail"), "t-err");
         }
     }
 
@@ -1519,12 +2011,13 @@
                     replayTimer = setTimeout(tick, 200);
                 } else {
                     document.getElementById("replay-label").textContent = "Replay complete";
-                    logTerm("Replay complete", "t-ok");
+                    logTerm(t("log.replay_done"), "t-ok");
+                    document.getElementById("replay-label").textContent = t("log.replay_done");
                 }
             }
             tick();
         } catch (e) {
-            logTerm("Replay failed", "t-err");
+            logTerm(t("log.replay_fail"), "t-err");
         }
     }
 
@@ -1532,7 +2025,56 @@
         if (replayTimer) clearTimeout(replayTimer);
         replayTimer = null;
         document.getElementById("replay-fill").style.width = "0%";
-        document.getElementById("replay-label").textContent = "Replay idle";
+        document.getElementById("replay-label").textContent = t("replay.idle");
+    }
+
+    let lastReportMarkdown = "";
+    let lastReportFilename = "console_report.md";
+
+    function downloadMarkdownBlob(markdown, filename) {
+        const blob = new Blob([markdown || ""], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename || "console_report.md";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function openReportModal(markdown, filename) {
+        lastReportMarkdown = markdown || "";
+        lastReportFilename = filename || "console_report.md";
+        const body = document.getElementById("report-body");
+        body.textContent = lastReportMarkdown || t("report.loading");
+        const modal = document.getElementById("report-modal");
+        const backdrop = document.getElementById("report-backdrop");
+        modal.hidden = false;
+        backdrop.hidden = false;
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeReportModal() {
+        const modal = document.getElementById("report-modal");
+        const backdrop = document.getElementById("report-backdrop");
+        if (modal) modal.hidden = true;
+        if (backdrop) backdrop.hidden = true;
+        document.body.style.overflow = "";
+    }
+
+    async function previewReport() {
+        try {
+            const out = await fetch("/api/v1/export/report").then(async (r) => {
+                const j = await r.json();
+                if (!r.ok) throw new Error(j.error || r.statusText);
+                return j;
+            });
+            openReportModal(out.markdown, out.filename || "console_preview.md");
+            logTerm(t("log.preview_ok"), "t-ok");
+        } catch (e) {
+            logTerm(`${t("log.preview_fail")} · ${e.message || e}`, "t-err");
+        }
     }
 
     async function exportReport() {
@@ -1541,10 +2083,20 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: `console_${Date.now()}` }),
-            }).then((r) => r.json());
-            logTerm(`Report written · ${out.path}`, "t-ok");
-        } catch (_) {
-            logTerm("Export report failed", "t-err");
+            }).then(async (r) => {
+                const j = await r.json();
+                if (!r.ok) throw new Error(j.error || r.statusText);
+                return j;
+            });
+            if (!out.markdown) throw new Error("empty markdown from server");
+            downloadMarkdownBlob(out.markdown, out.filename || "console_report.md");
+            openReportModal(out.markdown, out.filename);
+            logTerm(`${t("log.export_ok")} · ${out.path || out.filename}`, "t-ok");
+            if (out.download_url) {
+                logTerm(`${t("log.export_disk")} · ${out.path}`, "t-info");
+            }
+        } catch (e) {
+            logTerm(`${t("log.export_fail")} · ${e.message || e}`, "t-err");
         }
     }
 
@@ -1558,7 +2110,7 @@
             if (out.error) logTerm(`ONNX export error · ${out.error}`, "t-err");
             else logTerm(`Exported · ${JSON.stringify(out.exports)}`, "t-ok");
         } catch (_) {
-            logTerm("ONNX export failed", "t-err");
+            logTerm(t("log.onnx_fail"), "t-err");
         }
     }
 
@@ -1579,19 +2131,46 @@
     document.getElementById("btn-replay").addEventListener("click", playReplay);
     document.getElementById("btn-replay-stop").addEventListener("click", stopReplay);
     document.getElementById("btn-export").addEventListener("click", exportReport);
+    document.getElementById("btn-preview-report").addEventListener("click", previewReport);
     document.getElementById("btn-onnx").addEventListener("click", exportOnnx);
+    document.getElementById("report-close").addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeReportModal();
+    });
+    document.getElementById("report-backdrop").addEventListener("click", (e) => {
+        e.preventDefault();
+        closeReportModal();
+    });
+    // Ensure modal starts closed even if a prior bug left it visible
+    closeReportModal();
+    document.getElementById("report-download").addEventListener("click", () => {
+        downloadMarkdownBlob(lastReportMarkdown, lastReportFilename);
+    });
+    document.getElementById("btn-lang").addEventListener("click", () => {
+        const cur = window.SDNI18N ? window.SDNI18N.getLang() : "en";
+        window.SDNI18N.setLang(cur === "en" ? "vi" : "en");
+        applyChrome();
+        updateDashboard();
+    });
     document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") closeSettings();
+        if (e.key === "Escape") {
+            closeSettings();
+            closeReportModal();
+        }
     });
 
+    applyI18n();
     applyChrome();
     applyTauToUI();
-    logTerm("SDN-ITS ops console ready · live infer + replay armed", "t-info");
-    logTerm("Settings · theme / role / τ / webhook · Export report from toolbar", "t-ok");
+    logTerm(t("log.ready"), "t-info");
+    logTerm(t("log.settings_hint"), "t-ok");
     setPipeline("idle");
     loadServerSettings().then(() => {
+        applyI18n();
         restartTimers();
         updateDashboard();
+        refreshLabPanels();
         liveTick();
     });
 </script>
