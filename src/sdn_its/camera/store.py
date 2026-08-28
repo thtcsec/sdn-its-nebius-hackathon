@@ -116,8 +116,16 @@ class CameraContextStore:
         self._stop.set()
 
     def set_scenario(self, scenario: str) -> None:
+        """Set demo/scripted physical scenario and publish immediately.
+
+        Without an immediate emit, fusion_preview / anomaly_alert can still see the
+        previous aggregate (often idle→stable) until the next probe tick — which
+        breaks Cam·rush + network-inject demos.
+        """
         with self._lock:
             self._scenario = scenario
+            self._tick += 1
+        self._emit_context()
 
     def get_scenario(self) -> str:
         with self._lock:

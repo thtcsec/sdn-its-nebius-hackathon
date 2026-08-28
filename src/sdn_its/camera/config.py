@@ -67,6 +67,22 @@ def _rows_with_stream(inventory: list[Any]) -> list[dict[str, Any]]:
     return out
 
 
+def _host_resolves(url: str, timeout_s: float = 1.5) -> bool:
+    """Cheap DNS check so first_n skips dead DDNS entries when possible."""
+    import socket
+    from urllib.parse import urlparse
+
+    try:
+        host = urlparse(str(url)).hostname
+        if not host:
+            return False
+        socket.setdefaulttimeout(timeout_s)
+        socket.getaddrinfo(host, None)
+        return True
+    except OSError:
+        return False
+
+
 def _build_select_entries(cfg: dict[str, Any], inventory: list[Any]) -> list[dict[str, Any]]:
     """Resolve which inventory rows to load — never hardcode UUIDs in Python."""
     mode = str(cfg.get("select_mode") or "first_n").lower()
@@ -76,9 +92,13 @@ def _build_select_entries(cfg: dict[str, Any], inventory: list[Any]) -> list[dic
     if mode == "explicit" and select:
         return select[:max_n]
 
-    # first_n (default): first inventory rows that expose an RTSP URL
+    # first_n: prefer rows whose RTSP host resolves (dead DDNS otherwise fills the panel
+    # with stale daytime JPEGs). Fall back to inventory order if none resolve.
+    rows = _rows_with_stream(inventory)
+    reachable = [r for r in rows if _host_resolves(str(r.get("streamUrl") or r.get("rtsp") or r.get("url") or ""))]
+    chosen = (reachable or rows)[:max_n]
     entries: list[dict[str, Any]] = []
-    for i, row in enumerate(_rows_with_stream(inventory)[:max_n]):
+    for i, row in enumerate(chosen):
         entries.append(
             {
                 "id": str(row.get("id") or ""),

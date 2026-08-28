@@ -1,0 +1,32 @@
+{
+  "captured_at": "2026-08-28T22:36:42",
+  "live_rtsp": 3,
+  "frame_fresh": true,
+  "stream_available": true,
+  "source": "detector_tracker_v1",
+  "tracks": 2,
+  "physical_label": "stable",
+  "of_backend": "mock",
+  "network_evidence": false,
+  "model_loaded": true,
+  "cameras": [
+    {
+      "camera_id": "cam1",
+      "connected": true,
+      "preview_mtime": 1787931396,
+      "rtsp_host": "caxphuhuu179.ddns.net:554"
+    },
+    {
+      "camera_id": "cam2",
+      "connected": true,
+      "preview_mtime": 1787931396,
+      "rtsp_host": "hf6095z95vw.sn.mynetname.net:559"
+    },
+    {
+      "camera_id": "cam3",
+      "connected": true,
+      "preview_mtime": 1787931396,
+      "rtsp_host": "hf6095z95vw.sn.mynetname.net:559"
+    }
+  ]
+}
