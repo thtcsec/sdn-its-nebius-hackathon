@@ -1,6 +1,6 @@
 # AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems
 
-**A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware Mitigation**
+**Network Anomaly Detection, Reversible Mitigation, and Camera-Assisted Physical Context**
 
 **Proposed Category:** Transportation · AI · Internet Security · IoT · Cloud/Edge Computing
 
@@ -10,8 +10,9 @@
 [![Academic Context](https://img.shields.io/badge/Tsinghua%20IEDE-Autumn%202026-purple.svg)](docs/IEDE_Report_Summary.md)
 
 > **Official IEDE title unchanged** (see [docs/IEDE_Report_Summary.md](docs/IEDE_Report_Summary.md)).  
-> This repo is the **research prototype / evidence console** for that proposal:  
-> telemetry window → inference → policy → (optional) OpenFlow → cooldown rollback.  
+> Narrative focus: **SDN mitigation informed by physical context from the same RSU zone**  
+> (camera = physical-context sensor, not a standalone vision/DDoS module).  
+> Pipeline: telemetry → inference → policy (+ optional same-zone camera context) → temporary OpenFlow → rollback.  
 > Default OpenFlow on Windows is **mock**. Author: Trinh Hoang Tu · Advisor: Prof. Kris Singh.
 
 ---
@@ -28,11 +29,12 @@
 
 Honesty & reproduce: [docs/REPRODUCE.md](docs/REPRODUCE.md) · [docs/EVIDENCE.md](docs/EVIDENCE.md) · [docs/lab_checklist.md](docs/lab_checklist.md)
 
-### Camera-assisted fusion (physical context)
+### Camera-assisted fusion (same RSU-zone physical context)
 
-Not a video wall and **not** a pile of `CAMERA_*` env vars / hardcoded site cameras.
+Not a video wall, **not** a DDoS detector, and **not** a pile of `CAMERA_*` env vars / hardcoded site cameras.
+Camera answers: *is abnormal **network** demand consistent with observable transportation activity in this zone?*
 
-- `configs/cameras.yaml` — `select_mode: first_n` (no inventory UUIDs in git)
+- `configs/cameras.yaml` — `select_mode: first_n` (prefers DNS-reachable hosts; no inventory UUIDs in git)
 - Optional `configs/cameras.local.yaml` (**gitignored**) for explicit IDs
 - `1.cameras.json` — local inventory with RTSP URLs (**gitignored**)
 - Console labels are always **cam1 / cam2 / cam3** (place names never shown)

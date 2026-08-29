@@ -1,20 +1,22 @@
 # Tsinghua University IEDE Research Proposal Summary
 
-**Project Title:** AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems: A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware Mitigation  
+**Project Title:** AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems  
+**Subtitle:** Network Anomaly Detection, Reversible Mitigation, and Camera-Assisted Physical Context  
 **Academic Context:** Innovation and Entrepreneurship Development Education (IEDE) Autumn Semester 2026, Tsinghua University, Beijing, China  
 **Author:** Trinh Hoang Tu
 **Project Advisor:** Professor Kris Singh (Visiting Professor at Tsinghua University; CEO at SRII, Silicon Valley)  
 
 > **Evidence note (repo):** Prefer classifier-head metrics under `artifacts/results/` (InSDN / CIC).  
 > Synthetic multiclass figures below are historical prototype numbers — not the primary claim.  
-> See [REPRODUCE.md](REPRODUCE.md) and [EVIDENCE.md](EVIDENCE.md). Console defaults to **Lab mode**.
+> See [REPRODUCE.md](REPRODUCE.md) and [EVIDENCE.md](EVIDENCE.md). Console defaults to **Lab mode**.  
+> Camera = independent physical observation of the **same RSU service zone**; not a DDoS detector.
 
 ---
 
 ## Executive Summary & Research Motivation
-Intelligent Transportation Systems (ITS) heavily depend on Vehicle-to-Everything (V2X) communication, roadside units (RSUs), edge nodes, and software-defined network control. Software-Defined Networking (SDN) centralizes network programmability, but creates a single point of failure if the SDN controller, northbound API, or control channel comes under load, misconfiguration, or cyber-attack.
+The protected asset is **RSU-based ITS/V2X connectivity**. An attacker aims to exhaust control-plane or edge-network resources and degrade legitimate vehicle-to-infrastructure communication. SDN enables programmable mitigation, but permanent DROP/blacklist responses can also harm legitimate mobility traffic during rush-hour surges that elevate the same coarse counters used for intrusion signals.
 
-This research introduces a **transportation-first resilience framework** combining flow-level telemetry, lightweight time-series deep learning (TCN-GRU), and safety-aware closed-loop SDN flow modifications.
+This research proposes **SDN mitigation informed by physical context from the same RSU zone**: flow-level telemetry, lightweight TCN-GRU detection, temporary OpenFlow containment with rollback, and an optional roadside camera that helps the policy test whether abnormal *network* demand is consistent with observable transportation activity.
 
 ---
 

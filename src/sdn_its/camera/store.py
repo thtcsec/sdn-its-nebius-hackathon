@@ -237,9 +237,9 @@ class CameraContextStore:
             "scenario": self.get_scenario(),
             "physical_mode": self._physical_mode,
             "honesty": (
-                "detector_tracker_v1: IoU tracks across probe frames; occupancy/queue are zone proxies. "
-                "Does NOT yet prove surveyed queue meters, FP reduction on labeled video, or Mininet "
-                "camera-priority under attack (see Exp D)."
+                "Same-zone physical context for mitigation decisions: network demand vs observable "
+                "transportation activity. Tracks/occupancy/queue are zone proxies — not surveyed meters, "
+                "not DDoS detection, not labeled-video FP reduction (see Exp B/C/D)."
             ),
             "detector": get_detector(self._detector_cfg).status() if self._use_detector else {"enabled": False},
         }
@@ -290,8 +290,9 @@ class CameraContextStore:
         return {
             "enabled": True,
             "research_role": (
-                "Allow-listed RTSP → YOLO + IoU tracker (detector_tracker_v1) for fusion. "
-                "Not a video wall / not surveyed queue meters / not labeled-FP proof."
+                "Same RSU-zone physical-context sensor (RTSP → YOLO+IoU) for cyber–physical mitigation policy. "
+                "Not a DDoS/vision detector · not surveyed veh/h · not labeled-FP proof. "
+                "Scripted scenario replay = primary reproducible demo; live RTSP = sensor-pipeline bonus."
             ),
             "scenario": self.get_scenario(),
             "aggregate": self.aggregate_context(),

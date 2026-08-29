@@ -961,7 +961,7 @@
             <div class="brand-mark" data-i18n="brand.mark">Tsinghua IEDE · Transportation · AI · Security · IoT · Edge</div>
             <h1 class="brand-title">AI-Assisted SDN-ITS Resilience</h1>
             <p class="brand-sub" data-i18n="brand.sub">
-                V2X reliability · edge telemetry · safety-aware mitigation — evidence console (prototype), not a production ITS controller.
+                RSU-zone SDN mitigation informed by physical context — anomaly detect · reversible contain · camera as context sensor (prototype, not a production ITS controller).
             </p>
         </div>
         <div class="header-actions">
@@ -1231,7 +1231,7 @@
                         <span data-i18n="scen.c">Rush-hour surge (network label)</span>
                     </button>
                 </div>
-                <div class="ev-note">Network inject buttons ≠ camera. Camera track counts feed fusion separately (panel below).</div>
+                <div class="ev-note">Network inject = RSU/SDN load signals. Camera panel = independent physical view of the same zone. Fusion tests cyber–physical consistency; camera never overrides network evidence.</div>
 
                 <div class="toolbar">
                     <div>
@@ -1295,42 +1295,42 @@
         </article>
     </section>
 
-    <section class="fusion-row" id="fusion-row" aria-label="Camera context and fusion decision">
+    <section class="fusion-row" id="fusion-row" aria-label="Same-zone physical context and cyber-physical fusion">
         <article class="panel" id="panel-cameras">
             <div class="panel-head">
-                <h2>Camera context</h2>
-                <span id="cam-head-meta">metadata · not a video wall</span>
+                <h2>RSU-zone physical context</h2>
+                <span id="cam-head-meta">same service zone · not a DDoS detector</span>
             </div>
             <div class="panel-body">
                 <div class="cam-scenario-row">
-                    <button type="button" class="scenario-btn rush" data-cam-scen="rush">Cam · rush (synth)</button>
-                    <button type="button" class="scenario-btn ddos" data-cam-scen="attack_physical_stable">Cam · stable (synth)</button>
-                    <button type="button" class="scenario-btn loft" data-cam-scen="mixed">Cam · mixed (synth)</button>
-                    <button type="button" class="scenario-btn" data-cam-scen="idle">Cam · live detector</button>
+                    <button type="button" class="scenario-btn rush" data-cam-scen="rush" title="Reproducible scenario replay">Replay · rush (scripted)</button>
+                    <button type="button" class="scenario-btn ddos" data-cam-scen="attack_physical_stable" title="Reproducible scenario replay">Replay · low-traffic (scripted)</button>
+                    <button type="button" class="scenario-btn loft" data-cam-scen="mixed" title="Reproducible scenario replay">Replay · mixed (scripted)</button>
+                    <button type="button" class="scenario-btn" data-cam-scen="idle" title="Live RTSP sensor pipeline">Live observation</button>
                 </div>
                 <div class="cam-cards" id="cam-cards"></div>
-                <div class="ev-note" id="cam-note">YOLOv8 vehicle count on CUDA when mode=rtsp_detector · preview may show boxes.</div>
+                <div class="ev-note" id="cam-note">Physical-context sensor for the same RSU zone · YOLO tracks ≠ veh/h census · scripted replay = primary demo evidence; live RTSP = sensor pipeline bonus.</div>
             </div>
         </article>
         <article class="panel" id="panel-fusion">
             <div class="panel-head">
-                <h2>Fusion decision</h2>
-                <span id="fusion-head-meta">network × physical</span>
+                <h2>Cyber–physical policy</h2>
+                <span id="fusion-head-meta">network demand × physical activity</span>
             </div>
             <div class="panel-body ev-kv">
                 <div class="fusion-block">
-                    <div class="fusion-h">Network evidence</div>
+                    <div class="fusion-h">Network evidence (RSU/SDN)</div>
                     <div id="fus-net">—</div>
                 </div>
                 <div class="fusion-block">
-                    <div class="fusion-h">Physical evidence</div>
+                    <div class="fusion-h">Physical observation (same zone)</div>
                     <div id="fus-phys">—</div>
                 </div>
                 <div class="fusion-block">
-                    <div class="fusion-h">Decision</div>
+                    <div class="fusion-h">Mitigation decision</div>
                     <div id="fus-dec">—</div>
                 </div>
-                <div class="ev-note" id="fus-explain">Fusion idle — inject alert or set camera scenario.</div>
+                <div class="ev-note" id="fus-explain">Idle — inject network alert and/or choose Replay/Live physical mode. Camera never overrides network evidence.</div>
             </div>
         </article>
     </section>
@@ -1869,11 +1869,13 @@
             const cam = await fetch("/api/v1/camera").then((r) => r.json());
             const cards = document.getElementById("cam-cards");
             const agg = cam.aggregate || {};
+            const scen = cam.scenario || "idle";
+            const grade = scen === "idle" ? "LIVE OBSERVATION" : "SCENARIO REPLAY (scripted)";
             document.getElementById("cam-head-meta").textContent =
-                `scenario · ${cam.scenario || "—"} · ${agg.physical_label || "—"}`;
+                `${grade} · ${scen} · phys=${agg.physical_label || "—"} · live_rtsp=${agg.live_rtsp ?? 0}`;
             const cfg = cam.config || {};
             document.getElementById("cam-note").textContent =
-                `Allow-list ${cfg.loaded ?? "?"} / inventory ${cfg.inventory_total ?? "?"} · mode=${(cam.aggregate||{}).physical_mode || "—"} · detector=${(cam.detector||{}).device || "off"} · frames overwritten only`;
+                `Same RSU-zone physical context · allow-list ${cfg.loaded ?? "?"}/${cfg.inventory_total ?? "?"} · mode=${agg.physical_mode || "—"} · detector=${(cam.detector||{}).device || "off"} · tracks≠veh/h · camera does not detect DDoS`;
             cards.innerHTML = (cam.cameras || []).map((c) => {
                 const ctx = c.context || {};
                 const q = c.quality || {};
@@ -1890,8 +1892,9 @@
                 const metricLine = ctx.is_vehicle_count || ctx.vehicle_count_is_real
                     ? `Tracks: ${ctx.visible_vehicle_tracks ?? ctx.vehicle_count ?? "—"} · occ=${ctx.occupancy_ratio ?? "—"} · q≈${ctx.queue_length_proxy_m ?? "—"}m · rel=${ctx.context_reliability ?? "—"} · ${ctx.analytics_source || ctx.source || "—"}`
                     : `Activity proxy: ${va.value ?? "—"} (${ctx.activity_band || va.activity_band || "—"}) · NOT tracks`;
+                const liveTag = c.connected ? (scen === "idle" ? "LIVE OBSERVATION" : "LIVE FEED · scripted context") : "DOWN";
                 return `<div class="cam-card">
-                    <div class="cam-id">${(c.label || c.camera_id)} · ${c.connected ? "LIVE" : "DOWN"}</div>
+                    <div class="cam-id">${(c.label || c.camera_id)} · ${liveTag}</div>
                     ${preview}
                     <div>${c.role || "cam"} · ${c.codec || "—"} ${c.resolution || ""}</div>
                     <div>RTSP · ${c.rtsp_configured ? (c.latency_ms != null ? c.latency_ms + " ms" : "probing") : "synthetic"}</div>
@@ -1916,7 +1919,9 @@
                 `${fus.recommended_action || "—"} · risk=${fus.final_risk || "—"}`;
             document.getElementById("fus-explain").textContent = fus.explain || agg.honesty || "Awaiting decision…";
             document.getElementById("fusion-head-meta").textContent =
-                fus.false_positive_corrected ? "FP corrected by camera" : "network × physical";
+                fus.false_positive_corrected
+                    ? "policy preserved · cyber–physical mismatch avoided"
+                    : "network demand × same-zone physical activity";
         } catch (_) {}
     }
 

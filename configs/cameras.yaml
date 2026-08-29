@@ -1,8 +1,9 @@
 # Camera selection for the research console (no secrets / no site names here).
 # Inventory JSON (gitignored) holds RTSP URLs. Do NOT commit real camera IDs or place names.
 #
-# Prefer:
-#   select_mode: first_n     → take first max_cameras entries that have a stream URL
+# Research role: same RSU-zone physical-context sensor for cyber–physical mitigation —
+# not a DDoS/vision detector. Prefer:
+#   select_mode: first_n     → prefer DNS-reachable streams (skip dead DDNS when possible)
 # Optional override (gitignored):
 #   configs/cameras.local.yaml  with explicit select: [{id: ...}, ...]
 

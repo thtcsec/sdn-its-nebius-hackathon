@@ -1,5 +1,7 @@
-"""Rule-based multimodal fusion: SDN prediction × physical camera context.
+"""Rule-based cyber–physical fusion: SDN/RSU network prediction × same-zone camera context.
 
+Camera is a physical-context sensor for mitigation decisions (cyber–physical consistency),
+not a DDoS detector. Network evidence remains primary; camera must not override it.
 Explainable first — not a single opaque neural net.
 Thresholds are injectable for sensitivity studies.
 """

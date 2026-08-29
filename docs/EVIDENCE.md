@@ -53,9 +53,12 @@ artifacts/
 
 Refresh with `scripts/sync_artifacts.ps1` after any eval run.
 
-## Camera fusion (not a video wall)
+## Camera fusion (physical context for the same RSU zone)
 
-**Honest boundary:** with `physical_mode: rtsp_detector`, frames run **YOLOv8 + IoU tracker**
+**Honest boundary:** cameras are an **independent physical observation** of the RSU service zone
+used by the mitigation policy — not a DDoS detector and not a standalone vision product.
+
+With `physical_mode: rtsp_detector`, frames run **YOLOv8 + IoU tracker**
 (`detector_tracker_v1`) and export:
 
 - `visible_vehicle_tracks` (in-view tracks — **not** veh/h; `vehicle_flow_count` reserved for line-crossing)

@@ -4,7 +4,7 @@
     en: {
       "brand.mark": "Tsinghua IEDE · Transportation · AI · Security · IoT · Edge",
       "brand.sub":
-        "V2X reliability · edge telemetry · safety-aware mitigation — evidence console (prototype), not a production ITS controller.",
+        "RSU-zone SDN mitigation informed by physical context — anomaly detect · reversible contain · camera as context sensor (prototype, not a production ITS controller).",
       "btn.settings": "Settings",
       "btn.lang": "VI",
       "btn.lang.title": "Switch to Vietnamese",
@@ -189,7 +189,7 @@
     vi: {
       "brand.mark": "Tsinghua IEDE · Transportation · AI · Security · IoT · Edge",
       "brand.sub":
-        "Độ tin cậy V2X · edge telemetry · mitigation an toàn — console prototype, không phải controller ITS production.",
+        "Mitigation SDN theo vùng RSU + ngữ cảnh vật lý — phát hiện anomaly · contain tạm thời · camera là sensor ngữ cảnh (prototype, không phải controller ITS production).",
       "btn.settings": "Cài đặt",
       "btn.lang": "EN",
       "btn.lang.title": "Chuyển sang English",
