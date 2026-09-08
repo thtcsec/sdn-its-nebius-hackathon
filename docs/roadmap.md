@@ -15,6 +15,7 @@
 - [x] Live infer, replay, attribution, report preview/download
 - [x] Checkpoint bundles scaler mean/scale when retrained
 - [x] Docs: [REPRODUCE](REPRODUCE.md), [EVIDENCE](EVIDENCE.md), honest README
+- [x] Lab console hardening: loopback bind default, security headers, optional `SDN_API_TOKEN`, webhook SSRF guard, of_agent token + payload cap
 
 ## Next (credibility over cosmetics)
 

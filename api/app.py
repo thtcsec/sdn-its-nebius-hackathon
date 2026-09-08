@@ -7,7 +7,9 @@ from flask import Flask
 from api.middleware import register_middleware
 from api.routes import register_routes
 from sdn_its.controller.rest_api import ResilienceSDNController
+from sdn_its.utils.config import load_config
 from sdn_its.utils.paths import PROJECT_ROOT
+from sdn_its.utils.security import resolve_bind_host
 
 
 def create_app(controller: ResilienceSDNController | None = None) -> Flask:
@@ -29,8 +31,26 @@ def create_app(controller: ResilienceSDNController | None = None) -> Flask:
     return app
 
 
-def main(port: int = 8080):
-    controller = ResilienceSDNController(port=port)
+def _default_host_port() -> tuple[str, int]:
+    host = resolve_bind_host(None)
+    port = 8080
+    try:
+        cfg = load_config("controller")
+        if cfg.get("host"):
+            host = resolve_bind_host(str(cfg["host"]))
+        if cfg.get("port"):
+            port = int(cfg["port"])
+    except Exception:
+        pass
+    return host, port
+
+
+def main(host: str | None = None, port: int | None = None):
+    cfg_host, cfg_port = _default_host_port()
+    controller = ResilienceSDNController(
+        host=host if host is not None else cfg_host,
+        port=port if port is not None else cfg_port,
+    )
     controller.run()
 
 
@@ -38,6 +58,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Start SDN Resilience Controller REST API")
-    parser.add_argument("--port", type=int, default=8080, help="Controller REST API port")
+    parser.add_argument(
+        "--host",
+        type=str,
+        default=None,
+        help="Bind host (default: configs/controller.yaml or SDN_BIND_HOST / 127.0.0.1)",
+    )
+    parser.add_argument("--port", type=int, default=None, help="Controller REST API port")
     args = parser.parse_args()
-    main(port=args.port)
+    main(host=args.host, port=args.port)

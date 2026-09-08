@@ -216,6 +216,8 @@ def metrics_payload() -> dict[str, Any]:
 
 
 class Handler(BaseHTTPRequestHandler):
+    required_token: str | None = None
+
     def _json(self, code: int, payload: dict[str, Any]):
         body = json.dumps(payload).encode("utf-8")
         self.send_response(code)
@@ -223,6 +225,19 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _authorized(self) -> bool:
+        expected = getattr(self, "required_token", None) or Handler.required_token
+        if not expected:
+            return True
+        auth = self.headers.get("Authorization") or ""
+        x = self.headers.get("X-API-Token") or ""
+        provided = ""
+        if auth.lower().startswith("bearer "):
+            provided = auth[7:].strip()
+        elif x.strip():
+            provided = x.strip()
+        return provided == expected
 
     def log_message(self, fmt, *args):  # quieter
         print(f"[of_agent] {self.address_string()} {fmt % args}")
@@ -249,8 +264,15 @@ class Handler(BaseHTTPRequestHandler):
         self._json(404, {"error": "not found"})
 
     def do_POST(self):  # noqa: N802
+        if not self._authorized():
+            self._json(401, {"error": "unauthorized", "detail": "set OF_AGENT_TOKEN / --token"})
+            return
         path = urlparse(self.path).path
         length = int(self.headers.get("Content-Length", "0") or 0)
+        # Cap request body — flow_mod JSON is tiny
+        if length > 65536:
+            self._json(413, {"error": "payload too large"})
+            return
         raw = self.rfile.read(length) if length else b"{}"
         try:
             payload = json.loads(raw.decode("utf-8") or "{}")
@@ -258,17 +280,41 @@ class Handler(BaseHTTPRequestHandler):
             self._json(400, {"error": "invalid json"})
             return
         if path == "/flow_mod":
-            self._json(200, apply_flow_mod(payload if isinstance(payload, dict) else {}))
+            if not isinstance(payload, dict):
+                self._json(400, {"error": "expected object"})
+                return
+            src_ip = str(payload.get("src_ip") or "")
+            if src_ip and not re.match(r"^\d{1,3}(\.\d{1,3}){3}$", src_ip):
+                self._json(400, {"error": "invalid src_ip"})
+                return
+            self._json(200, apply_flow_mod(payload))
             return
         self._json(404, {"error": "not found"})
 
 
 def main():
     parser = argparse.ArgumentParser(description="WSL OVS OpenFlow lab agent")
-    parser.add_argument("--host", default="0.0.0.0")
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Bind address (default 127.0.0.1). Use 0.0.0.0 only if Windows→WSL needs it.",
+    )
     parser.add_argument("--port", type=int, default=8089)
+    parser.add_argument(
+        "--token",
+        default="",
+        help="Optional shared token; require X-API-Token / Bearer on POST /flow_mod (or env OF_AGENT_TOKEN)",
+    )
     args = parser.parse_args()
+    import os
+
+    token = (args.token or os.environ.get("OF_AGENT_TOKEN") or "").strip()
+    Handler.required_token = token or None  # type: ignore[attr-defined]
     print(f"[of_agent] listening on http://{args.host}:{args.port}")
+    if token:
+        print("[of_agent] POST /flow_mod requires Authorization Bearer / X-API-Token")
+    else:
+        print("[of_agent] WARNING: no token — loopback-only recommended")
     print("[of_agent] POST /flow_mod  GET /status /metrics /verify")
     ThreadingHTTPServer((args.host, args.port), Handler).serve_forever()
 

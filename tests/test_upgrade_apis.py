@@ -70,7 +70,7 @@ class TestUpgradeAPIs(unittest.TestCase):
         prev = self.client.get("/api/v1/export/report")
         self.assertEqual(prev.status_code, 200)
         self.assertIn("markdown", prev.get_json())
-        self.assertIn("SDN-ITS Console Snapshot", prev.get_json()["markdown"])
+        self.assertIn("Reversible Mitigation Testbed — Console Snapshot", prev.get_json()["markdown"])
 
         r = self.client.post("/api/v1/export/report", json={"name": "unit_test_report"})
         self.assertEqual(r.status_code, 200)
@@ -78,7 +78,7 @@ class TestUpgradeAPIs(unittest.TestCase):
         path = body["path"]
         self.assertTrue(os.path.exists(os.path.join(PROJECT_ROOT, path)))
         self.assertIn("markdown", body)
-        self.assertTrue(body["markdown"].startswith("# SDN-ITS Console Snapshot"))
+        self.assertTrue(body["markdown"].startswith("# Reversible Mitigation Testbed — Console Snapshot"))
         dl = self.client.get(f"/api/v1/export/report/file?path={path}")
         self.assertEqual(dl.status_code, 200)
 

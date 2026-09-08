@@ -9,6 +9,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from sdn_its.utils.security import validate_webhook_url
+
 
 class AlertNotifier:
     """Fire-and-forget JSON webhooks for containment events."""
@@ -20,11 +22,33 @@ class AlertNotifier:
         self._last_sent = 0.0
         self._lock = threading.Lock()
         self.history: list[dict[str, Any]] = []
+        self._reject_reason: str | None = None
+        self._rejected_url = False
+        if self.webhook_url:
+            ok, reason = validate_webhook_url(self.webhook_url)
+            if not ok:
+                self._reject_reason = reason
+                self._rejected_url = True
+                self.webhook_url = ""
+                self.enabled = False
 
     def configure(self, webhook_url: str | None = None, enabled: bool | None = None) -> dict[str, Any]:
         with self._lock:
+            self._reject_reason = None
+            self._rejected_url = False
             if webhook_url is not None:
-                self.webhook_url = webhook_url
+                raw = str(webhook_url or "").strip()
+                if raw:
+                    ok, reason = validate_webhook_url(raw)
+                    if not ok:
+                        self.webhook_url = ""
+                        self.enabled = False
+                        self._reject_reason = reason
+                        self._rejected_url = True
+                    else:
+                        self.webhook_url = raw
+                else:
+                    self.webhook_url = ""
             if enabled is not None:
                 self.enabled = bool(enabled and self.webhook_url)
             elif webhook_url is not None:
@@ -38,10 +62,19 @@ class AlertNotifier:
             "min_interval_s": self.min_interval_s,
             "deliveries": len(self.history),
             "last": self.history[-1] if self.history else None,
+            "rejected_url": self._rejected_url,
+            "reject_reason": self._reject_reason,
         }
 
     def notify(self, event: dict[str, Any]) -> None:
         if not self.enabled or not self.webhook_url:
+            return
+        ok, reason = validate_webhook_url(self.webhook_url)
+        if not ok:
+            with self._lock:
+                self._rejected_url = True
+                self._reject_reason = reason
+                self.enabled = False
             return
         now = time.time()
         with self._lock:

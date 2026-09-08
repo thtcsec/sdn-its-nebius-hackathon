@@ -98,15 +98,23 @@ def make_http_agent_backend(base_url: str | None = None) -> Callable:
     }
 
     def _get(path: str) -> dict[str, Any]:
-        with urllib.request.urlopen(f"{url}{path}", timeout=2.0) as resp:
+        req = urllib.request.Request(f"{url}{path}", method="GET")
+        token = (os.environ.get("OF_AGENT_TOKEN") or "").strip()
+        if token:
+            req.add_header("X-API-Token", token)
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
             return json.loads(resp.read().decode("utf-8"))
 
     def _post(path: str, payload: dict[str, Any]) -> dict[str, Any]:
         data = json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        token = (os.environ.get("OF_AGENT_TOKEN") or "").strip()
+        if token:
+            headers["X-API-Token"] = token
         req = urllib.request.Request(
             f"{url}{path}",
             data=data,
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=3.0) as resp:
@@ -173,7 +181,11 @@ def refresh_http_agent(adapter: dict[str, Any]) -> dict[str, Any]:
     if not url:
         return {"ok": False, "error": "no agent url"}
     try:
-        with urllib.request.urlopen(f"{url}/status", timeout=2.0) as resp:
+        req = urllib.request.Request(f"{url}/status", method="GET")
+        token = (os.environ.get("OF_AGENT_TOKEN") or "").strip()
+        if token:
+            req.add_header("X-API-Token", token)
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
             payload = json.loads(resp.read().decode("utf-8"))
         adapter["connected"] = True
         adapter["agent"] = payload

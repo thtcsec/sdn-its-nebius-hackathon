@@ -10,10 +10,11 @@ from sdn_its.ai.tcn_gru import TCNGRUResilienceModel
 from sdn_its.telemetry import LABEL_MAPPING
 
 
-def load_model(
+def load_checkpoint(
     checkpoint_path: str = "models/checkpoints/tcn_gru_best.pt",
     device: torch.device | None = None,
-) -> tuple[TCNGRUResilienceModel, float]:
+) -> tuple[TCNGRUResilienceModel, float, dict[str, Any]]:
+    """Load model + τ + raw checkpoint dict (single torch.load)."""
     device = device or torch.device("cpu")
     from pathlib import Path
 
@@ -30,6 +31,14 @@ def load_model(
     tau = float(ckpt.get("tau_threshold", 0.5))
     model.to(device)
     model.eval()
+    return model, tau, ckpt
+
+
+def load_model(
+    checkpoint_path: str = "models/checkpoints/tcn_gru_best.pt",
+    device: torch.device | None = None,
+) -> tuple[TCNGRUResilienceModel, float]:
+    model, tau, _ckpt = load_checkpoint(checkpoint_path, device)
     return model, tau
 
 

@@ -1,6 +1,8 @@
-host: "0.0.0.0"
+# Loopback by default — set SDN_BIND_HOST=0.0.0.0 or SDN_BIND_LAN=1 for LAN demos.
+# When LAN-bound, set SDN_API_TOKEN and pass Authorization: Bearer … on mutating calls.
+host: "127.0.0.1"
 port: 8080
 rollback_check_interval: 2.0
 default_cooldown_seconds: 30.0
-# mock | queue | ryu  (overridden by env SDN_OF_BACKEND)
+# mock | queue | ryu | http  (overridden by env SDN_OF_BACKEND)
 of_backend: mock

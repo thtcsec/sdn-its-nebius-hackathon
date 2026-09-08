@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 from sdn_its.ai.attribution import feature_attribution
-from sdn_its.ai.infer import load_model
+from sdn_its.ai.infer import load_checkpoint
 from sdn_its.telemetry.schema import FEATURE_COLUMNS, LABEL_MAPPING
 from sdn_its.utils.paths import PROJECT_ROOT
 
@@ -74,10 +74,9 @@ class LiveScorer:
         try:
             if not Path(self.checkpoint).is_file():
                 raise FileNotFoundError(f"checkpoint missing: {self.checkpoint}")
-            model, tau = load_model(self.checkpoint, self._device)
+            model, tau, ckpt = load_checkpoint(self.checkpoint, self._device)
             self._model = model
             self._tau = float(tau)
-            ckpt = torch.load(self.checkpoint, map_location=self._device, weights_only=False)
             self._mu = float(ckpt.get("mu_re", 0.0))
             self._std = float(ckpt.get("std_re", 1.0) or 1.0)
             if "tau_threshold" in ckpt:

@@ -1,0 +1,25 @@
+[Script Info]
+Title: IEDE console demo EN
+ScriptType: v4.00+
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+PlayResX: 1440
+PlayResY: 972
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,22,&H00FFFFFF,&H000000FF,&H00101010,&H00000000,0,0,0,0,100,100,0,0,1,1.4,0,2,24,24,26,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:02.90,0:00:07.10,Default,,0,0,0,,MODEL loaded · OF·mock · NET·NO EVIDENCE
+Dialogue: 0,0:00:07.10,0:00:12.90,Default,,0,0,0,,Evidence strip · τ≈77.9 · read MODEL / OF / NET first
+Dialogue: 0,0:00:12.90,0:00:21.40,Default,,0,0,0,,Lab OFF · scenario override ON · demo injects enabled
+Dialogue: 0,0:00:21.40,0:00:28.00,Default,,0,0,0,,Scroll to cameras · same RSU-zone physical context
+Dialogue: 0,0:00:28.00,0:00:33.00,Default,,0,0,0,,Live RTSP=3 · tracks≈2 · context only (not veh/h)
+Dialogue: 0,0:00:33.00,0:00:38.50,Default,,0,0,0,,Replay rush + flood · dominance=0.30
+Dialogue: 0,0:00:38.50,0:00:43.60,Default,,0,0,0,,Fusion → preserve_rush_hour · avoid false hard-block
+Dialogue: 0,0:00:43.60,0:00:48.50,Default,,0,0,0,,Stable cam + dominance=0.85 · network-originated case
+Dialogue: 0,0:00:48.50,0:00:52.50,Default,,0,0,0,,Fusion → temporary_drop · OF·mock intent (not switch)
+Dialogue: 0,0:00:52.50,0:00:54.90,Default,,0,0,0,,Detect → fuse → temporary contain → rollback

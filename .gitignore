@@ -86,6 +86,13 @@ models/detectors/*.pt
 !models/detectors/.gitkeep
 !configs/cameras.local.yaml.example
 
+# Large demo media / slide decks (keep captions + small previews)
+artifacts/demo_video/*.mp4
+artifacts/demo_video/*.webm
+artifacts/demo_video/raw/
+*.pptx
+IEDE*.pdf
+
 # Experiment run dumps (keep YAML + .gitkeep structure)
 experiments/*/results/*
 !experiments/*/results/.gitkeep

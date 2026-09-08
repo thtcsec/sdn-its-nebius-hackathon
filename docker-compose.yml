@@ -13,15 +13,17 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     ports:
-      - "8080:8080"
+      # Host loopback only — avoid exposing the research console on all interfaces.
+      - "127.0.0.1:8080:8080"
     environment:
       SDN_CAMERAS_CONFIG: /app/configs/cameras.yaml
+      SDN_BIND_HOST: "0.0.0.0"
     volumes:
       - ./models:/app/models
       - ./configs:/app/configs
       - ./artifacts:/app/artifacts
       - ./tmp/camera_frames:/app/tmp/camera_frames
-    command: ["python", "-m", "api.app", "--port", "8080"]
+    command: ["python", "-m", "api.app", "--host", "0.0.0.0", "--port", "8080"]
 
   telemetry:
     build:

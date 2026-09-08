@@ -1,0 +1,39 @@
+1
+00:00:02,900 --> 00:00:07,100
+MODEL loaded · OF·mock · NET·NO EVIDENCE
+
+2
+00:00:07,100 --> 00:00:12,900
+Evidence strip · τ≈77.9 · read MODEL / OF / NET first
+
+3
+00:00:12,900 --> 00:00:21,400
+Lab OFF · scenario override ON · demo injects enabled
+
+4
+00:00:21,400 --> 00:00:28,000
+Scroll to cameras · same RSU-zone physical context
+
+5
+00:00:28,000 --> 00:00:33,000
+Live RTSP=3 · tracks≈2 · context only (not veh/h)
+
+6
+00:00:33,000 --> 00:00:38,500
+Replay rush + flood · dominance=0.30
+
+7
+00:00:38,500 --> 00:00:43,600
+Fusion → preserve_rush_hour · avoid false hard-block
+
+8
+00:00:43,600 --> 00:00:48,500
+Stable cam + dominance=0.85 · network-originated case
+
+9
+00:00:48,500 --> 00:00:52,500
+Fusion → temporary_drop · OF·mock intent (not switch)
+
+10
+00:00:52,500 --> 00:00:54,900
+Detect → fuse → temporary contain → rollback

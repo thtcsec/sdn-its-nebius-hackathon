@@ -15,7 +15,7 @@ def _load_runtime_settings(controller=None) -> dict:
     out = {
         "project": {"name": "sdn-its-resilience-ai", "version": "0.2.0"},
         "controller": {
-            "host": "0.0.0.0",
+            "host": "127.0.0.1",
             "port": 8080,
             "rollback_check_interval": 2.0,
             "default_cooldown_seconds": 30.0,

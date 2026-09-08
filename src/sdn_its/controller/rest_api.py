@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections import deque
 from typing import TYPE_CHECKING, Any
 
 from sdn_its.controller.flow_manager import FlowRuleManager
@@ -10,6 +11,7 @@ from sdn_its.controller.of_backend import backend_status, resolve_of_backend
 from sdn_its.mitigation.containment import FlowRule
 from sdn_its.mitigation.policy_engine import PolicyEngine
 from sdn_its.utils.alerts import AlertNotifier
+from sdn_its.utils.security import is_loopback_bind, resolve_bind_host
 
 if TYPE_CHECKING:
     from flask import Flask
@@ -20,13 +22,13 @@ class ResilienceSDNController:
 
     def __init__(
         self,
-        host: str = "0.0.0.0",
+        host: str | None = None,
         port: int = 8080,
         app: Flask | None = None,
         create_flask: bool = True,
         of_backend: str | None = None,
     ):
-        self.host = host
+        self.host = resolve_bind_host(host)
         self.port = port
         self.of_backend_name, of_cb = resolve_of_backend(of_backend)
         self.flow_mgr = FlowRuleManager(
@@ -51,11 +53,13 @@ class ResilienceSDNController:
             "of_backend": self.of_backend_name,
             "network_evidence": False,
             "start_time": time.time(),
+            "bind_host": self.host,
+            "loopback_only": is_loopback_bind(self.host),
         }
         self.last_fusion: dict[str, Any] | None = None
-        self.policy_latency_samples_ms: list[float] = []
-        self.infer_latency_samples_ms: list[float] = []
-        self.event_trace: list[dict[str, Any]] = []
+        self.policy_latency_samples_ms: deque[float] = deque(maxlen=500)
+        self.infer_latency_samples_ms: deque[float] = deque(maxlen=500)
+        self.event_trace: deque[dict[str, Any]] = deque(maxlen=200)
         self.runtime_settings: dict[str, Any] = {
             "tau": 53.12,
             "k_sigma": 2.0,
@@ -78,7 +82,7 @@ class ResilienceSDNController:
         self.notifier = AlertNotifier()
         # Backward-compat name used by latency_cdf — POLICY path only
         self.latency_samples_ms = self.policy_latency_samples_ms
-        self.mitigation_log: list[dict[str, Any]] = []
+        self.mitigation_log: deque[dict[str, Any]] = deque(maxlen=200)
         self.app = app
         self.stats["network_evidence"] = self.of_backend_name not in {"mock", ""}
         if self.app is not None:
@@ -185,10 +189,17 @@ class ResilienceSDNController:
             except Exception:
                 pass
         if "webhook_url" in patch or "webhook_enabled" in patch:
-            self.notifier.configure(
+            status = self.notifier.configure(
                 webhook_url=self.runtime_settings.get("webhook_url"),
                 enabled=bool(self.runtime_settings.get("webhook_enabled")),
             )
+            # Reflect SSRF rejection in runtime settings so the console stays honest
+            if status.get("rejected_url"):
+                self.runtime_settings["webhook_url"] = ""
+                self.runtime_settings["webhook_enabled"] = False
+                self.runtime_settings["webhook_error"] = status.get("reject_reason")
+            else:
+                self.runtime_settings.pop("webhook_error", None)
         return dict(self.runtime_settings)
 
     def handle_alert(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -271,8 +282,6 @@ class ResilienceSDNController:
 
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         self.policy_latency_samples_ms.append(elapsed_ms)
-        if len(self.policy_latency_samples_ms) > 500:
-            del self.policy_latency_samples_ms[:-500]
 
         of_after = self.openflow_status(refresh=True)
         last_mods = list(of_after.get("last_mods") or [])
@@ -313,8 +322,6 @@ class ResilienceSDNController:
             else "NO NETWORK EVIDENCE — rules are in-memory / mock unless SDN_OF_BACKEND=http|ryu",
         }
         self.event_trace.append(trace)
-        if len(self.event_trace) > 200:
-            self.event_trace = self.event_trace[-200:]
 
         payload = {
             "status": "SUCCESS",
@@ -362,8 +369,6 @@ class ResilienceSDNController:
                 "of_last_mods": last_mods[-2:],
             }
         )
-        if len(self.mitigation_log) > 200:
-            self.mitigation_log = self.mitigation_log[-200:]
 
         if result.applied_rules or result.false_positive_avoided:
             self.stats["webhook_events"] += 1
@@ -384,5 +389,10 @@ class ResilienceSDNController:
             from api.app import create_app
 
             self.app = create_app(controller=self)
-        print(f"[*] Starting SDN Resilience Controller REST API on {self.host}:{self.port}...")
+        if not is_loopback_bind(self.host):
+            print(
+                f"[!] Binding {self.host}:{self.port} (LAN). "
+                "Set SDN_API_TOKEN for mutating API auth; prefer SDN_BIND_HOST=127.0.0.1 for local demos."
+            )
+        print(f"[*] Starting SDN Resilience Controller REST API on http://{self.host}:{self.port}/ ...")
         self.app.run(host=self.host, port=self.port, debug=debug, use_reloader=False)
