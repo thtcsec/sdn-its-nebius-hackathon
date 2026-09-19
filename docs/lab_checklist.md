@@ -112,8 +112,12 @@ wsl -d Ubuntu -u root -- bash /mnt/d/tu_projects/sdn-its-resilience-ai/scripts/r
 # Terminal B — Windows: API talks to WSL of_agent
 $env:SDN_OF_BACKEND = "http"
 $env:OF_AGENT_URL = "http://127.0.0.1:8089"
+# Optional shared secret (match agent --token / OF_AGENT_TOKEN):
+# $env:OF_AGENT_TOKEN = "lab-secret"
 .\.venv\Scripts\python.exe -m api.app --port 8080
 ```
+
+`wsl_of_agent` defaults to **`127.0.0.1:8089`**. Pass `--host 0.0.0.0` only if needed; prefer `--token` / `OF_AGENT_TOKEN` for `POST /flow_mod`.
 
 Smoke (all in WSL):
 
@@ -127,8 +131,9 @@ See also: [deployment.md](deployment.md), `sdn_its.controller.of_backend`, `scri
 
 | Exp | Compare | Must measure | Status |
 |-----|---------|--------------|--------|
-| **A** Containment | none / permanent DROP / temporary DROP+rollback | attack/legit ICMP delivery, install_ms, recovery_ms, dump-flows verify | **Done** — `.\scripts\run_exp_a.ps1` → `artifacts/results/exp_a/exp_a_metrics.json` |
-| **B** Rush-hour false block | RE-τ / classifier / classifier+safety policy | false-block rate, legitimate delivery | TODO |
-| **C** Mixed | rush hour then PacketIn flood | preserve rush hour **and** contain hidden flood | TODO |
+| **A** Containment | none / permanent DROP / temporary DROP+rollback | attack/legit ICMP delivery, install_ms, recovery_ms, dump-flows verify | **Done** — `.\scripts\run_exp_a.ps1` → `artifacts/results/exp_a/` |
+| **B/C** Fusion policy | camera×network matrix (rush / flood / mixed) | preserve vs temporary DROP decisions | **Done (rules)** — `scripts/exp_bc_camera_fusion.py` → `artifacts/results/exp_bc/` (not live FP-reduction claim) |
+| **D** Tracker phases | graded camera/tracker × fusion | evidence grades / honesty fields | **Done (graded)** — `scripts/exp_d_camera_containment.py` → `artifacts/results/exp_d/` |
+| Live false-block @ scale | RE-τ / classifier / fusion on city traces | false-block rate, PacketIn↓ | TODO |
 
 Exp A metrics are **data-plane ICMP ratios** (honest proxy). PacketIn/s still needs Ryu. Console: `GET /api/v1/lab/evidence`.

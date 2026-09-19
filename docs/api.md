@@ -1,6 +1,19 @@
 # REST API
 
-Base URL: `http://127.0.0.1:8080`
+Base URL: `http://127.0.0.1:8080`  
+Bind default: **`127.0.0.1`** (`configs/controller.yaml` / `SDN_BIND_HOST`). See [deployment.md](deployment.md).
+
+## Auth (optional)
+
+If `SDN_API_TOKEN` is set, **mutating** calls (`POST`/`PUT`/`PATCH`/`DELETE` under `/api/v1/…`) require:
+
+```http
+Authorization: Bearer <token>
+# or
+X-API-Token: <token>
+```
+
+`GET` status/console remain open for local demo. LAN bind (`0.0.0.0`) without a token is allowed but stamped `X-SDN-Warning`.
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -68,4 +81,6 @@ Lab mode (`runtime.lab_mode` / Settings): `scenario_override=false`, no simulati
 
 Supported `attack_type`: `DDoS_PacketIn_Flood`, `LOFT_LowRate_Attack`, `RSU_Link_Fault`, `RushHour_Burst`.
 
-Implementation: `api/routes.py`, `sdn_its.controller.rest_api`, `sdn_its.ai.live_scorer`.
+Webhooks (`settings.webhook_url`): SSRF guard blocks private/metadata hosts unless `SDN_WEBHOOK_ALLOW_PRIVATE=1`.
+
+Implementation: `api/routes.py`, `sdn_its.controller.rest_api`, `sdn_its.ai.live_scorer`, `sdn_its.utils.security`.

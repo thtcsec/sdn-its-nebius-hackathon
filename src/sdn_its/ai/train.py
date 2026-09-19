@@ -186,6 +186,9 @@ def train_model(
                 "arch": arch,
                 "seed": seed,
                 "k_sigma": k_sigma,
+                "alpha_ce": alpha,
+                "loss": "L = L_MSE(normal only) + alpha * L_CE",
+                "split_meta": getattr(loader, "last_split_meta", {}),
             }
             # Persist fitted StandardScaler so live inference matches training
             if getattr(loader, "scaler", None) is not None and hasattr(loader.scaler, "mean_"):
@@ -219,6 +222,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--seq_len", type=int, default=10)
     parser.add_argument("--k_sigma", type=float, default=2.0)
+    parser.add_argument("--alpha", type=float, default=1.0, help="CE weight in L = MSE + alpha*CE")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--arch",
@@ -247,6 +251,7 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         lr=args.lr,
         seq_len=args.seq_len,
+        alpha=args.alpha,
         k_sigma=args.k_sigma,
         seed=args.seed,
         arch=args.arch,

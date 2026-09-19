@@ -77,15 +77,31 @@ class TestTCNGRUModel(unittest.TestCase):
 
     def test_npz_and_resolve_loaders(self):
         temp_npz = "temp_windows.npz"
-        X = np.random.randn(40, 10, 10).astype(np.float32)
-        y = np.random.choice([0, 1], size=40).astype(np.int64)
-        np.savez(temp_npz, X=X, y=y)
+        Xtr = np.random.randn(20, 10, 10).astype(np.float32)
+        Xva = np.random.randn(10, 10, 10).astype(np.float32)
+        Xte = np.random.randn(10, 10, 10).astype(np.float32)
+        ytr = np.zeros(20, dtype=np.int64)
+        yva = np.zeros(10, dtype=np.int64)
+        yte = np.zeros(10, dtype=np.int64)
+        np.savez_compressed(
+            temp_npz,
+            X_train=Xtr,
+            y_train=ytr,
+            X_val=Xva,
+            y_val=yva,
+            X_test=Xte,
+            y_test=yte,
+            protocol="rows_before_window_v1",
+        )
         try:
             loader = TelemetryDataLoader(seq_len=10, batch_size=8)
             train_dl, val_dl, test_dl = loader.get_npz_loaders(temp_npz)
-            self.assertEqual(len(train_dl.dataset) + len(val_dl.dataset) + len(test_dl.dataset), 40)
+            self.assertEqual(len(train_dl.dataset), 20)
+            self.assertEqual(len(val_dl.dataset), 10)
+            self.assertEqual(len(test_dl.dataset), 10)
             train_dl2, _, _ = loader.resolve_loaders(npz_path=temp_npz, csv_path="missing.csv")
             self.assertGreater(len(train_dl2.dataset), 0)
+            self.assertIn("rows_before_window", str(loader.last_split_meta.get("protocol", "")))
         finally:
             if os.path.exists(temp_npz):
                 os.remove(temp_npz)

@@ -31,7 +31,7 @@ DATASETS = {
         ],
     },
     "cicids2017": {
-        "title": "CSE-CIC-IDS2017 (ML-ready CSV mirror)",
+        "title": "CIC-IDS2017 (ML-ready CSV mirror)",
         "raw_dir": "datasets/raw/cicids2017",
         "kaggle": "chethuhn/network-intrusion-dataset",
         "huggingface": {

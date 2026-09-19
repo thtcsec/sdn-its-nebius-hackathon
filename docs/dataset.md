@@ -5,7 +5,7 @@ Public datasets are **not** committed to git. Download into `datasets/raw/` then
 | Dataset | Purpose | How to use |
 |---------|---------|------------|
 | **InSDN (real)** | SDN / OpenFlow intrusion flows (~344k rows) | `python scripts/download_dataset.py --name insdn` |
-| **CSE-CIC-IDS2017** | Cross-dataset holdout (HF, no Kaggle needed) | `python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare` |
+| **CIC-IDS2017** | Cross-dataset holdout (HF, no Kaggle needed) | `python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare` |
 | **Synthetic V2X** | RushHour / RSU fault labels | `prepare_data.py --source synthetic` (fallback only) |
 
 ## Cross-dataset (InSDN → CIC)

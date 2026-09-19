@@ -16,17 +16,59 @@ from sdn_its.utils.config import load_config
 from sdn_its.utils.paths import PROJECT_ROOT, ensure_dir
 
 
-def _write_windows_npz(canonical: pd.DataFrame, seq_len: int, out_path: Path):
+def _write_windows_npz(
+    canonical: pd.DataFrame,
+    seq_len: int,
+    out_path: Path,
+    *,
+    train_ratio: float = 0.7,
+    val_ratio: float = 0.15,
+    seed: int = 42,
+):
+    """Split raw rows first, then build windows inside each partition (no overlap leakage)."""
+    from sdn_its.telemetry.feature_extractor import (
+        SPLIT_PROTOCOL,
+        build_windows_from_rows,
+        row_partition_bounds,
+    )
+
     X = canonical[FEATURE_COLUMNS].values.astype(np.float32)
     y = canonical["label"].values.astype(np.int64)
-    if len(X) < seq_len:
-        raise ValueError(f"Need >= {seq_len} rows to build windows, got {len(X)}")
-    Xw, yw = [], []
-    for i in range(len(X) - seq_len + 1):
-        Xw.append(X[i : i + seq_len])
-        yw.append(y[i + seq_len - 1])
-    np.savez_compressed(out_path, X=np.array(Xw, dtype=np.float32), y=np.array(yw, dtype=np.int64))
-    return len(Xw)
+    if len(X) < seq_len * 3:
+        raise ValueError(f"Need enough rows for split-before-window, got {len(X)}")
+
+    bounds = row_partition_bounds(len(X), train_ratio, val_ratio, seq_len)
+    parts = {}
+    for name in ("train", "val", "test"):
+        a, b = bounds[name]
+        Xw, yw = build_windows_from_rows(X[a:b], y[a:b], seq_len)
+        parts[name] = (Xw, yw)
+        if len(Xw) == 0:
+            raise ValueError(f"Partition {name} produced 0 windows (rows {a}:{b})")
+
+    np.savez_compressed(
+        out_path,
+        X_train=parts["train"][0],
+        y_train=parts["train"][1],
+        X_val=parts["val"][0],
+        y_val=parts["val"][1],
+        X_test=parts["test"][0],
+        y_test=parts["test"][1],
+        # Legacy concat for older scripts that only read X/y (loader still gap-splits)
+        X=np.concatenate([parts["train"][0], parts["val"][0], parts["test"][0]], axis=0),
+        y=np.concatenate([parts["train"][1], parts["val"][1], parts["test"][1]], axis=0),
+        protocol=SPLIT_PROTOCOL,
+        seq_len=np.asarray(seq_len),
+        seed=np.asarray(seed),
+        train_ratio=np.asarray(train_ratio),
+        val_ratio=np.asarray(val_ratio),
+        gap_rows=np.asarray(bounds["gap"][0]),
+        row_bounds_train=np.asarray(bounds["train"]),
+        row_bounds_val=np.asarray(bounds["val"]),
+        row_bounds_test=np.asarray(bounds["test"]),
+    )
+    total = sum(len(parts[n][0]) for n in ("train", "val", "test"))
+    return total, {n: int(len(parts[n][0])) for n in ("train", "val", "test")}
 
 
 def _generate_insdn_shaped_sample(n: int = 400, seed: int = 42) -> pd.DataFrame:
@@ -208,12 +250,16 @@ def main():
         "insdn": "insdn_windows.npz",
         "cic": "cic_windows.npz",
     }[source]
-    n_win = _write_windows_npz(full, args.seq_len, processed_dir / npz_name)
-    print(f"[+] Wrote datasets/processed/{npz_name} windows={n_win}")
+    n_win, split_counts = _write_windows_npz(
+        full, args.seq_len, processed_dir / npz_name, seed=args.seed
+    )
+    print(f"[+] Wrote datasets/processed/{npz_name} windows={n_win} split={split_counts}")
 
     # Manifest
     manifest = processed_dir / "last_prepare.json"
     import json
+
+    from sdn_its.telemetry.feature_extractor import SPLIT_PROTOCOL
 
     manifest.write_text(
         json.dumps(
@@ -221,9 +267,16 @@ def main():
                 "source": source,
                 "rows": int(len(full)),
                 "windows": int(n_win),
+                "split_counts": split_counts,
                 "seq_len": args.seq_len,
+                "seed": args.seed,
+                "split_protocol": SPLIT_PROTOCOL,
                 "label_counts": {str(k): int(v) for k, v in full["label"].value_counts().items()},
                 "canonical_sample": str(canon_path.relative_to(PROJECT_ROOT)),
+                "note": (
+                    "Raw rows partitioned train/val/test before sliding windows; "
+                    "gap=(seq_len-1) rows between partitions; scaler fit at train time on train only."
+                ),
             },
             indent=2,
         ),

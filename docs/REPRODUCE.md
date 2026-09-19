@@ -20,6 +20,11 @@ tell **MODEL** output from **SIMULATION**.
 **Not in git (by design):** `.venv`, `datasets/raw/`, large `*.npz`, `*.pt` checkpoints.
 Train locally or pack with `.\scripts\package.ps1 -IncludeCheckpoint`.
 
+Split / metrics honesty: see [METHODOLOGY.md](METHODOLOGY.md). Re-run
+`prepare_data` → `train` → `evaluate` → `sync_artifacts.ps1` after the
+`rows_before_window_v1` protocol before treating Acc/F1 as final. Cross-dataset
+name is **CIC-IDS2017** (`cicids2017`).
+
 ## One-command paper tables
 
 ```powershell

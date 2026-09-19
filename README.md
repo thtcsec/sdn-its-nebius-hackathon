@@ -108,9 +108,10 @@ pip install -e ".[dev]"
 # → http://127.0.0.1:8080/
 ```
 
-Defaults: **Lab mode on**, no scenario label cheat, no ambient fake RE, research theme.  
+Defaults: **Lab mode on**, bind **`127.0.0.1`**, no scenario label cheat, no ambient fake RE, research theme.  
 Evidence bar must show `MODEL · LOADED` before treating numbers as real.  
-If checkpoint missing → `DEGRADED` (inference disabled), not silent fake scores.
+If checkpoint missing → `DEGRADED` (inference disabled), not silent fake scores.  
+LAN demo: `SDN_BIND_HOST=0.0.0.0` + optional `SDN_API_TOKEN` — see [docs/deployment.md](docs/deployment.md).
 
 Camera preview needs **ffmpeg/ffprobe** on PATH and a live allow-list (`1.cameras.json` + `sample_frames: true`). Hard-refresh the console after starting; thumbnails reuse the last overwritten JPEG under `tmp/camera_frames/`.
 
@@ -189,7 +190,8 @@ Micro-benchmarks / latency methodology: [docs/benchmark.md](docs/benchmark.md).
 | [docs/REPRODUCE.md](docs/REPRODUCE.md) | Rebuild tables, modes, citing rules |
 | [docs/EVIDENCE.md](docs/EVIDENCE.md) | Console badges, artifact checklist |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System layers |
-| [docs/dataset.md](docs/dataset.md) | InSDN / CIC prepare |
+| [docs/dataset.md](docs/dataset.md) | InSDN / CIC-IDS2017 prepare |
+| [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | Split protocol, metrics defs, loss/α/k |
 | [docs/lab_checklist.md](docs/lab_checklist.md) | Mininet / OVS |
 | [docs/api.md](docs/api.md) | REST |
 | [docs/roadmap.md](docs/roadmap.md) | Done / next |

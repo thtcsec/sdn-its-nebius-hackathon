@@ -15,6 +15,7 @@ From the **repo root**:
 ```bash
 docker compose up -d --build
 # http://127.0.0.1:8080/
+# Host publish is loopback-only: 127.0.0.1:8080→container (see docker-compose.yml)
 ```
 
 With camera inventory mounted:

@@ -3,11 +3,10 @@
 **Project Title:** AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems  
 **Subtitle:** Network Anomaly Detection, Reversible Mitigation, and Camera-Assisted Physical Context  
 **Academic Context:** Innovation and Entrepreneurship Development Education (IEDE) Autumn Semester 2026, Tsinghua University, Beijing, China  
-**Author:** Trinh Hoang Tu
-**Project Advisor:** Professor Kris Singh (Visiting Professor at Tsinghua University; CEO at SRII, Silicon Valley)  
+**Author:** Trinh Hoang Tu  
+**Project Advisor:** Professor Kris Singh (Visiting Professor at Tsinghua University; CEO at SRII, Silicon Valley)
 
-> **Evidence note (repo):** Prefer classifier-head metrics under `artifacts/results/` (InSDN / CIC).  
-> Synthetic multiclass figures below are historical prototype numbers — not the primary claim.  
+> **Cite from** `artifacts/results/` (InSDN / CIC / Exp A–D).  
 > See [REPRODUCE.md](REPRODUCE.md) and [EVIDENCE.md](EVIDENCE.md). Console defaults to **Lab mode**.  
 > Camera = independent physical observation of the **same RSU service zone**; not a DDoS detector.
 
@@ -22,35 +21,48 @@ This research proposes **SDN mitigation informed by physical context from the sa
 
 ## Core Research Questions (RQs)
 - **RQ1**: How can SDN telemetry detect abnormal behavior in ITS networks without resource-intensive deep packet inspection (DPI)?
-- **RQ2**: Can a lightweight time-series AI model detect control-plane flooding, abnormal flow behavior, and network faults under edge latency constraints?
+- **RQ2**: Can a lightweight TCN-GRU model satisfy prototype edge-level latency and memory constraints while maintaining **useful in-domain** anomaly-detection performance?
 - **RQ3**: How can closed-loop SDN mitigation reduce controller overload while minimizing false-positive disruption to legitimate transportation services?
-- **RQ4**: How should public security datasets (InSDN, CSE-CIC-IDS2018) be combined with simulated VANET scenarios to approximate ITS network behavior?
+- **RQ4**: How should public security datasets (InSDN, **CIC-IDS2017**) be combined with simulated VANET scenarios to approximate ITS network behavior?
 
 ---
 
 ## Evaluation Metrics Summary
-1. **Detection Quality**: Accuracy, Precision, Recall, F1-Score, ROC-AUC.
-2. **False Alarm Control**: False Positive Rate (FPR) vs False Negative Rate (FNR).
-3. **Latency Benchmarks**: $IDL$ (Intrusion Detection Latency) and $T_{\text{response}}$ (End-to-End Response Latency).
-4. **Controller Resilience**: packet_in rate reduction, Controller CPU/Memory load.
-5. **Transportation Continuity**: Packet delivery ratio (PDR), RSU availability, service recovery time.
-6. **Mitigation Side Effects**: Legitimate flow drop rate, cooldown expiry rollback success rate.
+1. **Detection Quality**: Accuracy, Precision, Recall, F1-Score, ROC-AUC (classifier head).
+2. **False Alarm Control**: FPR / FNR; fusion-corrected false blocks (policy-level).
+3. **Latency**: $t_{inference}$, $IDL$, $T_{\text{response}}$ (tracked eval path).
+4. **Controller / dataplane**: PacketIn proxies where available; ICMP delivery ratios (Exp A).
+5. **Transportation continuity**: Legitimate delivery under temporary vs permanent DROP.
+6. **Mitigation side effects**: Cooldown rollback success; rush-hour preserve path.
 
 ---
 
-## 🔬 Prototype Implementation & Benchmarking Results
+## Tracked prototype snapshot (primary claims)
 
-The TCN-GRU model was trained on synthetic edge network V2X telemetry sequences ($L = 10$ sequence length, $10$ features) and evaluated under cybersecurity stressor injections (DDoS, LOFT, Link Faults, and RushHour surges).
+Numbers below are from tracked JSON under `artifacts/results/` (refresh via `scripts/sync_artifacts.ps1`).  
+Do **not** cite older synthetic multiclass “97% / 100%” prototype figures.
 
-### 1. Detection Quality (After Threshold Refinement)
-- **Anomaly Detection Accuracy**: **97.33%**
-- **Anomaly Detection Recall**: **100.00%** (All injected cyber-attacks and faults successfully triggered the adaptive threshold $\tau = \mu_{RE} + 2\sigma_{RE}$)
-- **Anomaly Detection Precision**: **93.85%**
-- **Anomaly Detection F1-Score**: **96.83%**
-- **Multi-Class Classification Accuracy**: **100.00%** (Perfect class separation across Normal, DDoS, LOFT, Link Fault, and RushHour classes using the Softmax MLP head)
+### 1. Classifier head — **binary** Normal vs Anomaly (not 5-class macro)
+- **Acc** ≈ **96.2%** · **F1** ≈ **0.977** · **AUC** ≈ **0.977**  
+  Definition: `cls_binary_*` = `(argmax class > 0)`; sklearn `average="binary"`.  
+  `roc_auc` = binary score `sum(P(class ≠ Normal))`.  
+  Source: `artifacts/results/exp_insdn/metrics.json`.  
+  See [METHODOLOGY.md](METHODOLOGY.md) for macro/weighted multiclass exports.
 
-### 2. Edge Latency Benchmarks
-- **Model Inference Latency ($t_{inference}$)**: **0.19 ms** (on CPU, extremely edge-compatible)
-- **Intrusion Detection Latency ($IDL$)**: **6.39 ms** (includes sFlow push collection and feature pre-processing)
-- **End-to-End Mitigation Response ($T_{response}$)**: **9.89 ms** (includes Flask REST API decision, OpenFlow rule push, and OVS switch flow table update)
-- **V2X Latency Requirement**: Meets the safety-critical sub-10ms requirement for cooperative ITS networks.
+### 2. Cross-dataset (InSDN → CIC-IDS2017 adapt)
+- Zero-shot holdout Acc ≈ **71.5%** → adapted Acc ≈ **98.6%** (ΔF1 ≈ **+0.35**)  
+  Source: `artifacts/results/cross_dataset/adapted_metrics.json`.
+  Dataset id: `cicids2017` (not CSE-CIC-IDS2018).
+
+### 3. Latency (same InSDN eval export)
+- **Inference** ≈ **0.25 ms** · **IDL** ≈ **6.45 ms** · **$T_{\text{response}}$** ≈ **9.95 ms**  
+  Source: `exp_insdn/metrics.json` (`inference_ms`, `idl_ms`, `t_response_ms`).
+
+### 4. Lab evidence (scripts, not the console mock path)
+| Exp | Claim | Artifact |
+|-----|-------|----------|
+| **A** | Reversible DROP vs permanent / none (ICMP + ovs-ofctl) | `artifacts/results/exp_a/` |
+| **B/C** | Explainable camera×network fusion rules | `artifacts/results/exp_bc/` |
+| **D** | Graded camera/tracker × fusion phases | `artifacts/results/exp_d/` |
+
+Honesty: Windows default OpenFlow is **mock** (`NET · NO EVIDENCE`). Real switch evidence needs `SDN_OF_BACKEND=http|ryu` + lab checklist.

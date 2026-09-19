@@ -138,6 +138,20 @@ def evaluate_checkpoint(
     except ValueError:
         roc_auc = float("nan")
 
+    # Multiclass reporting (explicit averaging — do not conflate with cls_binary_*)
+    macro_p, macro_r, macro_f1, _ = precision_recall_fscore_support(
+        y_true_class_arr, y_pred_class_arr, average="macro", zero_division=0
+    )
+    weighted_p, weighted_r, weighted_f1, _ = precision_recall_fscore_support(
+        y_true_class_arr, y_pred_class_arr, average="weighted", zero_division=0
+    )
+    try:
+        macro_ovr_auc = float(
+            roc_auc_score(y_true_class_arr, y_probs_arr, multi_class="ovr", average="macro")
+        )
+    except ValueError:
+        macro_ovr_auc = float("nan")
+
     print("\n--- ANOMALY DETECTION (RE threshold τ) ---")
     print(f"Accuracy:    {acc * 100:.2f}%")
     print(f"Precision:   {prec * 100:.2f}%")
@@ -151,6 +165,10 @@ def evaluate_checkpoint(
     print(f"F1-Score:    {f1_c * 100:.2f}%")
     print(f"ROC-AUC:     {roc_auc:.4f}")
 
+    print("\n--- MULTI-CLASS (explicit averaging) ---")
+    print(f"Macro P/R/F1:     {macro_p*100:.2f}% / {macro_r*100:.2f}% / {macro_f1*100:.2f}%")
+    print(f"Weighted P/R/F1:  {weighted_p*100:.2f}% / {weighted_r*100:.2f}% / {weighted_f1*100:.2f}%")
+    print(f"Macro ROC-AUC OvR:{macro_ovr_auc:.4f}")
     print("\n--- MULTI-CLASS FAULT CLASSIFICATION REPORT ---")
     present = sorted(set(y_true_class_arr.tolist()) | set(y_pred_class_arr.tolist()))
     target_names = [LABEL_MAPPING.get(i, str(i)) for i in present]
@@ -194,12 +212,20 @@ def evaluate_checkpoint(
     print(f"6. OVS Switch Apply (t_apply):         {t_apply:.2f} ms")
     print(f"==> End-to-End Response (T_response):  {t_response:.3f} ms")
 
+    split_meta = getattr(loader, "last_split_meta", {}) or {}
     metrics = {
         "arch": arch,
         "checkpoint": checkpoint_path,
         "npz_path": npz_path,
         "csv_path": csv_path,
         "n_test": int(len(y_true_class_arr)),
+        "metric_definitions": {
+            "cls_binary_*": "Binary Normal vs Anomaly from argmax(class)>0; sklearn average=binary",
+            "roc_auc": "Binary ROC-AUC using score=sum(P(class!=Normal)); not multiclass OvR",
+            "macro_*": "sklearn average=macro over observed classes",
+            "weighted_*": "sklearn average=weighted over observed classes",
+            "macro_roc_auc_ovr": "sklearn multi_class=ovr average=macro",
+        },
         "binary_accuracy": float(acc),
         "binary_precision": float(prec),
         "binary_recall": float(rec),
@@ -209,10 +235,18 @@ def evaluate_checkpoint(
         "cls_binary_recall": float(rec_c),
         "cls_binary_f1": float(f1_c),
         "roc_auc": float(roc_auc) if roc_auc == roc_auc else None,
+        "macro_precision": float(macro_p),
+        "macro_recall": float(macro_r),
+        "macro_f1": float(macro_f1),
+        "weighted_precision": float(weighted_p),
+        "weighted_recall": float(weighted_r),
+        "weighted_f1": float(weighted_f1),
+        "macro_roc_auc_ovr": float(macro_ovr_auc) if macro_ovr_auc == macro_ovr_auc else None,
         "idl_ms": float(idl_latency),
         "t_response_ms": float(t_response),
         "inference_ms": avg_inference_ms,
         "tau": float(tau_threshold),
+        "split_meta": split_meta,
         "confusion_matrix": cm.tolist(),
         "labels": target_names,
     }
