@@ -140,8 +140,8 @@ def estimate_activity(image_path: Path) -> dict[str, Any]:
         "mean_luma": None,
     }
     try:
-        from PIL import Image
         import numpy as np
+        from PIL import Image
 
         im = Image.open(image_path).convert("L").resize((320, 180))
         arr = np.asarray(im, dtype=np.float32)

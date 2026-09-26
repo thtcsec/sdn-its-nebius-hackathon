@@ -213,7 +213,9 @@ class ResilienceSDNController:
         dpid = data["dpid"]
         src_ip = data.get("src_ip", "10.0.0.15")
         dst_ip = data.get("dst_ip")
-        attack_type = data["attack_type"]
+        attack_type = data.get("attack_type") or "Normal"
+        if not isinstance(attack_type, str):
+            attack_type = str(attack_type)
         prediction = data.get("prediction") or data.get("predicted_label")
         ground_truth = data.get("ground_truth")
         default_cd = float(self.runtime_settings.get("ddos_cooldown", 30.0))

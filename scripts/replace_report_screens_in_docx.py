@@ -121,7 +121,7 @@ def replace_media_blobs(docx_path: Path, mapping: dict[str, Path], out_path: Pat
         raise SystemExit(f"expected >=6 UI images in docx, found {len(ui_slots)}: {[p.name for p in ui_slots]}")
 
     # First 6 non-architecture images in rels order ≈ Fig 1–6 from original report
-    for slot, src in zip(ui_slots[:6], figs):
+    for slot, src in zip(ui_slots[:6], figs, strict=True):
         if not src.exists():
             raise SystemExit(f"missing screenshot: {src}")
         shutil.copyfile(src, slot)
@@ -251,11 +251,11 @@ def ensure_camera_figures(docx_path: Path) -> None:
 
 
 def main() -> None:
-    for k, p in REPLACEMENTS.items():
+    for _k, p in REPLACEMENTS.items():
         if not p.exists():
             raise SystemExit(f"missing {p}")
     print("media before:")
-    for name, path, size in media_map(DOC):
+    for name, _path, size in media_map(DOC):
         print(f"  {name}: {size}")
 
     tmp_out = ROOT / "Trinh Hoang Tu_3rd Version.screens_tmp.docx"

@@ -68,7 +68,6 @@ def main() -> int:
         # Stable + anomaly: raising stable_contain threshold → fewer contains at mid dominance
         stable_at_mid = _act(th_stable, stable, "DDoS_PacketIn_Flood", dominance=0.60)
 
-        false_preserve = rush_at_probe == "preserve_rush_hour"  # missed isolate when thr low enough to expect drop
         # When thr <= probe_dom, isolate branch should fire → temporary_drop expected
         expect_isolate = thr <= probe_dom
         false_preserve_risk = expect_isolate and rush_at_probe != "temporary_drop"

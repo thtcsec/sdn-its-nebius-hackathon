@@ -75,7 +75,7 @@ class IoUTracker:
             matched_t.add(tid)
             matched_d.add(di)
 
-        for ti, tid in enumerate(track_ids):
+        for _ti, tid in enumerate(track_ids):
             if tid in matched_t:
                 continue
             tr = self.tracks[tid]

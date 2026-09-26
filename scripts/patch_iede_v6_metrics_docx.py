@@ -8,6 +8,7 @@ from pathlib import Path
 
 import _bootstrap  # noqa: F401
 from docx import Document
+
 from sdn_its.utils.paths import PROJECT_ROOT
 
 SRC = PROJECT_ROOT / "Trinh Hoang Tu_6th Version.docx"

@@ -410,15 +410,16 @@ def register_routes(app: Flask) -> None:
             allow_simulation_fallback=allow_override,
         )
         alert_out = None
-        if do_alert:
+        attack_type = result.get("attack_type")
+        if do_alert and isinstance(attack_type, str) and attack_type:
             # In lab mode only alert when model/classifier says anomaly
-            if allow_override or result.get("is_anomaly") or result.get("attack_type") != "Normal":
+            if allow_override or result.get("is_anomaly") or attack_type != "Normal":
                 cooldown = controller.runtime_settings.get("ddos_cooldown", 12.0)
-                if "LOFT" in str(result["attack_type"]):
+                if "LOFT" in attack_type:
                     cooldown = controller.runtime_settings.get("loft_cooldown", 15.0)
-                if result["attack_type"] == "RushHour_Burst":
+                if attack_type == "RushHour_Burst":
                     cooldown = 0.0
-                if result["attack_type"] != "Normal" or allow_override:
+                if attack_type != "Normal" or allow_override:
                     wid = f"REP-WIN-{int(time.time() * 1000) % 100000}"
                     iid = f"REP-INF-{wid}"
                     result["window_id"] = wid
@@ -435,8 +436,8 @@ def register_routes(app: Flask) -> None:
                             "inference_id": iid,
                             "dpid": "0000000000000001",
                             "src_ip": data.get("src_ip", "10.0.0.15"),
-                            "attack_type": result["attack_type"],
-                            "prediction": result.get("predicted_label") or result["attack_type"],
+                            "attack_type": attack_type,
+                            "prediction": result.get("predicted_label") or attack_type,
                             "ground_truth": data.get("ground_truth") or result.get("ground_truth"),
                             "reconstruction_error": result["reconstruction_error"],
                             "confidence": 0.95,

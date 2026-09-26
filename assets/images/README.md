@@ -2,6 +2,8 @@
 
 Place architecture diagrams and paper figures here (`architecture.png`, `workflow.png`, `benchmark.png`, `logo.png`).
 
+Institutional marks used on the README live in `branding/` (`tsinghua.jpg`, `srii.jpg`).
+
 Generate topology preview:
 
 ```bash

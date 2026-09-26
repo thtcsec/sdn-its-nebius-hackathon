@@ -181,7 +181,7 @@ class VehicleDetector:
                 xyxy = r0.boxes.xyxy.tolist()
                 clss = r0.boxes.cls.tolist()
                 conf_list = r0.boxes.conf.tolist() if r0.boxes.conf is not None else [0.5] * len(xyxy)
-                for box, cls_id, score in zip(xyxy, clss, conf_list):
+                for box, cls_id, score in zip(xyxy, clss, conf_list, strict=False):
                     cid = int(cls_id)
                     bb = (float(box[0]), float(box[1]), float(box[2]), float(box[3]))
                     sc = float(score)

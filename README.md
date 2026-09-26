@@ -2,6 +2,14 @@
 
 **Network Anomaly Detection, Reversible Mitigation, and Camera-Assisted Physical Context**
 
+<p align="center">
+  <img src="assets/images/branding/tsinghua.jpg" alt="Tsinghua University" height="96" />
+  &nbsp;&nbsp;&nbsp;
+  <img src="assets/images/branding/srii.jpg" alt="Service Research and Innovation Institute" height="64" />
+</p>
+
+<p align="center"><sub>IEDE, Tsinghua University · Advisor affiliation: SRII</sub></p>
+
 **Proposed Category:** Transportation · AI · Internet Security · IoT · Cloud/Edge Computing
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)

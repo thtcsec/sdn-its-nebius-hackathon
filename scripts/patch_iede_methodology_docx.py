@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import _bootstrap  # noqa: F401
+
 from sdn_its.utils.paths import PROJECT_ROOT
 
 REPLACEMENTS = [
@@ -129,8 +130,8 @@ def _ensure_paragraph_after_heading(doc, heading_substr: str, body: str) -> bool
 
 
 def _fix_tables(doc) -> int:
-    from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
 
     n = 0
     for table in doc.tables:

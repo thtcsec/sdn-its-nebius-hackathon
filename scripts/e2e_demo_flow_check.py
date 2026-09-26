@@ -75,7 +75,6 @@ def main() -> int:
     print("    status:", json.dumps({k: st.get(k) for k in ("status", "model_loaded", "of_backend", "mode", "version") if k in st or True}, default=str)[:350])
 
     settings = get("/api/v1/settings")
-    runtime = settings.get("runtime") or settings.get("console_defaults") or settings
     print("    settings keys:", list(settings.keys())[:12])
 
     updated = post("/api/v1/settings", {"lab_mode": False, "scenario_override": True})

@@ -334,8 +334,8 @@ def record() -> tuple[Path, float, list[tuple[float, float, str]]]:
             )
         else:
             text = (
-                f"Summary: detect → fuse → temporary contain/rollback | "
-                f"Claim only what the evidence grade allows"
+                "Summary: detect → fuse → temporary contain/rollback | "
+                "Claim only what the evidence grade allows"
             )
         return (start, end, text)
 

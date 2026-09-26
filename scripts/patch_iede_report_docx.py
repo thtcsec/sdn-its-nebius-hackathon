@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import copy
 import shutil
 from pathlib import Path
 
@@ -218,14 +217,6 @@ def patch() -> Path:
     # --- Contributions ---
     contrib = find_para_exact(doc, "1.3 Contributions of This Prototype")
     if contrib is not None:
-        # find last bullet under contributions (before heading 2)
-        last = contrib
-        for p in doc.paragraphs:
-            if p == contrib:
-                continue
-            # walk after contrib until next Heading 1
-            # simpler: find the InSDN bullet
-            pass
         insdn = find_para_startswith(doc, "InSDN download/prepare")
         if insdn is not None and "Explainable camera" not in "\n".join(x.text or "" for x in doc.paragraphs):
             b1 = insert_bullet_after(
@@ -532,7 +523,7 @@ def verify(path: Path) -> None:
         ok = c in text
         print(f"  [{'OK' if ok else 'MISSING'}] {c}")
     # ensure doc opens and tables readable
-    for i, t in enumerate(doc.tables):
+    for _i, t in enumerate(doc.tables):
         _ = [[c.text for c in row.cells] for row in t.rows]
 
 

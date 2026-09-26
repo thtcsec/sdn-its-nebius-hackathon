@@ -185,7 +185,7 @@ def replace_nearest_extent(xml: str, caption_pos: int, cx: int, cy: int) -> str:
 
 
 def rebind_images() -> None:
-    for n, p in FIG_SRC.items():
+    for _n, p in FIG_SRC.items():
         if not p.exists():
             raise SystemExit(f"missing {p}")
     tmp = ROOT / "tmp_docx_rebind"
