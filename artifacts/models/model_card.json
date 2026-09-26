@@ -27,8 +27,9 @@
                           "0":  "Normal"
                       },
     "notes":  [
-                  "Prefer classifier-head binary metrics over RE-threshold alone.",
-                  "Synthetic 100% multiclass is not strong evidence — cite InSDN/CIC tables.",
+                  "Prefer classifier-head binary metrics (average=binary) over RE-threshold alone.",
+                  "InSDN holdout 2026-09-26 uses rows_before_window_v1, seed 42, n_test 7489.",
+                  "Best weights are pre-NaN epoch 8. Synthetic 100% multiclass is not evidence.",
                   "Checkpoint *.pt excluded from default zip; train or use -IncludeCheckpoint."
               ]
 }

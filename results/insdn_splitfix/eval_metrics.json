@@ -1,0 +1,55 @@
+{
+  "arch": "tcn_gru",
+  "checkpoint": "models/checkpoints/tcn_gru_best.pt",
+  "npz_path": "datasets/processed/insdn_windows.npz",
+  "csv_path": "datasets/sample/canonical_flows.csv",
+  "n_test": 7489,
+  "metric_definitions": {
+    "cls_binary_*": "Binary Normal vs Anomaly from argmax(class)>0; sklearn average=binary",
+    "roc_auc": "Binary ROC-AUC using score=sum(P(class!=Normal)); not multiclass OvR",
+    "macro_*": "sklearn average=macro over observed classes",
+    "weighted_*": "sklearn average=weighted over observed classes",
+    "macro_roc_auc_ovr": "sklearn multi_class=ovr average=macro"
+  },
+  "binary_accuracy": 0.20349846441447456,
+  "binary_precision": 0.851063829787234,
+  "binary_recall": 0.006668889629876626,
+  "binary_f1": 0.013234077750206782,
+  "cls_binary_accuracy": 0.960208305514755,
+  "cls_binary_precision": 0.9568772042321256,
+  "cls_binary_recall": 0.9951650550183394,
+  "cls_binary_f1": 0.9756456358287022,
+  "roc_auc": 0.9745587004297653,
+  "macro_precision": 0.9668478746979973,
+  "macro_recall": 0.9073746133575935,
+  "macro_f1": 0.9334829200295955,
+  "weighted_precision": 0.9608473657128612,
+  "weighted_recall": 0.960208305514755,
+  "weighted_f1": 0.9588571168658317,
+  "macro_roc_auc_ovr": null,
+  "idl_ms": 6.358697726038418,
+  "t_response_ms": 9.858697726038418,
+  "inference_ms": 0.15869772603841836,
+  "tau": 277.791748046875,
+  "split_meta": {
+    "protocol": "rows_before_window_v1",
+    "n_train": 34978,
+    "n_val": 7488,
+    "n_test": 7489,
+    "npz": "datasets/processed/insdn_windows.npz"
+  },
+  "confusion_matrix": [
+    [
+      1222,
+      269
+    ],
+    [
+      29,
+      5969
+    ]
+  ],
+  "labels": [
+    "Normal",
+    "DDoS_PacketIn_Flood"
+  ]
+}

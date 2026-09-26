@@ -15,7 +15,7 @@ Honest answers to the pre-submit methodology questions. Canonical code paths:
 
 New NPZs write `X_train/y_train/...` plus `protocol`. Legacy NPZs with only `X/y` use a **gap-aware window-index split** + train-only scaler and print a re-prepare warning.
 
-> Tracked Acc/F1/AUC under `artifacts/results/` were produced **before** this protocol landed. Cite them as preliminary until `prepare → train → evaluate → sync_artifacts` is re-run.
+Re-run on 2026-09-26 (`seed=42`, 50,000 InSDN rows): windows train 34,978 / val 7,488 / test 7,489. Best checkpoint is epoch 8 (loss became NaN from epoch 9; that checkpoint was not kept). Classifier-head binary test: Acc 96.02%, F1 0.976, AUC 0.975. Only Normal and DDoS appear in this subsample.
 
 ## 2. Cross-dataset name: CICIDS2017 (not CSE-CIC-IDS2018)
 

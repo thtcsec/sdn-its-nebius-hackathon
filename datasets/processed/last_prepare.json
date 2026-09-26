@@ -1,12 +1,19 @@
 {
-  "source": "cic",
-  "rows": 80000,
-  "windows": 79991,
-  "seq_len": 10,
-  "label_counts": {
-    "0": 55531,
-    "2": 15274,
-    "1": 9195
+  "source": "insdn",
+  "rows": 50000,
+  "windows": 49955,
+  "split_counts": {
+    "train": 34978,
+    "val": 7488,
+    "test": 7489
   },
-  "canonical_sample": "datasets\\sample\\canonical_flows.csv"
+  "seq_len": 10,
+  "seed": 42,
+  "split_protocol": "rows_before_window_v1",
+  "label_counts": {
+    "1": 40051,
+    "0": 9949
+  },
+  "canonical_sample": "datasets\\sample\\canonical_flows.csv",
+  "note": "Raw rows partitioned train/val/test before sliding windows; gap=(seq_len-1) rows between partitions; scaler fit at train time on train only."
 }

@@ -57,8 +57,9 @@ env/
 logs/*
 !logs/.gitkeep
 
-# Large / binary report dumps (keep markdown docs)
+# Large / binary report dumps (keep markdown docs + one canonical proposal)
 *.docx
+!docs/IEDE_Project_Report_Prototype.docx
 *.zip
 extracted_report.txt
 tmp/

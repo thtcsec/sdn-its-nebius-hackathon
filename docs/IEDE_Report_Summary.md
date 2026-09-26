@@ -43,19 +43,19 @@ Numbers below are from tracked JSON under `artifacts/results/` (refresh via `scr
 Do **not** cite older synthetic multiclass “97% / 100%” prototype figures.
 
 ### 1. Classifier head — **binary** Normal vs Anomaly (not 5-class macro)
-- **Acc** ≈ **96.2%** · **F1** ≈ **0.977** · **AUC** ≈ **0.977**  
-  Definition: `cls_binary_*` = `(argmax class > 0)`; sklearn `average="binary"`.  
-  `roc_auc` = binary score `sum(P(class ≠ Normal))`.  
-  Source: `artifacts/results/exp_insdn/metrics.json`.  
-  See [METHODOLOGY.md](METHODOLOGY.md) for macro/weighted multiclass exports.
+- **Acc 96.02%** · **Precision 95.69%** · **Recall 99.52%** · **F1 0.976** · **AUC 0.975**  
+  Holdout `n_test=7489` after `rows_before_window_v1` (seed 42; train 34978 / val 7488).  
+  Classes present: Normal and DDoS only. sklearn `average="binary"`.  
+  Source: `artifacts/results/exp_insdn/metrics.json` (rerun 2026-09-26).  
+  See [METHODOLOGY.md](METHODOLOGY.md).
 
-### 2. Cross-dataset (InSDN → CIC-IDS2017 adapt)
-- Zero-shot holdout Acc ≈ **71.5%** → adapted Acc ≈ **98.6%** (ΔF1 ≈ **+0.35**)  
-  Source: `artifacts/results/cross_dataset/adapted_metrics.json`.
-  Dataset id: `cicids2017` (not CSE-CIC-IDS2018).
+### 2. Cross-dataset (InSDN → CIC-IDS2017)
+- Full-file zero-shot: Acc **37.1%** · F1 **0.468** · AUC **0.521** (`cross_dataset/eval_metrics.json`).
+- Adaptation protocol: zero-shot-on-holdout Acc **71.5%** → adapted Acc **98.6%** (`adapted_metrics.json`).  
+  These are different splits. Dataset id: `cicids2017` (not CSE-CIC-IDS2018).
 
 ### 3. Latency (same InSDN eval export)
-- **Inference** ≈ **0.25 ms** · **IDL** ≈ **6.45 ms** · **$T_{\text{response}}$** ≈ **9.95 ms**  
+- **Inference** ≈ **0.16 ms** · **IDL** ≈ **6.36 ms** · **$T_{\text{response}}$** ≈ **9.86 ms**  
   Source: `exp_insdn/metrics.json` (`inference_ms`, `idl_ms`, `t_response_ms`).
 
 ### 4. Lab evidence (scripts, not the console mock path)
