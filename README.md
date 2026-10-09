@@ -1,193 +1,122 @@
-# AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems
+# SDN-ITS × Nebius × NVIDIA
 
-**Network Anomaly Detection, Reversible Mitigation, and Camera-Assisted Physical Context**
+**SOLO submission — Nebius x NVIDIA Global AI Hackathon**
 
-<p align="center">
-  <img src="assets/images/branding/tsinghua.jpg" alt="Tsinghua University" height="96" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="assets/images/branding/srii.jpg" alt="Service Research and Innovation Institute" height="64" />
-</p>
-
-<p align="center"><sub>IEDE, Tsinghua University · Advisor affiliation: SRII</sub></p>
-
-**Proposed Category:** Transportation · AI · Internet Security · IoT · Cloud/Edge Computing
+Extend **SDN-ITS Resilience AI** (network anomaly detection + reversible mitigation + same-zone camera context) with a **real NVIDIA open-source model** served through **Nebius Token Factory**.
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Academic Context](https://img.shields.io/badge/Tsinghua%20IEDE-Autumn%202026-purple.svg)](docs/IEDE_Report_Summary.md)
+[![Hackathon](https://img.shields.io/badge/Nebius%20x%20NVIDIA-SOLO-0ad4c8.svg)](HACKATHON.md)
+[![Repo](https://img.shields.io/badge/GitHub-private-lightgrey.svg)](https://github.com/thtcsec/sdn-its-nebius-hackathon)
 
-> **Official IEDE title unchanged** (see [docs/IEDE_Report_Summary.md](docs/IEDE_Report_Summary.md)).  
-> Narrative focus: **SDN mitigation informed by physical context from the same RSU zone**  
-> (camera = physical-context sensor, not a standalone vision/DDoS module).  
-> Pipeline: telemetry → inference → policy (+ optional same-zone camera context) → temporary OpenFlow → rollback.  
-> Default OpenFlow on Windows is **mock**. Author: Trinh Hoang Tu · Advisor: Prof. Kris Singh.
+**Author:** Trinh Hoang Tu · **Deadline:** 30 October 2026 · **Branch:** `hackathon/nebius-nvidia`
 
 ---
 
-## What this is / is not
+## What this repo is
 
-| Is | Is not |
-|----|--------|
-| **Reversible mitigation** testbed (Detect → temporary contain → rollback) | Proof that controller load / attack pps fell on a real switch |
-| Train/eval on **InSDN** + cross-dataset **CIC** adaptation | Claim that TCN-GRU beats simple baselines (current ablation does not) |
-| Lab console with honest KPI names + `NET · NO EVIDENCE` when mock | “134 mitigations” = 134 real network attacks |
-| Optional real **OVS** via WSL `of_agent` (`SDN_OF_BACKEND=http`) | Default Windows path installing verified OpenFlow rules |
-| Tracked **artifacts/results** + event trace IDs | End-to-end ITS latency / PacketIn evidence out of the box |
+| This repo | Not this repo |
+|-----------|----------------|
+| Hackathon working copy + public-facing submission target (starts **private**) | The IEDE research tree (`sdn-its-resilience-ai`) |
+| Base: Detect → temporary contain → rollback (+ optional camera fusion) | A claim that Nebius/Nemotron is already integrated |
+| Real Nebius inference only — no fake API calls or invented gains | Simulated model output presented as production evidence |
+| Demo mode keeps destructive OpenFlow disabled by default (`of_backend: mock`) | Proof of live switch PacketIn reduction out of the box |
 
-Honesty & reproduce: [docs/REPRODUCE.md](docs/REPRODUCE.md) · [docs/EVIDENCE.md](docs/EVIDENCE.md) · [docs/lab_checklist.md](docs/lab_checklist.md)
+Research / IEDE source of truth (separate folder, do not mix edits):  
+`D:\tu_projects\sdn-its-resilience-ai` · upstream: [thtcsec/sdn-its-resilience-ai](https://github.com/thtcsec/sdn-its-resilience-ai)
 
-### Camera-assisted fusion (same RSU-zone physical context)
-
-Not a video wall, **not** a DDoS detector, and **not** a pile of `CAMERA_*` env vars / hardcoded site cameras.
-Camera answers: *is abnormal **network** demand consistent with observable transportation activity in this zone?*
-
-- `configs/cameras.yaml` — `select_mode: first_n` (prefers DNS-reachable hosts; no inventory UUIDs in git)
-- Optional `configs/cameras.local.yaml` (**gitignored**) for explicit IDs
-- `1.cameras.json` — local inventory with RTSP URLs (**gitignored**)
-- Console labels are always **cam1 / cam2 / cam3** (place names never shown)
-- Worker probes RTSP health + quality (`stream_available` / `frame_fresh` / `scene_valid` / `analytics_valid`)
-- Live RTSP: **YOLOv8 + IoU tracker** (`detector_tracker_v1`) — tracks, occupancy, queue proxy
-- Fallback: edge-energy proxy only when detector off/fails
-- Optional annotated JPEG preview (`GET /api/v1/camera/<id>/preview`)
-
-```powershell
-pip install -e ".[camera]"
-# Keep CUDA torch (do not let ultralytics pull torch+cpu):
-# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-.\.venv\Scripts\python.exe scripts\exp_bc_camera_fusion.py
-.\.venv\Scripts\python.exe scripts\exp_d_camera_containment.py
-```
-
-Console: **Camera context** + preview thumbnails + **Fusion decision** (`GET /api/v1/camera`, `POST /api/v1/camera/reload`).
-
-### Experiment A — DDoS containment (network evidence)
-
-```powershell
-# Schema only (Windows CI / no Mininet):
-.\scripts\run_exp_a.ps1 -DryRun
-
-# Live Mininet/OVS in WSL (root) — writes exp_a_metrics.json:
-.\scripts\run_exp_a.ps1
-```
-
-Compares **none / permanent DROP / temporary DROP+rollback** with ICMP delivery ratios + `ovs-ofctl` verify. Console board: `/api/v1/lab/evidence` (Actuation/Outcome grey without network evidence).
+Local note: [HACKATHON.md](HACKATHON.md)
 
 ---
 
-## Repository layout
+## Hackathon goals
 
-```text
-sdn-its-resilience-ai/
-├── artifacts/            # Paper-facing mirrors (metrics, model_card) — tracked
-├── results/              # Eval outputs (tcn_gru, cross_dataset, ablation, …)
-├── datasets/
-│   ├── sample/           # Small CSVs in git
-│   ├── manifests/        # Inventory + prepare commands
-│   ├── raw/ processed/   # Large dumps — gitignored; download locally
-├── src/sdn_its/          # AI, telemetry, controller, mitigation, simulation
-├── api/  dashboard/      # Flask + evidence console
-├── benchmark/            # Micro-benchmarks (in repo)
-├── experiments/          # exp01–exp05 YAML + folders
-├── models/               # checkpoints/ (weights gitignored; .gitkeep + exports meta)
-├── notebooks/  visualization/  docker/  .github/
-├── docs/                 # Architecture, reproduce, evidence, lab
-├── scripts/              # train helpers, lab, package.ps1, sync_artifacts.ps1
-├── reproduce.ps1         # Rebuild primary tables
-└── tests/
-```
+1. Audit baseline SDN-ITS pipeline (telemetry → detector → policy → rollback).
+2. Verify Nebius account, credits, and Token Factory inference access.
+3. Land a **successful real runtime** call to an NVIDIA Nemotron model via Nebius.
+4. Feed network telemetry + camera physical context into Nemotron-assisted incident investigation.
+5. Return **structured, validated** mitigation recommendations.
+6. Keep deterministic policy gates and rollback; destructive actions off in demo mode.
+7. Benchmark against the existing rule-based baseline (honest deltas only).
+8. English docs + YouTube demo under 3 minutes; open-source when ready to publish.
+
+### Status (honest)
+
+| Milestone | Status |
+|-----------|--------|
+| Private hackathon repo + isolated working tree | Done |
+| Nebius API key / credits / authenticated inference | **Blocked — needs `NEBIUS_API_KEY`** |
+| Minimal vertical slice (real Nemotron call) | Not started |
+| Telemetry + camera → Nemotron investigation | Not started |
+| Validated structured mitigation + policy gates | Not started |
+| Benchmark vs rule baseline | Not started |
+| Public docs + &lt;3 min demo video | Not started |
+
+Target model (default for first real call): `nvidia/Nemotron-3_5-Lightning`  
+API: OpenAI-compatible · `https://api.tokenfactory.nebius.com/v1/` · env: `NEBIUS_API_KEY`
+
+---
+
+## Base system (inherited)
+
+Pipeline: **telemetry → anomaly inference → policy (+ optional same-zone camera) → temporary OpenFlow → rollback**.
+
+- Camera = physical-context sensor for the same RSU zone (not a standalone DDoS detector).
+- Default OpenFlow backend on Windows is **mock**.
+- Evidence / honesty docs from the research baseline: [docs/REPRODUCE.md](docs/REPRODUCE.md) · [docs/EVIDENCE.md](docs/EVIDENCE.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+Tracked classifier snapshot (InSDN): `artifacts/results/exp_insdn/metrics.json` — cite those files; do not invent improvements.
 
 ---
 
 ## Quickstart
 
 ```powershell
-git clone https://github.com/thtcsec/sdn-its-resilience-ai.git
-cd sdn-its-resilience-ai
+git clone https://github.com/thtcsec/sdn-its-nebius-hackathon.git
+cd sdn-its-nebius-hackathon
+git checkout hackathon/nebius-nvidia
 py -m venv .venv
 .\.venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
-### Ops console (research defaults)
+### Ops console (lab defaults)
 
 ```powershell
 .\scripts\dev.ps1
 # → http://127.0.0.1:8080/
 ```
 
-Defaults: **Lab mode on**, bind **`127.0.0.1`**, no scenario label cheat, no ambient fake RE, research theme.  
-Evidence bar must show `MODEL · LOADED` before treating numbers as real.  
-If checkpoint missing → `DEGRADED` (inference disabled), not silent fake scores.  
-LAN demo: `SDN_BIND_HOST=0.0.0.0` + optional `SDN_API_TOKEN` — see [docs/deployment.md](docs/deployment.md).
+Defaults: lab mode on, bind `127.0.0.1`, mock OpenFlow, no silent fake scores.  
+LAN: `SDN_BIND_HOST=0.0.0.0` + optional `SDN_API_TOKEN` — [docs/deployment.md](docs/deployment.md).
 
-Camera preview needs **ffmpeg/ffprobe** on PATH and a live allow-list (`1.cameras.json` + `sample_frames: true`). Hard-refresh the console after starting; thumbnails reuse the last overwritten JPEG under `tmp/camera_frames/`.
-
-Demo injects that force labels: Settings → disable Lab mode → enable scenario override (UI marks `OVERRIDDEN`).
-
-### Docker (console)
+### Nebius (after you have a key)
 
 ```powershell
-docker compose up -d --build
-# → http://127.0.0.1:8080/
-
-# With local camera inventory (./1.cameras.json must exist; never commit it):
-docker compose -f docker-compose.yml -f docker/docker-compose.cameras.yml up -d --build
+# Never commit secrets — .env is gitignored
+$env:NEBIUS_API_KEY = "<your Token Factory key>"
+# Verification script will land in scripts/ after access is confirmed
 ```
 
-Details: [docs/docker.md](docs/docker.md). Image includes `ffmpeg` for RTSP probe/preview.
-
-### Train / evaluate (preferred evidence path)
-
-```powershell
-python scripts/download_dataset.py --name insdn --prefer hf --prepare
-python -m sdn_its.ai.train --npz datasets/processed/insdn_windows.npz --epochs 15
-python -m sdn_its.ai.evaluate --npz datasets/processed/insdn_windows.npz
-.\scripts\sync_artifacts.ps1
-.\reproduce.ps1   # optional full refresh + run_manifest
-```
-
-Cross-dataset:
-
-```powershell
-python scripts/download_dataset.py --name cicids2017 --prefer hf --prepare
-python scripts/run_cross_dataset.py
-python scripts/adapt_to_cic.py --epochs 5 --adapt-ratio 0.2
-.\scripts\sync_artifacts.ps1
-```
-
-### Real OpenFlow lab (optional but strong)
-
-```powershell
-$env:SDN_OF_BACKEND = "http"
-# WSL: sudo python scripts/wsl_of_agent.py --port 8089
-# then Mininet topology + dump-flows — see docs/lab_checklist.md
-```
-
-### Package for submission
-
-```powershell
-.\scripts\sync_artifacts.ps1
-.\scripts\package.ps1                     # source + metrics (no *.pt)
-.\scripts\package.ps1 -IncludeCheckpoint  # include weights
-```
+Create a key: [Nebius Token Factory → API keys](https://tokenfactory.nebius.com/).
 
 ---
 
-## Tracked empirical snapshot (classifier head)
+## Repository layout
 
-Canonical copies live under `artifacts/results/` (refresh via `sync_artifacts.ps1`).
-
-| Eval | Where |
-|------|--------|
-| InSDN in-domain | `artifacts/results/exp_insdn/metrics.json` |
-| CIC zero-shot / adapted | `artifacts/results/cross_dataset/` |
-| Ablation JSON | `artifacts/results/ablation/` |
-
-**Cite classifier-head Acc/F1/AUC from those files.**  
-Legacy synthetic “97.33% / 100% multiclass” figures in older summary docs are **not** the primary claim — see [docs/REPRODUCE.md](docs/REPRODUCE.md).
-
-Micro-benchmarks / latency methodology: [docs/benchmark.md](docs/benchmark.md).
+```text
+sdn-its-nebius-hackathon/
+├── HACKATHON.md          # Local isolation note (research tree path)
+├── src/sdn_its/          # Detector, telemetry, camera, controller, mitigation
+├── api/  dashboard/      # Flask + evidence console
+├── configs/              # controller, cameras, train/eval
+├── artifacts/ results/   # Tracked metrics from the baseline
+├── docs/                 # Architecture, evidence, reproduce (baseline + hackathon)
+├── scripts/              # Lab, experiments, (soon) Nebius verify + vertical slice
+├── benchmark/ tests/
+└── reproduce.ps1
+```
 
 ---
 
@@ -195,14 +124,12 @@ Micro-benchmarks / latency methodology: [docs/benchmark.md](docs/benchmark.md).
 
 | Doc | Content |
 |-----|---------|
-| [docs/REPRODUCE.md](docs/REPRODUCE.md) | Rebuild tables, modes, citing rules |
-| [docs/EVIDENCE.md](docs/EVIDENCE.md) | Console badges, artifact checklist |
+| [HACKATHON.md](HACKATHON.md) | Working-tree isolation |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System layers |
-| [docs/dataset.md](docs/dataset.md) | InSDN / CIC-IDS2017 prepare |
-| [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | Split protocol, metrics defs, loss/α/k |
-| [docs/lab_checklist.md](docs/lab_checklist.md) | Mininet / OVS |
+| [docs/EVIDENCE.md](docs/EVIDENCE.md) | Console badges / evidence rules |
+| [docs/REPRODUCE.md](docs/REPRODUCE.md) | Rebuild tables, citing rules |
 | [docs/api.md](docs/api.md) | REST |
-| [docs/roadmap.md](docs/roadmap.md) | Done / next |
+| [docs/lab_checklist.md](docs/lab_checklist.md) | Mininet / OVS (optional) |
 
 ---
 
@@ -215,19 +142,8 @@ pytest -q
 
 ---
 
-## Citation
-
-```bibtex
-@techreport{trinh2026sdnits,
-  title        = {AI-Assisted Resilience for SDN-Enabled Intelligent Transportation Systems: A Lightweight Framework for V2X Network Reliability, Edge Telemetry, and Safety-Aware Mitigation},
-  author       = {Trinh, Hoang Tu},
-  institution  = {Innovation and Entrepreneurship Development Education, Tsinghua University},
-  year         = {2026},
-  type         = {Research Proposal},
-  note         = {Project Advisor: Prof. Kris Singh}
-}
-```
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Baseline research lineage: Trinh Hoang Tu · IEDE / Tsinghua context documented in the research repo; this repository is the **hackathon** fork for Nebius × NVIDIA work.
