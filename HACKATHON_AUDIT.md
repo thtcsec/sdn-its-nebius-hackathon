@@ -13,7 +13,7 @@
 | Field | Value |
 |-------|--------|
 | Branch | `hackathon/nebius-nvidia` |
-| Commit (HEAD) | `75742bc01dc9028f494b4b791ff7d49b73d68da3` |
+| Commit (HEAD) | `24f5fd9eaae3acf56991ec9d10d267d050d927ab` |
 | Feature commit | `e692329e9afdf80e3bf88c0677430e64d80c8f3f` (vertical slice) |
 | Remote | `origin` → `https://github.com/thtcsec/sdn-its-nebius-hackathon.git` (**PRIVATE**) |
 | Research tree | Untouched |
