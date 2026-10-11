@@ -575,3 +575,55 @@ def register_routes(app: Flask) -> None:
             "ctrl": {"role": "controller", "state": "active"},
         }
         return jsonify({"nodes": nodes, "active_rules": len(rules), "note": "stub — wire ovs-ofctl stats"}), 200
+
+    @app.route("/api/v1/hackathon/investigate", methods=["POST"])
+    def hackathon_investigate():
+        """Nemotron investigation vertical slice (Nebius Token Factory).
+
+        Requires NEBIUS_API_KEY for real_api evidence. Never fabricates success.
+        Demo mode blocks containment intentions by default.
+        """
+        from sdn_its.llm.investigation import IncidentContext, investigate_incident
+
+        data = request.get_json(force=True, silent=True) or {}
+        demo_mode = bool(data.get("demo_mode", True))
+        allow_containment = bool(data.get("allow_containment_in_demo", False))
+        ctx = IncidentContext(
+            network_prediction=str(data.get("network_prediction") or "Normal"),
+            telemetry=dict(data.get("telemetry") or {}),
+            camera=dict(data.get("camera") or {}),
+            rule_fusion=data.get("rule_fusion"),
+            dpid=str(data.get("dpid") or "1"),
+            src_ip=str(data.get("src_ip") or "10.0.0.15"),
+        )
+        result = investigate_incident(
+            ctx,
+            demo_mode=demo_mode,
+            allow_containment_in_demo=allow_containment,
+            model=data.get("model"),
+        )
+        payload = result.to_dict()
+        payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
+        payload["note"] = (
+            "Advisory investigation only. Deterministic PolicyEngine remains authoritative; "
+            "default OF backend is mock unless SDN_OF_BACKEND is set."
+        )
+        if result.evidence_class == "blocked_no_credentials":
+            return jsonify(payload), 503
+        if not result.ok:
+            return jsonify(payload), 502
+        # Optionally map through policy without claiming switch evidence
+        if data.get("apply_policy") and result.fusion_for_policy is not None:
+            controller = app.extensions["sdn_controller"]
+            mit = controller.policy.apply(
+                attack_type=ctx.network_prediction,
+                dpid=ctx.dpid,
+                src_ip=ctx.src_ip,
+                fusion=result.fusion_for_policy,
+            )
+            payload["policy"] = {
+                "mitigation_status": mit.mitigation_status,
+                "applied_rules_count": len(mit.applied_rules),
+                "network_evidence": bool(controller.stats.get("network_evidence")),
+            }
+        return jsonify(payload), 200
