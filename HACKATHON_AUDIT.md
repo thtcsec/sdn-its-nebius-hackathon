@@ -1,4 +1,4 @@
-# Hackathon readiness audit
+﻿# Hackathon readiness audit
 
 **Scope:** `D:\tu_projects\sdn-its-nebius-hackathon` only  
 **Upstream research tree:** not modified by this work  
@@ -13,7 +13,7 @@
 | Field | Value |
 |-------|--------|
 | Branch | `hackathon/nebius-nvidia` |
-| Commit | *(filled after commit — see `git rev-parse HEAD`)* |
+| Commit | e692329e9afdf80e3bf88c0677430e64d80c8f3f |
 | Remote | `origin` → `https://github.com/thtcsec/sdn-its-nebius-hackathon.git` (**PRIVATE**) |
 | Research tree | Untouched |
 
