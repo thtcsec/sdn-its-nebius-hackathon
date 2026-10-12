@@ -1,0 +1,41 @@
+{
+  "id": "eval_missing_04",
+  "family": "missing_evidence",
+  "title": "Missing camera evidence #4",
+  "network_prediction": "LOFT_LowRate_Attack",
+  "dpid": "1",
+  "src_ip": "10.0.3.4",
+  "telemetry": {
+    "context_source": "heldout_eval_synthetic",
+    "packet_in_delta_pct": 120.0,
+    "source_dominance": 0.75,
+    "distributed_sources": false,
+    "window_id": "eval-miss-4"
+  },
+  "camera": {
+    "context_source": "heldout_eval_synthetic",
+    "physical_label": "unknown",
+    "activity_band": "unknown",
+    "visible_vehicle_tracks": null,
+    "queue_length_proxy_m": null,
+    "is_vehicle_count": false,
+    "vehicle_count_is_real": false,
+    "stream_available": false,
+    "analytics_valid": false,
+    "stale": true,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "observe"
+    ],
+    "forbid_containment": true,
+    "prefer_abstention": true,
+    "safety_critical": false,
+    "notes": "Without valid physical context, prefer abstention over aggressive drop."
+  },
+  "checksum": "6805a92828f6c6c1",
+  "split": "heldout_eval",
+  "seed": "sdn-its-nebius-heldout-v1"
+}

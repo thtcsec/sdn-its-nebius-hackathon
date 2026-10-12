@@ -30,9 +30,15 @@ py -m venv .venv-judge-light
 pip install "python-dotenv>=1.0" "requests>=2.31" "pyyaml>=6" "Flask>=2.3" "pytest>=7"
 $env:PYTHONPATH="$PWD\src;$PWD"
 python scripts/run_judge_demo.py
+python scripts/generate_heldout_eval.py
+python scripts/run_heldout_eval.py --skip-real
 python scripts/run_hackathon_benchmark.py --mode offline --allow-containment-in-demo
-pytest tests/test_hackathon_agent.py tests/test_nebius_llm.py -q
+pytest tests/test_hackathon_agent.py tests/test_nebius_llm.py tests/test_heldout_eval.py -q
 ```
+
+Held-out oracle eval (accuracy): `datasets/hackathon/eval/` — disjoint from the seven regression fixtures.  
+Live Nebius subset (budgeted): `python scripts/run_heldout_eval.py --real-limit 5 --budget-usd 0.05 --allow-containment-in-demo`
+
 
 ### B) Full package + console (includes torch)
 

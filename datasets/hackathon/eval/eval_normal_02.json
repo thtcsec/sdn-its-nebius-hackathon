@@ -1,0 +1,40 @@
+{
+  "id": "eval_normal_02",
+  "family": "normal_quiet",
+  "title": "Normal quiet zone #2",
+  "network_prediction": "Normal",
+  "dpid": "1",
+  "src_ip": "10.0.5.2",
+  "telemetry": {
+    "context_source": "heldout_eval_synthetic",
+    "packet_in_delta_pct": 6.0,
+    "source_dominance": 0.15,
+    "distributed_sources": true,
+    "window_id": "eval-n-2"
+  },
+  "camera": {
+    "context_source": "heldout_eval_synthetic",
+    "physical_label": "stable",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 3,
+    "queue_length_proxy_m": 2.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "observe"
+    ],
+    "forbid_containment": true,
+    "prefer_abstention": false,
+    "safety_critical": false
+  },
+  "checksum": "e9cac9bebab43845",
+  "split": "heldout_eval",
+  "seed": "sdn-its-nebius-heldout-v1"
+}

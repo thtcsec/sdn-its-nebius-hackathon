@@ -1,15 +1,41 @@
-# Demo video script (&lt; 3 minutes)
+# Demo video (&lt; 3 minutes) — production script
 
-Status: **script ready — recording not yet uploaded**.
+**Status:** Script + shot list ready. Recording/upload not automated.  
+**Do not claim video published until a URL is pasted below.**
 
-## Suggested shot list (≈150–170s)
+**YouTube URL:** _TBD_
 
-1. **0:00–0:20** — Title: SDN-ITS × Nebius × NVIDIA SOLO; open console `127.0.0.1:8080`; note mock OF + DEGRADED classifier OK for judge path.
-2. **0:20–0:50** — Hackathon board: run fixture `01_legitimate_rush_hour` offline → preserve/observe; show synthetic camera metadata (no RTSP).
-3. **0:50–1:20** — Fixture `02_suspicious_loft_stable_camera` → rule rate_limit; Nemotron rationale; demo gate note.
-4. **1:20–1:50** — Fixture `07_unsafe_escalation_blocked` → model wants `temporary_drop`, gate forces `protect_safety` / observe; highlight audit.
-5. **1:50–2:20** — Terminal: `python scripts/run_hackathon_benchmark.py --mode offline --allow-containment-in-demo`; show summary rates + honesty_note.
-6. **2:20–2:50** — Optional: `verify_nebius_nemotron.py` with `evidence_class: real_api` (blur any env UI); model id Nano.
-7. **2:50–3:00** — Limitations slide: mock OF, synthetic camera, no claimed accuracy win without numbers.
+## Runtime to film (safe)
 
-Upload URL placeholder: _TBD — add YouTube link here when published._
+```powershell
+cd D:\tu_projects\sdn-its-nebius-hackathon
+$env:PYTHONPATH="$PWD\src;$PWD"
+# Light venv OK
+python scripts/run_judge_demo.py
+python scripts/run_heldout_eval.py --skip-real
+# Optional blur-ready real call:
+python scripts/verify_nebius_nemotron.py
+.\scripts\dev.ps1   # http://127.0.0.1:8080/
+```
+
+Show **OF: mock** on the hackathon board. Never enable live switch pushes on camera.
+
+## Shot list (target 165s)
+
+| T | Visual | Narration |
+|---|--------|-----------|
+| 0:00–0:15 | Title card / README | SOLO Nebius×NVIDIA: cyber–physical investigation, not a chatbot |
+| 0:15–0:35 | Console board | Synthetic telemetry + camera metadata; no private RTSP; classifier may be DEGRADED |
+| 0:35–0:55 | Fixture 01 offline | Legitimate congestion → preserve/observe |
+| 0:55–1:15 | Fixture 07 unsafe | Model wants temporary_drop → **gate blocks** |
+| 1:15–1:40 | Terminal held-out eval | `run_heldout_eval.py --skip-real` → rule vs oracle rates; honesty note |
+| 1:40–2:05 | Optional real Nebius | `verify_nebius_nemotron.py` `real_api` + model id (blur `.env`) |
+| 2:05–2:30 | Benchmark honesty | Offline agreement ≠ accuracy; held-out uses oracle; no fake gains |
+| 2:30–2:55 | Limitations | Mock OF, synthetic camera, private→public only after checklist |
+| 2:55–3:00 | End card | Repo + docs/JUDGE_DEMO.md |
+
+## Recording tips
+
+- Resolution 1080p, cursor highlight on gate pills
+- Do not scroll through `.env`
+- Keep total under 180s

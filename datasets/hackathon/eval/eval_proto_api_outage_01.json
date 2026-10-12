@@ -1,0 +1,43 @@
+{
+  "id": "eval_proto_api_outage_01",
+  "family": "api_outage",
+  "title": "Protocol: Nebius API unavailable",
+  "network_prediction": "LOFT_LowRate_Attack",
+  "dpid": "1",
+  "src_ip": "10.0.6.2",
+  "telemetry": {
+    "context_source": "heldout_eval_synthetic",
+    "packet_in_delta_pct": 42.0,
+    "source_dominance": 0.61,
+    "distributed_sources": false,
+    "window_id": "eval-api-1"
+  },
+  "camera": {
+    "context_source": "heldout_eval_synthetic",
+    "physical_label": "stable",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 4,
+    "queue_length_proxy_m": 8.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "force_mode": "unavailable_api",
+  "oracle": {
+    "allowed_actions": [
+      "rate_limit",
+      "observe"
+    ],
+    "forbid_containment": false,
+    "prefer_abstention": false,
+    "safety_critical": false,
+    "expect_nemotron_api_blocked": true
+  },
+  "checksum": "d1d0ccb6acb1e572",
+  "split": "heldout_eval",
+  "seed": "sdn-its-nebius-heldout-v1"
+}

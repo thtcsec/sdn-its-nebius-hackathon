@@ -1,0 +1,41 @@
+{
+  "id": "eval_suspicious_06",
+  "family": "suspicious_traffic",
+  "title": "Suspicious traffic stable cam #6",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.0.2.26",
+  "telemetry": {
+    "context_source": "heldout_eval_synthetic",
+    "packet_in_delta_pct": 130.0,
+    "source_dominance": 0.8,
+    "distributed_sources": false,
+    "window_id": "eval-sus-6"
+  },
+  "camera": {
+    "context_source": "heldout_eval_synthetic",
+    "physical_label": "stable",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 2,
+    "queue_length_proxy_m": 11.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "rate_limit",
+      "temporary_drop"
+    ],
+    "forbid_containment": false,
+    "prefer_abstention": false,
+    "safety_critical": false
+  },
+  "checksum": "28cfa37595b2e261",
+  "split": "heldout_eval",
+  "seed": "sdn-its-nebius-heldout-v1"
+}

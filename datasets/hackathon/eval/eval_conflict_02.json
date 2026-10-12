@@ -1,0 +1,42 @@
+{
+  "id": "eval_conflict_02",
+  "family": "contradictory_evidence",
+  "title": "Conflict rush cam vs attack label #2",
+  "network_prediction": "LOFT_LowRate_Attack",
+  "dpid": "1",
+  "src_ip": "10.0.4.2",
+  "telemetry": {
+    "context_source": "heldout_eval_synthetic",
+    "packet_in_delta_pct": 60.0,
+    "source_dominance": 0.35,
+    "distributed_sources": true,
+    "window_id": "eval-cf-2"
+  },
+  "camera": {
+    "context_source": "heldout_eval_synthetic",
+    "physical_label": "rush_hour",
+    "activity_band": "high",
+    "visible_vehicle_tracks": 20,
+    "queue_length_proxy_m": 50.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": true,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "protect_safety",
+      "preserve_rush_hour",
+      "observe"
+    ],
+    "forbid_containment": true,
+    "prefer_abstention": false,
+    "safety_critical": true
+  },
+  "checksum": "92d2d8269a2acd34",
+  "split": "heldout_eval",
+  "seed": "sdn-its-nebius-heldout-v1"
+}

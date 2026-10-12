@@ -1,13 +1,8 @@
-# Hackathon incident fixtures
+# Dev / regression fixtures (NOT accuracy evidence)
 
-Synthetic, public fixtures for judge-ready cyber–physical investigation demos.
+These seven JSON files are **offline regression fixtures** for unit tests and the judge demo smoke path.
 
-Each JSON file contains:
+They may include `synthetic_model_output` for deterministic offline wiring checks.
 
-- `network_prediction` — detector/label hypothesis (not live TCN-GRU)
-- `telemetry` — SDN/RSU counters (synthetic)
-- `camera` — **same-zone physical context metadata** (synthetic; no RTSP URLs)
-- `expected` — honest scoring targets for the benchmark
-- optional `synthetic_model_output` — offline Nemotron-path stand-in (clearly labeled)
-
-No private camera inventories or research checkpoints required.
+**Do not cite them as held-out accuracy.**  
+Held-out evaluation lives in `datasets/hackathon/eval/` (oracle-labeled, disjoint IDs).

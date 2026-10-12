@@ -112,4 +112,8 @@ artifacts/hackathon/*_last.json
 
 .venv-judge/
 .venv-judge-light/
+.venv-judge-fresh/
+
+
+artifacts/hackathon/heldout_eval_with_real.json
 

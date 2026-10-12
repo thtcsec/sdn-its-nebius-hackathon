@@ -1,0 +1,42 @@
+{
+  "seed": "sdn-its-nebius-heldout-v1",
+  "n": 25,
+  "families": [
+    "api_outage",
+    "contradictory_evidence",
+    "legitimate_congestion",
+    "malformed_output",
+    "missing_evidence",
+    "normal_quiet",
+    "suspicious_traffic",
+    "unsafe_escalation"
+  ],
+  "ids": [
+    "eval_conflict_01",
+    "eval_conflict_02",
+    "eval_conflict_03",
+    "eval_conflict_04",
+    "eval_legit_cong_01",
+    "eval_legit_cong_02",
+    "eval_legit_cong_03",
+    "eval_legit_cong_04",
+    "eval_legit_cong_05",
+    "eval_missing_01",
+    "eval_missing_02",
+    "eval_missing_03",
+    "eval_missing_04",
+    "eval_normal_01",
+    "eval_normal_02",
+    "eval_normal_03",
+    "eval_proto_api_outage_01",
+    "eval_proto_malformed_01",
+    "eval_proto_unsafe_escalation_01",
+    "eval_suspicious_01",
+    "eval_suspicious_02",
+    "eval_suspicious_03",
+    "eval_suspicious_04",
+    "eval_suspicious_05",
+    "eval_suspicious_06"
+  ],
+  "note": "Held-out evaluation inputs + oracle labels. No Nebius completions are embedded. Disjoint from datasets/hackathon/incidents/ regression fixtures."
+}

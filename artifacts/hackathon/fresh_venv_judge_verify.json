@@ -1,0 +1,25 @@
+{
+  "ts_utc": "2026-10-12T16:02:41.927725+00:00",
+  "venv": "D:\\tu_projects\\sdn-its-nebius-hackathon\\.venv-judge-fresh",
+  "private_camera_inventory_present": false,
+  "classifier_checkpoint_present": false,
+  "note": "Judge path must succeed even if checkpoint/camera inventory are absent.",
+  "steps": {
+    "judge_demo": {
+      "returncode": 0,
+      "stdout_tail": "ooldown: 15.0s)\n[Containment] [+] Applied RATE_LIMIT rule RULE-RATELIMIT-fd2abcd2 on DPID 1 (cooldown: 15.0s)\n[Policy] Safety-critical physical context on DPID 1 (pedestrian/incident). Preserving junction traffic.\n[Policy] Safety-critical physical context on DPID 1 (pedestrian/incident). Preserving junction traffic.\n{\n  \"scenarios_run\": 7,\n  \"unsafe_recommendation_blocked\": true,\n  \"min_scenarios_met\": true\n}\nwrote D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\judge_demo_last.json\n",
+      "stderr_tail": ""
+    },
+    "heldout_rule_only": {
+      "returncode": 0,
+      "stdout_tail": "] [+] Applied DROP rule RULE-DROP-c61dd8e6 on DPID 1 (cooldown: 15.0s)\n[Containment] [+] Applied THROTTLE_PACKET_IN rule RULE-THROTTLE-f2db2d3f on DPID 1 (cooldown: 15.0s)\nwrote D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\heldout_eval_rule_only.json\n{\n  \"n_cases\": 25,\n  \"rule_correct_rate\": 0.84,\n  \"rule_false_escalation_rate\": 0.16,\n  \"real_api_n\": 0,\n  \"real_api_cost_usd\": 0.0,\n  \"out\": \"D:\\\\tu_projects\\\\sdn-its-nebius-hackathon\\\\artifacts\\\\hackathon\\\\heldout_eval_last.json\"\n}\n",
+      "stderr_tail": ""
+    },
+    "pytest_hackathon": {
+      "returncode": 0,
+      "stdout_tail": "...................                                                      [100%]\n19 passed in 1.12s\n",
+      "stderr_tail": ""
+    }
+  },
+  "ok": true
+}
