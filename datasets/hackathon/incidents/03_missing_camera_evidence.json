@@ -1,0 +1,44 @@
+{
+  "id": "03_missing_camera_evidence",
+  "title": "Missing / invalid camera evidence",
+  "description": "Network anomaly present but camera analytics invalid — agent should abstain from aggressive action.",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.0.0.44",
+  "telemetry": {
+    "context_source": "synthetic_fixture",
+    "packet_in_delta_pct": 120.0,
+    "source_dominance": 0.72,
+    "distributed_sources": false,
+    "window_id": "fix-03"
+  },
+  "camera": {
+    "context_source": "synthetic_fixture",
+    "physical_label": "unknown",
+    "activity_band": "unknown",
+    "visible_vehicle_tracks": null,
+    "queue_length_proxy_m": null,
+    "is_vehicle_count": false,
+    "stream_available": false,
+    "analytics_valid": false,
+    "stale": true,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "expected": {
+    "rule_action_in": ["temporary_drop", "rate_limit", "observe", "protect_safety"],
+    "prefer_abstention_when_uncertain": true,
+    "notes": "Missing physical context — aggressive containment should be carefully gated in demo."
+  },
+  "synthetic_model_output": {
+    "recommended_action": "observe",
+    "final_risk": "medium",
+    "rationale": "PacketIn spike without valid camera analytics — abstain until physical context recovers.",
+    "policy_attack_type": "DDoS_PacketIn_Flood",
+    "cooldown_seconds": 30,
+    "false_positive_corrected": false,
+    "safety_critical": false,
+    "confidence": 0.45,
+    "evidence_notes": ["analytics_invalid", "camera_stale"]
+  }
+}

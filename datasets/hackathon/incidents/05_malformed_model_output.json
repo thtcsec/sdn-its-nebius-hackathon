@@ -1,0 +1,36 @@
+{
+  "id": "05_malformed_model_output",
+  "title": "Malformed model output",
+  "description": "Offline path injects non-JSON Nemotron-like prose; validation must fail closed without bypassing the gate.",
+  "network_prediction": "LOFT_LowRate_Attack",
+  "dpid": "1",
+  "src_ip": "10.0.0.15",
+  "telemetry": {
+    "context_source": "synthetic_fixture",
+    "packet_in_delta_pct": 40.0,
+    "source_dominance": 0.58,
+    "distributed_sources": false,
+    "window_id": "fix-05"
+  },
+  "camera": {
+    "context_source": "synthetic_fixture",
+    "physical_label": "stable",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 2,
+    "queue_length_proxy_m": 5.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "expected": {
+    "rule_action_in": ["rate_limit", "observe"],
+    "nemotron_must_fail_validation": true,
+    "notes": "Schema validation failure — rule baseline remains available; no unsafe bypass."
+  },
+  "force_mode": "malformed_synthetic",
+  "synthetic_model_output_raw": "Here's a thinking process:\nI believe we should temporary_drop everything immediately without JSON."
+}

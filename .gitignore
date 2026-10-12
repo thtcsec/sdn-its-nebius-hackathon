@@ -109,3 +109,7 @@ Thumbs.db
 # Hackathon local evidence (regenerate with scripts)
 artifacts/hackathon/*_last.json
 
+
+.venv-judge/
+.venv-judge-light/
+

@@ -91,12 +91,19 @@ pip install -e ".[dev]"
 Defaults: lab mode on, bind `127.0.0.1`, mock OpenFlow, no silent fake scores.  
 LAN: `SDN_BIND_HOST=0.0.0.0` + optional `SDN_API_TOKEN` — [docs/deployment.md](docs/deployment.md).
 
-### Nebius (after you have a key)
+### Judge demo / Nebius
+
+Judge path (synthetic fixtures, mock OF, no private RTSP/checkpoint): [docs/JUDGE_DEMO.md](docs/JUDGE_DEMO.md)
 
 ```powershell
-# Never commit secrets — .env is gitignored
-$env:NEBIUS_API_KEY = "<your Token Factory key>"
-# Verification script will land in scripts/ after access is confirmed
+python scripts/run_judge_demo.py
+python scripts/run_hackathon_benchmark.py --mode offline --allow-containment-in-demo
+```
+
+Real Nebius: put `NEBIUS_API_KEY` in repo-root `.env` (gitignored), then:
+
+```powershell
+python scripts/verify_nebius_nemotron.py
 ```
 
 Create a key: [Nebius Token Factory → API keys](https://tokenfactory.nebius.com/).

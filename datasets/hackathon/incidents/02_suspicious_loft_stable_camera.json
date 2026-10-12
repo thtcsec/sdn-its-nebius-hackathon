@@ -1,0 +1,45 @@
+{
+  "id": "02_suspicious_loft_stable_camera",
+  "title": "Suspicious LOFT anomaly with stable camera",
+  "description": "Low-rate network anomaly while physical zone looks calm — cyber–physical inconsistency.",
+  "network_prediction": "LOFT_LowRate_Attack",
+  "dpid": "1",
+  "src_ip": "10.0.0.15",
+  "telemetry": {
+    "context_source": "synthetic_fixture",
+    "packet_in_delta_pct": 42.0,
+    "source_dominance": 0.61,
+    "distributed_sources": false,
+    "window_id": "fix-02"
+  },
+  "camera": {
+    "context_source": "synthetic_fixture",
+    "physical_label": "stable",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 3,
+    "queue_length_proxy_m": 8.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "expected": {
+    "rule_action_in": ["rate_limit", "temporary_drop", "observe"],
+    "allow_containment": true,
+    "notes": "Stable camera does not explain network anomaly; containment may be appropriate (demo still gates OF)."
+  },
+  "synthetic_model_output": {
+    "recommended_action": "rate_limit",
+    "final_risk": "medium",
+    "rationale": "LOFT-like pattern with stable physical context suggests cyber anomaly, not rush hour.",
+    "policy_attack_type": "LOFT_LowRate_Attack",
+    "cooldown_seconds": 15,
+    "false_positive_corrected": false,
+    "safety_critical": false,
+    "confidence": 0.8,
+    "evidence_notes": ["stable_camera", "source_dominance_0.61"]
+  }
+}

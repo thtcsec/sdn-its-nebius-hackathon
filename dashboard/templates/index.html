@@ -890,6 +890,33 @@
         }
         .cam-card .prio-critical { color: var(--alert); }
         .cam-card .prio-high { color: var(--warn); }
+        .hackathon-board {
+            display: grid;
+            grid-template-columns: 1.1fr 1.4fr 1fr;
+            gap: 12px;
+            margin: 14px 0 18px;
+        }
+        @media (max-width: 1100px) {
+            .hackathon-board { grid-template-columns: 1fr; }
+        }
+        .hc-pre {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            background: rgba(0,0,0,0.04);
+            padding: 8px;
+            border-radius: 6px;
+            max-height: 160px;
+            overflow: auto;
+        }
+        .hc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+        .hc-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: rgba(0,0,0,0.06);
+        }
         .fusion-block { margin-bottom: 8px; }
         .fusion-h {
             text-transform: uppercase; letter-spacing: 0.06em;
@@ -1331,6 +1358,65 @@
                     <div id="fus-dec">—</div>
                 </div>
                 <div class="ev-note" id="fus-explain">Idle — inject network alert and/or choose Replay/Live physical mode. Camera never overrides network evidence.</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="hackathon-board" id="hackathon-board" aria-label="Nebius Nemotron investigation">
+        <article class="panel" id="panel-hc-select">
+            <div class="panel-head">
+                <h2>Hackathon · Incident agent</h2>
+                <span>synthetic fixtures · no private RTSP</span>
+            </div>
+            <div class="panel-body">
+                <div class="ev-note">Compare deterministic rules vs Nemotron-assisted investigation. Default OpenFlow = <b>mock</b>. Classifier checkpoint not required (fixture labels).</div>
+                <label for="hc-incident">Fixture</label>
+                <select id="hc-incident" aria-label="Hackathon incident fixture"></select>
+                <div class="hc-actions">
+                    <button type="button" class="primary" id="hc-run-offline">Run offline</button>
+                    <button type="button" id="hc-run-real" title="Uses repo-root .env NEBIUS_API_KEY">Run real Nebius</button>
+                    <button type="button" id="hc-refresh-audit">Refresh audit</button>
+                </div>
+                <div><span class="hc-pill" id="hc-mode-pill">mode: —</span>
+                    <span class="hc-pill" id="hc-gate-pill">gate: —</span>
+                    <span class="hc-pill" id="hc-of-pill">OF: mock</span></div>
+            </div>
+        </article>
+        <article class="panel" id="panel-hc-case">
+            <div class="panel-head">
+                <h2>Evidence · decision</h2>
+                <span id="hc-case-meta">idle</span>
+            </div>
+            <div class="panel-body ev-kv">
+                <div class="fusion-block">
+                    <div class="fusion-h">Telemetry (synthetic)</div>
+                    <div class="hc-pre" id="hc-telemetry">—</div>
+                </div>
+                <div class="fusion-block">
+                    <div class="fusion-h">Camera context (synthetic metadata)</div>
+                    <div class="hc-pre" id="hc-camera">—</div>
+                </div>
+                <div class="fusion-block">
+                    <div class="fusion-h">Rule-only → policy</div>
+                    <div id="hc-rule">—</div>
+                </div>
+                <div class="fusion-block">
+                    <div class="fusion-h">Nemotron (validated) → policy</div>
+                    <div id="hc-nemotron">—</div>
+                </div>
+                <div class="fusion-block">
+                    <div class="fusion-h">Reasoning / rationale</div>
+                    <div class="hc-pre" id="hc-rationale">—</div>
+                </div>
+            </div>
+        </article>
+        <article class="panel" id="panel-hc-audit">
+            <div class="panel-head">
+                <h2>Audit history</h2>
+                <span>in-process · no secrets</span>
+            </div>
+            <div class="panel-body">
+                <div class="hc-pre" id="hc-audit">—</div>
             </div>
         </article>
     </section>
@@ -2505,6 +2591,80 @@
     document.querySelectorAll("[data-cam-scen]").forEach((btn) => {
         btn.addEventListener("click", () => setCameraScenario(btn.getAttribute("data-cam-scen")));
     });
+
+    async function hcLoadIncidents() {
+        const sel = document.getElementById("hc-incident");
+        if (!sel) return;
+        try {
+            const data = await fetch("/api/v1/hackathon/incidents").then((r) => r.json());
+            const items = data.incidents || [];
+            sel.innerHTML = items.map((i) =>
+                `<option value="${i.id}">${i.id} — ${i.title || ""}</option>`
+            ).join("");
+        } catch (e) {
+            sel.innerHTML = `<option value="">incidents unavailable</option>`;
+        }
+    }
+
+    function hcRenderCase(payload) {
+        document.getElementById("hc-case-meta").textContent = `${payload.incident_id || "—"} · ${payload.mode || "—"}`;
+        document.getElementById("hc-mode-pill").textContent = `mode: ${payload.mode || "—"}`;
+        document.getElementById("hc-of-pill").textContent = `OF: ${payload.of_backend || "mock"}`;
+        document.getElementById("hc-telemetry").textContent = JSON.stringify(payload.telemetry || {}, null, 2);
+        document.getElementById("hc-camera").textContent = JSON.stringify(payload.camera || {}, null, 2);
+        const rule = payload.rule || {};
+        const nem = payload.nemotron || {};
+        document.getElementById("hc-rule").textContent =
+            `${rule.recommended_action || "—"} → ${rule.policy_status || "—"} (${rule.evidence_class || "rules"})`;
+        document.getElementById("hc-nemotron").textContent =
+            `${nem.recommended_action || "—"} → ${nem.policy_status || "—"} · ${nem.evidence_class || "—"}` +
+            (nem.gated_notes && nem.gated_notes.length ? ` · gates=${nem.gated_notes.join(",")}` : "");
+        document.getElementById("hc-rationale").textContent = nem.rationale || nem.error || nem.raw_preview || "—";
+        const gateFired = (nem.gated_notes || []).some((n) => String(n).includes("gate:"));
+        document.getElementById("hc-gate-pill").textContent = gateFired ? "gate: BLOCKED/CLAMPED" : "gate: pass";
+    }
+
+    async function hcRefreshAudit() {
+        try {
+            const data = await fetch("/api/v1/hackathon/audit?limit=20").then((r) => r.json());
+            document.getElementById("hc-audit").textContent = JSON.stringify(data.audit || [], null, 2);
+        } catch (e) {
+            document.getElementById("hc-audit").textContent = "audit fetch failed";
+        }
+    }
+
+    async function hcRun(mode) {
+        const id = document.getElementById("hc-incident").value;
+        if (!id) return;
+        logTerm(`Hackathon run · ${id} · ${mode}`, "t-info");
+        try {
+            const r = await fetch("/api/v1/hackathon/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ incident_id: id, mode, demo_mode: true }),
+            });
+            const payload = await r.json();
+            if (!r.ok && !payload.rule) {
+                logTerm(`Hackathon run failed HTTP ${r.status}`, "t-err");
+            }
+            hcRenderCase(payload);
+            await hcRefreshAudit();
+            logTerm(
+                `Hackathon · rule=${(payload.rule||{}).recommended_action} · nemotron=${(payload.nemotron||{}).recommended_action}`,
+                "t-ok",
+            );
+        } catch (e) {
+            logTerm("Hackathon run error", "t-err");
+        }
+    }
+
+    const hcOffline = document.getElementById("hc-run-offline");
+    const hcReal = document.getElementById("hc-run-real");
+    const hcAud = document.getElementById("hc-refresh-audit");
+    if (hcOffline) hcOffline.addEventListener("click", () => hcRun("offline"));
+    if (hcReal) hcReal.addEventListener("click", () => hcRun("real"));
+    if (hcAud) hcAud.addEventListener("click", () => hcRefreshAudit());
+
     document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
             closeSettings();
@@ -2518,6 +2678,7 @@
     logTerm(t("log.ready"), "t-info");
     logTerm(t("log.settings_hint"), "t-ok");
     setPipeline("idle");
+    hcLoadIncidents().then(() => hcRefreshAudit());
     loadServerSettings().then(() => {
         applyI18n();
         restartTimers();

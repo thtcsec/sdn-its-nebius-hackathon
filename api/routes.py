@@ -584,7 +584,10 @@ def register_routes(app: Flask) -> None:
         Demo mode blocks containment intentions by default.
         """
         from sdn_its.llm.investigation import IncidentContext, investigate_incident
+        from sdn_its.llm.audit_log import record_audit
+        from sdn_its.utils.env import ensure_repo_env
 
+        ensure_repo_env()
         data = request.get_json(force=True, silent=True) or {}
         demo_mode = bool(data.get("demo_mode", True))
         allow_containment = bool(data.get("allow_containment_in_demo", False))
@@ -608,6 +611,16 @@ def register_routes(app: Flask) -> None:
             "Advisory investigation only. Deterministic PolicyEngine remains authoritative; "
             "default OF backend is mock unless SDN_OF_BACKEND is set."
         )
+        record_audit(
+            {
+                "source": "api_investigate",
+                "network_prediction": ctx.network_prediction,
+                "nemotron_action": (result.recommendation.recommended_action if result.recommendation else None),
+                "nemotron_evidence_class": result.evidence_class,
+                "gated_notes": result.gated_notes,
+                "ok": result.ok,
+            }
+        )
         if result.evidence_class == "blocked_no_credentials":
             return jsonify(payload), 503
         if not result.ok:
@@ -627,3 +640,63 @@ def register_routes(app: Flask) -> None:
                 "network_evidence": bool(controller.stats.get("network_evidence")),
             }
         return jsonify(payload), 200
+
+    @app.route("/api/v1/hackathon/incidents", methods=["GET"])
+    def hackathon_incidents():
+        from sdn_its.llm.fixtures import incident_summaries
+
+        return jsonify({"incidents": incident_summaries(), "camera": "synthetic_metadata_only"}), 200
+
+    @app.route("/api/v1/hackathon/run", methods=["POST"])
+    def hackathon_run_incident():
+        """Run rule-only + Nemotron-assisted paths for a fixture id or inline body."""
+        from sdn_its.llm.agent import investigate_case
+        from sdn_its.llm.fixtures import load_incident
+
+        data = request.get_json(force=True, silent=True) or {}
+        mode = str(data.get("mode") or "offline")
+        if mode not in {"offline", "real"}:
+            return jsonify({"error": "mode must be offline|real"}), 400
+        demo_mode = bool(data.get("demo_mode", True))
+        if data.get("incident_id"):
+            try:
+                incident = load_incident(f"{data['incident_id']}.json")
+            except FileNotFoundError:
+                # allow bare id match
+                from sdn_its.llm.fixtures import load_all_incidents
+
+                hits = [i for i in load_all_incidents() if i["id"] == data["incident_id"]]
+                if not hits:
+                    return jsonify({"error": f"unknown incident_id {data['incident_id']}"}), 404
+                incident = hits[0]
+        else:
+            incident = {
+                "id": data.get("id") or "inline",
+                "title": data.get("title") or "inline",
+                "network_prediction": data.get("network_prediction") or "Normal",
+                "telemetry": data.get("telemetry") or {},
+                "camera": data.get("camera") or {},
+                "dpid": data.get("dpid") or "1",
+                "src_ip": data.get("src_ip") or "10.0.0.15",
+                "synthetic_model_output": data.get("synthetic_model_output"),
+                "force_mode": data.get("force_mode"),
+                "synthetic_model_output_raw": data.get("synthetic_model_output_raw"),
+                "expected": data.get("expected") or {},
+            }
+        case = investigate_case(
+            incident,
+            mode=mode,  # type: ignore[arg-type]
+            demo_mode=demo_mode,
+            allow_containment_in_demo=bool(data.get("allow_containment_in_demo", False)),
+        )
+        payload = case.to_dict()
+        payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
+        return jsonify(payload), 200
+
+    @app.route("/api/v1/hackathon/audit", methods=["GET"])
+    def hackathon_audit():
+        from sdn_its.llm.audit_log import list_audit
+
+        limit = request.args.get("limit", 40, type=int)
+        return jsonify({"audit": list_audit(limit=limit or 40)}), 200
+

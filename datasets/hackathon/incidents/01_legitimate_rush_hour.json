@@ -1,0 +1,45 @@
+{
+  "id": "01_legitimate_rush_hour",
+  "title": "Legitimate rush-hour surge",
+  "description": "Network label looks busy; same-zone camera shows high vehicle occupancy consistent with rush hour.",
+  "network_prediction": "RushHour_Burst",
+  "dpid": "1",
+  "src_ip": "10.0.0.21",
+  "telemetry": {
+    "context_source": "synthetic_fixture",
+    "packet_in_delta_pct": 35.0,
+    "source_dominance": 0.32,
+    "distributed_sources": true,
+    "window_id": "fix-01"
+  },
+  "camera": {
+    "context_source": "synthetic_fixture",
+    "physical_label": "rush_hour",
+    "activity_band": "high",
+    "visible_vehicle_tracks": 18,
+    "queue_length_proxy_m": 45.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "expected": {
+    "rule_action_in": ["preserve_rush_hour", "observe"],
+    "allow_containment": false,
+    "notes": "Benign transportation surge — containment would be inappropriate."
+  },
+  "synthetic_model_output": {
+    "recommended_action": "preserve_rush_hour",
+    "final_risk": "low",
+    "rationale": "High vehicle tracks and queue match rush-hour; treat as legitimate surge.",
+    "policy_attack_type": "RushHour_Burst",
+    "cooldown_seconds": 30,
+    "false_positive_corrected": true,
+    "safety_critical": false,
+    "confidence": 0.86,
+    "evidence_notes": ["rush_hour_camera", "distributed_sources"]
+  }
+}

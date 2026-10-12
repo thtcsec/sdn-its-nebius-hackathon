@@ -1,5 +1,6 @@
 """Nebius Token Factory / Nemotron investigation helpers (hackathon)."""
 
+from .agent import investigate_case
 from .investigation import IncidentContext, InvestigationResult, investigate_incident
 from .schema import (
     ALLOWED_ACTIONS,
@@ -14,6 +15,7 @@ __all__ = [
     "InvestigationResult",
     "MitigationRecommendation",
     "RecommendationValidationError",
+    "investigate_case",
     "investigate_incident",
     "validate_recommendation",
 ]

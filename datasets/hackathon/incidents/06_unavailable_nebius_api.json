@@ -1,0 +1,35 @@
+{
+  "id": "06_unavailable_nebius_api",
+  "title": "Unavailable Nebius API",
+  "description": "Forces empty API key so Nemotron path reports blocked_no_credentials; rule-only path still works.",
+  "network_prediction": "LOFT_LowRate_Attack",
+  "dpid": "1",
+  "src_ip": "10.0.0.15",
+  "telemetry": {
+    "context_source": "synthetic_fixture",
+    "packet_in_delta_pct": 38.0,
+    "source_dominance": 0.6,
+    "distributed_sources": false,
+    "window_id": "fix-06"
+  },
+  "camera": {
+    "context_source": "synthetic_fixture",
+    "physical_label": "stable",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 4,
+    "queue_length_proxy_m": 10.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "expected": {
+    "rule_action_in": ["rate_limit", "observe"],
+    "nemotron_evidence_class": "blocked_no_credentials",
+    "notes": "API unavailable — deterministic rules remain the fallback."
+  },
+  "force_mode": "unavailable_api"
+}

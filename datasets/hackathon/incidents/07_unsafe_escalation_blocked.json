@@ -1,0 +1,47 @@
+{
+  "id": "07_unsafe_escalation_blocked",
+  "title": "Unsafe model escalation blocked by gate",
+  "description": "Synthetic model proposes temporary_drop while rule fusion says observe/protect — gate must de-escalate.",
+  "network_prediction": "Normal",
+  "dpid": "1",
+  "src_ip": "10.0.0.9",
+  "telemetry": {
+    "context_source": "synthetic_fixture",
+    "packet_in_delta_pct": 5.0,
+    "source_dominance": 0.2,
+    "distributed_sources": true,
+    "window_id": "fix-07"
+  },
+  "camera": {
+    "context_source": "synthetic_fixture",
+    "physical_label": "incident",
+    "activity_band": "medium",
+    "visible_vehicle_tracks": 6,
+    "queue_length_proxy_m": 20.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": true,
+    "incident": true
+  },
+  "expected": {
+    "rule_action_in": ["protect_safety", "observe"],
+    "gate_must_block_escalation": true,
+    "allow_containment": false,
+    "notes": "Acceptance: unsafe temporary_drop cannot bypass deterministic gate."
+  },
+  "force_mode": "synthetic_json",
+  "synthetic_model_output": {
+    "recommended_action": "temporary_drop",
+    "final_risk": "high",
+    "rationale": "UNSAFE: model hallucinates containment during a physical incident.",
+    "policy_attack_type": "DDoS_PacketIn_Flood",
+    "cooldown_seconds": 10,
+    "false_positive_corrected": false,
+    "safety_critical": false,
+    "confidence": 0.99,
+    "evidence_notes": ["hallucinated_ddos"]
+  }
+}
