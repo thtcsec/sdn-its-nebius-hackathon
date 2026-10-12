@@ -6,8 +6,11 @@ import json
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from sdn_its.utils.env import ensure_repo_env
+
 from .nebius_client import (
     DEFAULT_MODEL,
+    FALLBACK_INVESTIGATION_MODEL,
     ChatCompletionResult,
     NebiusAPIError,
     NebiusConfigError,
@@ -24,7 +27,12 @@ from .schema import (
 SYSTEM_PROMPT = """You are an SDN-ITS incident investigator for Intelligent Transportation Systems.
 You advise a deterministic policy engine. You do NOT execute OpenFlow rules.
 
-Return ONLY a single JSON object with keys:
+CRITICAL OUTPUT RULES:
+- Your entire reply MUST be one JSON object and nothing else.
+- Do not write analysis, markdown, code fences, or chain-of-thought before/after the JSON.
+- Start with `{` and end with `}`.
+
+Required JSON keys:
 - recommended_action: one of observe | rate_limit | temporary_drop | preserve_rush_hour | protect_safety
 - final_risk: one of low | medium | high | critical
 - rationale: short English explanation
@@ -35,7 +43,7 @@ Return ONLY a single JSON object with keys:
 - confidence: number between 0 and 1
 - evidence_notes: array of short strings
 
-Rules:
+Policy guidance:
 - Network anomaly evidence is primary; camera is same-zone physical context only.
 - If pedestrians/incident/safety_critical, prefer protect_safety.
 - If rush-hour physical activity explains a surge, prefer preserve_rush_hour or observe.
@@ -77,7 +85,9 @@ class InvestigationResult:
     estimated_cost_usd: float | None = None
     completion_id: str | None = None
     error: str | None = None
+    error_class: str | None = None
     raw_content_preview: str | None = None
+    http_status: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -100,10 +110,11 @@ def investigate_incident(
     demo_mode: bool = True,
     allow_containment_in_demo: bool = False,
     model: str | None = None,
-    temperature: float = 0.2,
-    max_tokens: int = 512,
+    temperature: float = 0.1,
+    max_tokens: int = 1024,
 ) -> InvestigationResult:
     """Run a real Token Factory completion when credentials exist; never fabricate success."""
+    ensure_repo_env()
     try:
         tf = client or NebiusTokenFactoryClient(model=model or DEFAULT_MODEL)
         # Force key check early for clear evidence_class
@@ -116,6 +127,7 @@ def investigate_incident(
             evidence_class="blocked_no_credentials",
             recommendation=None,
             error=str(exc),
+            error_class=getattr(exc, "error_class", "config"),
         )
 
     messages = [
@@ -133,7 +145,7 @@ def investigate_incident(
         )
     except NebiusAPIError as exc:
         # Retry once without response_format if server rejects it
-        if exc.status_code in {400, 422} and "response_format" in str(exc.body).lower():
+        if exc.status_code in {400, 422}:
             try:
                 completion = tf.chat_completions(
                     messages,
@@ -148,6 +160,8 @@ def investigate_incident(
                     evidence_class="api_error",
                     recommendation=None,
                     error=str(exc2),
+                    error_class=exc2.error_class,
+                    http_status=exc2.status_code,
                     model=model or DEFAULT_MODEL,
                 )
         else:
@@ -156,22 +170,103 @@ def investigate_incident(
                 evidence_class="api_error",
                 recommendation=None,
                 error=str(exc),
+                error_class=exc.error_class,
+                http_status=exc.status_code,
                 model=model or DEFAULT_MODEL,
             )
+
+    # If the model spent the budget on reasoning and never emitted JSON, one repair call
+    finalized = _finalize_from_completion(
+        completion,
+        rule_fusion=ctx.rule_fusion,
+        demo_mode=demo_mode,
+        allow_containment_in_demo=allow_containment_in_demo,
+    )
+    if finalized.ok or finalized.evidence_class != "validation_error":
+        return finalized
+
+    repair_messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": build_user_prompt(ctx)},
+        {"role": "assistant", "content": completion.content},
+        {
+            "role": "user",
+            "content": (
+                "Your previous reply was invalid. Reply again with ONLY the JSON object "
+                "(no thinking, no prose). It must parse with json.loads."
+            ),
+        },
+    ]
+    try:
+        completion = tf.chat_completions(
+            repair_messages,
+            model=model,
+            temperature=0.0,
+            max_tokens=max_tokens,
+            response_format={"type": "json_object"},
+        )
+    except NebiusAPIError as exc:
+        return InvestigationResult(
+            ok=False,
+            evidence_class="api_error",
+            recommendation=None,
+            error=str(exc),
+            error_class=exc.error_class,
+            http_status=exc.status_code,
+            model=model or DEFAULT_MODEL,
+            raw_content_preview=(finalized.raw_content_preview),
+        )
     except NebiusConfigError as exc:
         return InvestigationResult(
             ok=False,
             evidence_class="blocked_no_credentials",
             recommendation=None,
             error=str(exc),
+            error_class=getattr(exc, "error_class", "config"),
         )
 
-    return _finalize_from_completion(
+    repaired = _finalize_from_completion(
         completion,
         rule_fusion=ctx.rule_fusion,
         demo_mode=demo_mode,
         allow_containment_in_demo=allow_containment_in_demo,
     )
+    if repaired.ok or repaired.evidence_class != "validation_error":
+        return repaired
+
+    # Last resort: switch to a JSON-reliable NVIDIA model (still real_api)
+    primary = (model or tf.model or DEFAULT_MODEL).strip()
+    fallback = FALLBACK_INVESTIGATION_MODEL
+    if primary == fallback:
+        return repaired
+    try:
+        completion = tf.chat_completions(
+            messages,
+            model=fallback,
+            temperature=0.0,
+            max_tokens=max_tokens,
+            response_format={"type": "json_object"},
+        )
+    except NebiusAPIError as exc:
+        return InvestigationResult(
+            ok=False,
+            evidence_class="api_error",
+            recommendation=None,
+            error=f"fallback {fallback} failed: {exc}",
+            error_class=exc.error_class,
+            http_status=exc.status_code,
+            model=fallback,
+            raw_content_preview=repaired.raw_content_preview,
+        )
+    out = _finalize_from_completion(
+        completion,
+        rule_fusion=ctx.rule_fusion,
+        demo_mode=demo_mode,
+        allow_containment_in_demo=allow_containment_in_demo,
+    )
+    if out.ok:
+        out.gated_notes = list(out.gated_notes) + [f"fallback_model:{fallback}"]
+    return out
 
 
 def investigate_from_model_text(

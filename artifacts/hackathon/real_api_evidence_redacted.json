@@ -1,0 +1,183 @@
+{
+  "ts_utc": "2026-10-12T15:36:50.887256+00:00",
+  "evidence_class": "real_api",
+  "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+  "notes": [
+    "Credentials loaded from repo-root .env via python-dotenv (process env wins).",
+    "No API keys included in this bundle.",
+    "demo_mode gated containment to observe; OF remains mock."
+  ],
+  "estimated_cost_usd_sum_from_last_artifacts": 0.00046842,
+  "artifacts": {
+    "nebius_verify_last.json": {
+      "ts_utc": "2026-10-12T15:36:18.092542+00:00",
+      "requested_model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "base_url": "https://api.tokenfactory.nebius.com/v1",
+      "config": {
+        "project_root": "D:\\tu_projects\\sdn-its-nebius-hackathon",
+        "env_file": "D:\\tu_projects\\sdn-its-nebius-hackathon\\.env",
+        "env_file_exists": true,
+        "nebius_api_key_present": true,
+        "nebius_base_url_set": true,
+        "nebius_model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+        "cwd": "C:\\Users\\Acer\\AppData\\Local\\Temp",
+        "note": "Existing process env vars take precedence over .env (override=False)."
+      },
+      "evidence_class": "real_api",
+      "ok": true,
+      "list_models": {
+        "ok": true,
+        "count": 25,
+        "latency_ms": 1077.1266999654472,
+        "requested_model_listed": true,
+        "nemotron_ids_sample": [
+          "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+          "nvidia/Nemotron-3_5-Lightning",
+          "nvidia/Nemotron-3-Ultra-550b-a55b",
+          "nvidia/nemotron-3-super-120b-a12b"
+        ]
+      },
+      "http_status": 200,
+      "completion_id": "chatcmpl-eb2610a1-4ee2-434f-bb2d-24457780de47",
+      "response_model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 41,
+        "completion_tokens": 96,
+        "total_tokens": 137
+      },
+      "latency_ms": 1068.2652000105008,
+      "estimated_cost_usd": 2.55e-05,
+      "content_preview": "{\n  \"ping\": \"pong\",\n  \"model_family\": \"nemotron\",\n  \"ok\": true\n}"
+    },
+    "vertical_slice_last.json": {
+      "ts_utc": "2026-10-12T15:36:01.607029+00:00",
+      "slice": "telemetry_camera_nemotron_policy_v1",
+      "context_source": "synthetic_fixture",
+      "demo_mode": true,
+      "requested_model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "config": {
+        "project_root": "D:\\tu_projects\\sdn-its-nebius-hackathon",
+        "env_file": "D:\\tu_projects\\sdn-its-nebius-hackathon\\.env",
+        "env_file_exists": true,
+        "nebius_api_key_present": true,
+        "nebius_base_url_set": true,
+        "nebius_model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+        "cwd": "D:\\tu_projects\\sdn-its-nebius-hackathon",
+        "note": "Existing process env vars take precedence over .env (override=False)."
+      },
+      "of_backend_note": "PolicyEngine only creates in-memory FlowRule objects here; default controller of_backend remains mock (no switch push in this script).",
+      "investigation": {
+        "ok": true,
+        "evidence_class": "real_api",
+        "recommendation": {
+          "recommended_action": "observe",
+          "final_risk": "medium",
+          "rationale": "Low\u2011rate attack detected with moderate packet\u2011in surge; camera stable, no safety impact. [demo_mode: containment intention blocked; OF remains non-destructive]",
+          "policy_attack_type": "LOFT_LowRate_Attack",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.81,
+          "evidence_notes": [
+            "LOFT_LowRate_Attack detected",
+            "packet_in_delta_pct 42.0%",
+            "camera stable, no safety incident"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "gated_notes": [
+          "gate:demo_block_containment"
+        ],
+        "fusion_for_policy": {
+          "recommended_action": "observe",
+          "policy_attack_type": "LOFT_LowRate_Attack",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "final_risk": "medium",
+          "explain": "Low\u2011rate attack detected with moderate packet\u2011in surge; camera stable, no safety impact. [demo_mode: containment intention blocked; OF remains non-destructive]",
+          "reason_codes": [
+            "LOFT_LowRate_Attack detected",
+            "packet_in_delta_pct 42.0%",
+            "camera stable, no safety incident"
+          ],
+          "llm_schema_version": "hackathon_mitigation_v1",
+          "llm_confidence": 0.81
+        },
+        "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+        "usage": {
+          "prompt_tokens": 601,
+          "completion_tokens": 882,
+          "total_tokens": 1483
+        },
+        "latency_ms": 8397.66839996446,
+        "estimated_cost_usd": 0.00024774,
+        "completion_id": "chatcmpl-7e19542c-beae-468d-84c8-f76963a6aff8",
+        "error": null,
+        "error_class": null,
+        "raw_content_preview": "{\n  \"recommended_action\": \"rate_limit\",\n  \"final_risk\": \"medium\",\n  \"rationale\": \"Low\u2011rate attack detected with moderate packet\u2011in surge; camera stable, no safety impact.\",\n  \"policy_attack_type\": \"LOFT_LowRate_Attack\",\n  \"cooldown_seconds\"",
+        "http_status": null
+      },
+      "policy_mitigation_status": "OBSERVE_ONLY",
+      "policy_applied_rules_count": 0,
+      "validated_decision": {
+        "recommended_action": "observe",
+        "final_risk": "medium",
+        "rationale": "Low\u2011rate attack detected with moderate packet\u2011in surge; camera stable, no safety impact. [demo_mode: containment intention blocked; OF remains non-destructive]",
+        "policy_attack_type": "LOFT_LowRate_Attack",
+        "cooldown_seconds": 15.0,
+        "false_positive_corrected": false,
+        "safety_critical": false,
+        "confidence": 0.81,
+        "evidence_notes": [
+          "LOFT_LowRate_Attack detected",
+          "packet_in_delta_pct 42.0%",
+          "camera stable, no safety incident"
+        ],
+        "schema_version": "hackathon_mitigation_v1"
+      }
+    },
+    "flask_investigate_last.json": {
+      "ok": true,
+      "evidence_class": "real_api",
+      "model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "usage": {
+        "completion_tokens": 694,
+        "prompt_tokens": 477,
+        "total_tokens": 1171
+      },
+      "latency_ms": 6713.680999935605,
+      "estimated_cost_usd": 0.00019517999999999998,
+      "gated_notes": [
+        "gate:demo_block_containment"
+      ],
+      "policy": {
+        "applied_rules_count": 0,
+        "mitigation_status": "OBSERVE_ONLY",
+        "network_evidence": false
+      },
+      "recommended_action": "observe",
+      "error": null,
+      "error_class": null,
+      "completion_id": "chatcmpl-5d50e576-ec2b-469e-a5f3-c1115f6c3e2a",
+      "validated_decision": {
+        "confidence": 0.78,
+        "cooldown_seconds": 15.0,
+        "evidence_notes": [
+          "LOFT_LowRate_Attack detected",
+          "42% packet_in delta",
+          "camera context stable"
+        ],
+        "false_positive_corrected": false,
+        "final_risk": "medium",
+        "policy_attack_type": "LOFT_LowRate_Attack",
+        "rationale": "LOFT low-rate attack detected with high packet_in delta, but no safety or rush-hour context; rate limiting is appropriate. [demo_mode: containment intention blocked; OF remains non-destructive]",
+        "recommended_action": "observe",
+        "safety_critical": false,
+        "schema_version": "hackathon_mitigation_v1"
+      },
+      "http_route": "POST /api/v1/hackathon/investigate"
+    }
+  }
+}

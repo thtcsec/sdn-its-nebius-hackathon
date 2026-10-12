@@ -8,11 +8,14 @@ from api.middleware import register_middleware
 from api.routes import register_routes
 from sdn_its.controller.rest_api import ResilienceSDNController
 from sdn_its.utils.config import load_config
+from sdn_its.utils.env import ensure_repo_env
 from sdn_its.utils.paths import PROJECT_ROOT
 from sdn_its.utils.security import resolve_bind_host
 
 
 def create_app(controller: ResilienceSDNController | None = None) -> Flask:
+    # Repo-root .env (NEBIUS_*), without overriding already-exported process env
+    ensure_repo_env()
     template_folder = str(PROJECT_ROOT / "dashboard" / "templates")
     static_folder = str(PROJECT_ROOT / "dashboard" / "static")
     app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)

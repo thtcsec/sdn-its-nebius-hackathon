@@ -23,6 +23,19 @@ from sdn_its.controller.flow_manager import FlowRuleManager
 from sdn_its.mitigation.policy_engine import PolicyEngine
 
 
+def test_extract_json_after_reasoning_preamble():
+    from sdn_its.llm.schema import extract_json_object
+
+    text = (
+        "Here's a thinking process:\n1. analyze\n"
+        '{"recommended_action":"observe","final_risk":"low",'
+        '"rationale":"Uncertain evidence warrants observe only.",'
+        '"confidence":0.5,"evidence_notes":["unit"]}'
+    )
+    obj = extract_json_object(text)
+    assert obj["recommended_action"] == "observe"
+
+
 def test_validate_recommendation_ok():
     rec = validate_recommendation(
         {
@@ -113,7 +126,8 @@ def test_investigate_from_model_text_feeds_policy_engine():
 
 
 def test_investigate_incident_blocked_without_credentials(monkeypatch):
-    monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
+    # Empty process env wins over repo .env (override=False)
+    monkeypatch.setenv("NEBIUS_API_KEY", "")
     ctx = IncidentContext(network_prediction="Normal", telemetry={"x": 1}, camera={"y": 2})
     result = investigate_incident(ctx)
     assert result.ok is False
@@ -155,6 +169,32 @@ def test_nebius_client_http_error():
 
 
 def test_load_api_key_missing(monkeypatch):
-    monkeypatch.delenv("NEBIUS_API_KEY", raising=False)
+    monkeypatch.setenv("NEBIUS_API_KEY", "")
     with pytest.raises(NebiusConfigError):
         NebiusTokenFactoryClient(api_key=None).list_models()
+
+
+def test_repo_env_loads_from_project_root_not_cwd(monkeypatch, tmp_path):
+    """``.env`` is resolved via PROJECT_ROOT even when cwd differs."""
+    from sdn_its.utils.env import env_file_path, load_repo_env, nebius_config_summary
+    from sdn_its.utils.paths import PROJECT_ROOT
+
+    monkeypatch.chdir(tmp_path)
+    path = env_file_path()
+    assert path == PROJECT_ROOT / ".env"
+    assert path.is_absolute()
+    # Loading must not depend on cwd
+    loaded = load_repo_env(override=False)
+    summary = nebius_config_summary()
+    assert summary["project_root"] == str(PROJECT_ROOT)
+    assert summary["cwd"] == str(tmp_path)
+    assert "NEBIUS_API_KEY" not in json.dumps(summary)
+    if (PROJECT_ROOT / ".env").is_file():
+        assert loaded == PROJECT_ROOT / ".env"
+        assert summary["env_file_exists"] is True
+
+
+def test_classify_http_error_auth():
+    from sdn_its.llm.nebius_client import ERROR_AUTH, classify_http_error
+
+    assert classify_http_error(401, {"error": {"message": "unauthorized"}}) == ERROR_AUTH

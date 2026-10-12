@@ -65,20 +65,50 @@ class MitigationRecommendation:
 _JSON_FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL | re.IGNORECASE)
 
 
+def _balanced_json_objects(text: str) -> list[str]:
+    """Return candidate JSON object substrings (brace-balanced), last-first preferred later."""
+    out: list[str] = []
+    depth = 0
+    start: int | None = None
+    in_str = False
+    escape = False
+    for i, ch in enumerate(text):
+        if in_str:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_str = False
+            continue
+        if ch == '"':
+            in_str = True
+            continue
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}" and depth > 0:
+            depth -= 1
+            if depth == 0 and start is not None:
+                out.append(text[start : i + 1])
+                start = None
+    return out
+
+
 def extract_json_object(text: str) -> dict[str, Any]:
-    """Parse a JSON object from model text (raw or fenced)."""
+    """Parse a JSON object from model text (raw, fenced, or trailing after reasoning)."""
     if not text or not str(text).strip():
         raise RecommendationValidationError("empty model content")
     raw = str(text).strip()
-    candidates: list[str] = [raw]
+    candidates: list[str] = []
     m = _JSON_FENCE.search(raw)
     if m:
-        candidates.insert(0, m.group(1))
-    # Brace slice fallback
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start >= 0 and end > start:
-        candidates.append(raw[start : end + 1])
+        candidates.append(m.group(1))
+    # Prefer the last balanced object (common for reasoning models that narrate then emit JSON)
+    balanced = _balanced_json_objects(raw)
+    candidates.extend(reversed(balanced))
+    candidates.append(raw)
 
     last_err: Exception | None = None
     for cand in candidates:

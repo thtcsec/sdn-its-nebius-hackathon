@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 """Minimal vertical slice: telemetry + camera → Nemotron → schema → safety → PolicyEngine.
 
-Demo mode defaults: containment intentions blocked; OpenFlow backend stays mock
-unless the process already configured otherwise.
-
-Evidence classes mirror sdn_its.llm.investigation.InvestigationResult.
+Loads credentials from repository-root ``.env`` (process env wins).
+Demo mode defaults: containment intentions blocked; OpenFlow not pushed here.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,8 +17,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT))
 
+from sdn_its.utils.env import ensure_repo_env, nebius_config_summary  # noqa: E402
 from sdn_its.llm.investigation import IncidentContext, investigate_incident  # noqa: E402
-from sdn_its.llm.nebius_client import DEFAULT_MODEL  # noqa: E402
+from sdn_its.llm.nebius_client import resolve_model  # noqa: E402
 from sdn_its.controller.flow_manager import FlowRuleManager  # noqa: E402
 from sdn_its.mitigation.policy_engine import PolicyEngine  # noqa: E402
 
@@ -61,8 +59,9 @@ def _sample_context() -> IncidentContext:
 
 
 def main() -> int:
+    ensure_repo_env()
     parser = argparse.ArgumentParser(description="Nemotron vertical slice (Nebius)")
-    parser.add_argument("--model", default=os.environ.get("NEBIUS_MODEL") or DEFAULT_MODEL)
+    parser.add_argument("--model", default=None)
     parser.add_argument("--demo-mode", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--allow-containment-in-demo", action="store_true", default=False)
     parser.add_argument(
@@ -71,12 +70,13 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    model = resolve_model(args.model)
     ctx = _sample_context()
     result = investigate_incident(
         ctx,
         demo_mode=args.demo_mode,
         allow_containment_in_demo=args.allow_containment_in_demo,
-        model=args.model,
+        model=model,
     )
 
     policy_status = None
@@ -97,12 +97,14 @@ def main() -> int:
         "slice": "telemetry_camera_nemotron_policy_v1",
         "context_source": "synthetic_fixture",
         "demo_mode": args.demo_mode,
+        "requested_model": model,
+        "config": nebius_config_summary(),
         "of_backend_note": "PolicyEngine only creates in-memory FlowRule objects here; "
         "default controller of_backend remains mock (no switch push in this script).",
         "investigation": result.to_dict(),
         "policy_mitigation_status": policy_status,
         "policy_applied_rules_count": len(applied_rules),
-        # Do not embed full rule payloads with noisy prints — count only for slice evidence
+        "validated_decision": result.recommendation.to_dict() if result.recommendation else None,
     }
 
     out_path = Path(args.out)

@@ -2,8 +2,10 @@
 # Set NEBIUS_API_KEY in the environment (never commit secrets).
 
 base_url: "https://api.tokenfactory.nebius.com/v1"
-# Public catalog ID (eu-north1 Lightning)
-model: "nvidia/Nemotron-3_5-Lightning"
+# Public catalog — Nano is the default for structured investigation JSON.
+# Lightning remains available for smoke tests but often emits CoT before JSON.
+model: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
+fallback_investigation_model: "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B"
 timeout_s: 60
 temperature: 0.2
 max_tokens: 512
