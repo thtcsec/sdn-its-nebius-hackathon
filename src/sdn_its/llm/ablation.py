@@ -101,6 +101,7 @@ def run_ablation_arm(
             "conclusion_kind": ms.conclusion_kind,
             "pre_gate_action": ms.pre_gate_action,
             "pre_gate_source": ms.pre_gate_source,
+            "pre_gate_recommendation": ms.pre_gate_recommendation,
         },
     )
 

@@ -896,8 +896,26 @@
             gap: 12px;
             margin: 14px 0 18px;
         }
+        .hc-story {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+            margin: 10px 0 8px;
+        }
+        .hc-step {
+            border: 1px solid rgba(0,0,0,0.12);
+            background: linear-gradient(165deg, rgba(236,244,247,0.95), rgba(220,232,236,0.9));
+            padding: 8px;
+            min-height: 74px;
+            border-radius: 6px;
+        }
+        .hc-step .k { font-size: 10px; letter-spacing: 0.03em; text-transform: uppercase; opacity: 0.65; }
+        .hc-step .v { font-size: 12px; margin-top: 4px; line-height: 1.35; word-break: break-word; }
+        .hc-step.active { border-color: #2a9d6a; box-shadow: inset 0 0 0 1px rgba(42,157,106,0.25); }
+        .hc-operator { font-size: 12px; opacity: 0.9; margin: 6px 0 8px; line-height: 1.4; }
         @media (max-width: 1100px) {
             .hackathon-board { grid-template-columns: 1fr; }
+            .hc-story { grid-template-columns: 1fr 1fr; }
         }
         .hc-pre {
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -1369,7 +1387,17 @@
                 <span>synthetic fixtures · no private RTSP</span>
             </div>
             <div class="panel-body">
-                <div class="ev-note">Product story: a network surge is not always an attack — investigate physical context before disruptive decisions. Multi-step tools use <b>fixture metadata</b> (not live RTSP). Default OpenFlow = <b>mock</b>.</div>
+                <div class="ev-note">Product story: a network surge is not always an attack — investigate physical context before disruptive decisions. Multi-step tools use <b>fixture metadata</b> (not live RTSP). Default OpenFlow = <b>mock</b>. Advisory latency is seconds, not subsecond IR.</div>
+                <p class="hc-operator" id="hc-operator-line">Operator view: alarm → missing evidence → tool → new facts → model conclusion → policy allow/block → audit.</p>
+                <div class="hc-story" id="hc-story" aria-label="Investigation storyboard">
+                    <div class="hc-step" data-step="alarm"><div class="k">1 · Alarm</div><div class="v" id="hc-s-alarm">—</div></div>
+                    <div class="hc-step" data-step="gap"><div class="k">2 · Missing</div><div class="v" id="hc-s-gap">—</div></div>
+                    <div class="hc-step" data-step="tool"><div class="k">3 · Tool</div><div class="v" id="hc-s-tool">—</div></div>
+                    <div class="hc-step" data-step="evidence"><div class="k">4 · Retrieved</div><div class="v" id="hc-s-evidence">—</div></div>
+                    <div class="hc-step" data-step="model"><div class="k">5 · Model</div><div class="v" id="hc-s-model">—</div></div>
+                    <div class="hc-step" data-step="policy"><div class="k">6 · Policy</div><div class="v" id="hc-s-policy">—</div></div>
+                    <div class="hc-step" data-step="why"><div class="k">7 · Why it matters</div><div class="v" id="hc-s-why">Avoid unsupported disrupt / miss</div></div>
+                </div>
                 <label for="hc-incident">Fixture / scenario</label>
                 <select id="hc-incident" aria-label="Hackathon incident fixture"></select>
                 <div class="hc-actions">
@@ -1381,7 +1409,8 @@
                 <div><span class="hc-pill" id="hc-mode-pill">mode: —</span>
                     <span class="hc-pill" id="hc-gate-pill">gate: —</span>
                     <span class="hc-pill" id="hc-of-pill">OF: mock</span>
-                    <span class="hc-pill" id="hc-tools-pill">tools: —</span></div>
+                    <span class="hc-pill" id="hc-tools-pill">tools: —</span>
+                    <span class="hc-pill" id="hc-lat-pill">latency: —</span></div>
             </div>
         </article>
         <article class="panel" id="panel-hc-case">
@@ -2634,8 +2663,9 @@
         document.getElementById("hc-rule").textContent =
             `${rule.recommended_action || "—"} → ${rule.policy_status || "—"} (${rule.evidence_class || "rules"})`;
         const gates = nem.gated_notes || payload.gated_notes || [];
+        const kind = payload.conclusion_kind || (nem.fusion && nem.fusion.conclusion_kind) || "—";
         document.getElementById("hc-nemotron").textContent =
-            `${nemAction || "—"} → ${nem.policy_status || "—"} · ${nem.evidence_class || payload.evidence_class || "—"}` +
+            `${nemAction || "—"} → ${nem.policy_status || "—"} · ${nem.evidence_class || payload.evidence_class || "—"} · ${kind}` +
             (gates.length ? ` · gates=${gates.join(",")}` : "");
         document.getElementById("hc-rationale").textContent =
             nem.rationale || (payload.recommendation && payload.recommendation.rationale) || nem.error || payload.error || "—";
@@ -2643,8 +2673,37 @@
         document.getElementById("hc-trace").textContent = trace.length ? JSON.stringify(trace, null, 2) : "—";
         const tools = payload.tool_calls || (nem.fusion && nem.fusion.tool_calls) || 0;
         document.getElementById("hc-tools-pill").textContent = `tools: ${tools}`;
+        const lat = payload.latency_ms || nem.latency_ms || (nem.fusion && nem.fusion.latency_ms);
+        document.getElementById("hc-lat-pill").textContent = lat != null ? `latency: ${Math.round(lat)} ms` : "latency: —";
         const gateFired = gates.some((n) => String(n).includes("gate:"));
         document.getElementById("hc-gate-pill").textContent = gateFired ? "gate: BLOCKED/CLAMPED" : "gate: pass";
+
+        // Storyboard for judges
+        const net = payload.network_prediction || payload.bundle?.network_prediction || "—";
+        const unc = [];
+        const toolNames = [];
+        let retrieved = "—";
+        for (const t of trace) {
+            if (t.phase === "identify_uncertainty") {
+                (t.detail?.uncertainties || []).forEach((u) => unc.push(u));
+            }
+            if (t.phase === "select_evidence_tool" && t.detail?.tool) toolNames.push(t.detail.tool);
+            if (t.phase === "retrieve_validate" && t.detail?.summary) retrieved = t.detail.summary;
+        }
+        const pre = payload.pre_gate_action || (nem.fusion && nem.fusion.pre_gate_action) || nemAction;
+        document.getElementById("hc-s-alarm").textContent = String(net);
+        document.getElementById("hc-s-gap").textContent = unc.length ? unc.slice(0, 3).join(", ") : "none listed";
+        document.getElementById("hc-s-tool").textContent = toolNames.length ? toolNames.join(" → ") : "—";
+        document.getElementById("hc-s-evidence").textContent = retrieved;
+        document.getElementById("hc-s-model").textContent = `${pre || "—"} (${kind})`;
+        document.getElementById("hc-s-policy").textContent = gateFired
+            ? `${nemAction || "—"} · ${gates.join(", ")}`
+            : `${nemAction || "—"} · allowed`;
+        document.getElementById("hc-s-why").textContent =
+            "Investigate before disrupt: reduce false contain on missing/conflict evidence; keep mock OF non-destructive.";
+        document.querySelectorAll("#hc-story .hc-step").forEach((el) => el.classList.add("active"));
+        document.getElementById("hc-operator-line").textContent =
+            `Operator: alarm=${net}; missing=${unc[0] || "n/a"}; Nemotron tools=${toolNames.length}; final=${nemAction || "—"}; OF=mock; camera=synthetic metadata.`;
     }
 
     async function hcRefreshAudit() {

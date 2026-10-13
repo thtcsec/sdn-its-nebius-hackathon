@@ -28,11 +28,11 @@ Show **OF: mock** on the hackathon board. Never enable live switch pushes on cam
 | 0:15–0:40 | Console · scenario rush | Multi-step: tools inspect camera metadata → contradiction → preserve/observe |
 | 0:40–1:05 | Console · missing camera | Tools flag insufficient evidence → gate blocks containment → observe |
 | 1:05–1:25 | Trace panel | DETECT → tools → REASON → POLICY GATE → AUDIT (mock OF) |
-| 1:25–1:50 | Terminal ablation | `run_ablation_study.py --skip-real` — A/B/C/D on same held-out inputs |
-| 1:50–2:15 | Optional real Nebius | `verify_nebius_nemotron.py` or multistep `--real` (blur `.env`) |
-| 2:15–2:40 | Honesty | Offline planner ≠ live Nemotron; camera = synthetic metadata; no fake gains |
-| 2:40–2:55 | Limitations | Mock OF; public repo/video still require owner approval |
-| 2:55–3:00 | End card | `docs/JUDGE_DEMO.md` + `COMPETITION_DELTA_REPORT.md` |
+| 1:25–1:50 | Storyboard | Alarm → missing → tool → retrieved → model → policy → why (console) |
+| 1:50–2:15 | Paired gate honesty | Live C=D on n=4 (no override); show adversarial DROP→observe enforcement |
+| 2:15–2:40 | Honesty | Offline planner ≠ Nemotron; synthetic camera; mock OF; ~15–20s advisory latency |
+| 2:40–2:55 | Limitations | Public repo / YouTube / hosted URL need owner approval |
+| 2:55–3:00 | End card | `FINAL_RELEASE_GATE.md` + judge commands |
 
 ## Recording tips
 

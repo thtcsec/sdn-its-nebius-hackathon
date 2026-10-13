@@ -114,6 +114,7 @@ class MultiStepResult:
     conclusion_kind: ConclusionKind | str = "deterministic_fallback"
     pre_gate_action: str | None = None
     pre_gate_source: str | None = None  # nemotron_conclude | deterministic_fallback
+    pre_gate_recommendation: dict[str, Any] | None = None  # frozen advisory for paired gate replay
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -280,6 +281,7 @@ def _finalize(
             pre_gate_source=pre_gate_source,
         )
 
+    pre_gate_rec = rec.to_dict()
     pre_gate_action = rec.recommended_action
     notes: list[str] = []
     if apply_gate:
@@ -349,6 +351,7 @@ def _finalize(
         conclusion_kind=conclusion_kind,
         pre_gate_action=pre_gate_action,
         pre_gate_source=pre_gate_source,
+        pre_gate_recommendation=pre_gate_rec,
     )
 
 
