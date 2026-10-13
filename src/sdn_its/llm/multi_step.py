@@ -42,10 +42,10 @@ from .schema import (
 PlannerMode = Literal["offline", "real"]
 
 MAX_TOOLS_DEFAULT = 5
-MAX_MODEL_CALLS_DEFAULT = 3
+MAX_MODEL_CALLS_DEFAULT = 4
 
-AGENT_SYSTEM = """You are an SDN-ITS cyber-physical investigator.
-A network traffic surge is not always an attack — gather physical context before disruptive decisions.
+AGENT_SYSTEM = """You are an SDN-ITS cyber-physical investigator for an ITS network operator / SOC analyst.
+A traffic surge is not always an attack. Before disrupting a cyber-physical system, investigate the evidence.
 You do NOT execute OpenFlow. You may only call evidence tools or conclude.
 
 Reply with ONE JSON object only (no markdown, no chain-of-thought):
@@ -67,11 +67,14 @@ Final recommendation:
 }}
 
 Rules:
+- When uncertainties are listed, your FIRST reply MUST be action=tool_call (never conclude immediately).
+- Choose the tool that addresses the most important missing evidence (quality, camera, contradiction, temporal).
+- High road traffic does NOT prove a cyberattack is harmless — use identify_contradictions, then decide carefully.
 - If physical evidence is insufficient/stale/unavailable, prefer observe; do not escalate containment.
 - If network attack label conflicts with rush-hour physical activity, prefer preserve_rush_hour or observe.
 - If safety_critical / pedestrian / incident, prefer protect_safety.
 - Never invent packet counters or claim live camera inference.
-- Prefer escalate_human_review tool when uncertain.
+- Prefer escalate_human_review when still uncertain after tools.
 """
 
 
@@ -430,7 +433,12 @@ def run_multi_step_investigation(
                             "telemetry_keys": list(bundle.telemetry.keys()),
                             "camera_enabled": include_camera,
                         },
-                        "instruction": "Select a tool or conclude. Prefer tools before concluding.",
+                        "instruction": (
+                            "Uncertainties are open: your next JSON MUST be action=tool_call. "
+                            "Do not conclude until at least one relevant tool has returned evidence."
+                            if uncertainties
+                            else "Select a tool or conclude."
+                        ),
                     },
                     indent=2,
                 ),
@@ -438,6 +446,7 @@ def run_multi_step_investigation(
         ]
 
         concluded: dict[str, Any] | None = None
+        require_tool_first = bool(uncertainties)
         while model_calls < max_model_calls and tool_calls <= max_tools:
             try:
                 completion = tf.chat_completions(
@@ -530,13 +539,85 @@ def run_multi_step_investigation(
                 )
                 continue
             if action == "conclude" and isinstance(obj.get("recommendation"), dict):
+                if require_tool_first and tool_calls == 0:
+                    # Do not accept conclude-without-tools; ask Nemotron to choose a tool.
+                    trace.append(
+                        TraceStep(
+                            "select_evidence_tool",
+                            {
+                                "rejected_premature_conclude": True,
+                                "model_wanted_action": (obj.get("recommendation") or {}).get("recommended_action"),
+                                "instruction": "must_tool_call",
+                            },
+                        )
+                    )
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": json.dumps(
+                                {
+                                    "notice": (
+                                        "Conclude rejected: uncertainties remain and no tools have run. "
+                                        "Reply with action=tool_call choosing the best tool for the gap."
+                                    ),
+                                    "uncertainties": uncertainties,
+                                    "available_tools": tools,
+                                    "suggested_priority": [
+                                        "check_physical_evidence_quality",
+                                        "inspect_camera_metadata",
+                                        "identify_contradictions",
+                                        "retrieve_network_telemetry",
+                                        "compare_temporal_windows",
+                                    ]
+                                    if include_camera
+                                    else [
+                                        "retrieve_network_telemetry",
+                                        "compare_temporal_windows",
+                                        "identify_contradictions",
+                                    ],
+                                },
+                                indent=2,
+                            ),
+                        }
+                    )
+                    continue
                 concluded = dict(obj["recommendation"])
-                trace.append(TraceStep("reason", {"source": "nemotron_conclude", "preview": concluded}))
+                trace.append(
+                    TraceStep(
+                        "reason",
+                        {
+                            "source": "nemotron_conclude",
+                            "preview": concluded,
+                            "tool_calls_before_conclude": tool_calls,
+                        },
+                    )
+                )
                 break
             # Tolerate bare recommendation objects
             if "recommended_action" in obj:
+                if require_tool_first and tool_calls == 0:
+                    trace.append(
+                        TraceStep(
+                            "select_evidence_tool",
+                            {"rejected_premature_conclude": True, "bare_recommendation": True},
+                        )
+                    )
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": json.dumps(
+                                {
+                                    "notice": "Recommendation rejected until you call at least one evidence tool.",
+                                    "available_tools": tools,
+                                    "uncertainties": uncertainties,
+                                },
+                                indent=2,
+                            ),
+                        }
+                    )
+                    continue
                 concluded = obj
-                trace.append(TraceStep("reason", {"source": "nemotron_bare_recommendation"}))
+                trace.append(TraceStep("reason", {"source": "nemotron_bare_recommendation", "tool_calls": tool_calls}))
                 break
             trace.append(TraceStep("reason", {"unexpected": obj}))
             break

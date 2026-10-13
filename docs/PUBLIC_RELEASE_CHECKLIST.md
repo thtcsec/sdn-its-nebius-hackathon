@@ -15,6 +15,9 @@ Repository is currently **private**. Changing GitHub visibility requires an expl
 - [ ] Multi-step demo traces in `artifacts/hackathon/multistep_demo_traces.json`
 - [ ] Demo video (&lt;3 min) uploaded; URL recorded in `docs/DEMO_VIDEO.md`
 - [ ] Hosted working demo URL prepared (or clear local judge path + credentials note)
+- [ ] `WINNING_EVIDENCE.md` remote SHA matches GitHub tip
+- [ ] Matched live proof artifact present (`matched_nemotron_proof.json`) — never pitch offline 92% as Nemotron
+- [ ] Devpost feedback draft reviewed (`docs/NEBIUS_NVIDIA_FEEDBACK.md`)
 - [ ] LICENSE present (MIT) and visible on GitHub About after public flip
 - [ ] README status table matches reality; mock OF; no fabricated Nebius results
 - [ ] Competition rules re-checked (public repo, YouTube, Token Factory runtime, track, pre-existing explanation, feedback form)
