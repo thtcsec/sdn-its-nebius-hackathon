@@ -179,3 +179,25 @@ OFFLINE deterministic planner (ablation_offline.json): D≈92% on N=25
 LIVE matched Nemotron proof (matched_nemotron_proof.json): C/D = 4/4 on 4 cases
   → This is the Nemotron value evidence. Still small-n.
 ```
+
+---
+
+## P0 fix — reserved final reasoning (post tool-only exhaustion)
+
+**Problem:** With `MAX_MODEL_CALLS=4`, all rounds were spent on `tool_call`; conclusions were `deterministic_fallback`.
+
+**Fix (`multi_step.py`):**
+- Cap tool-selection model rounds (`MAX_TOOL_MODEL_CALLS_DEFAULT=3`)
+- Reserve a dedicated `final_reason` phase that only accepts `action=conclude`
+- Label outcomes: `nemotron_conclude` | `deterministic_fallback` | `policy_overridden`
+- Policy gate still authoritative (no bypass)
+
+**Re-run (same 4 IDs, budget ≤ $0.10, spent ≈ $0.011):**
+
+| Arm | nemotron_conclude | deterministic_fallback | policy_overridden | Correct |
+|-----|-------------------|------------------------|-------------------|---------|
+| B net-only | 2/4 (50%) | 2/4 | 0 | 75% |
+| C net+cam | **4/4 (100%)** | 0 | 0 | 75% |
+| D net+cam+gate | **4/4 (100%)** | 0 | 0 | **100%** |
+
+**Pass criterion:** C/D prove Nemotron completes a valid decision after tools (`pre_gate_source=nemotron_conclude`, phase `reserved_final_reason` or conclude-during-loop) — not tool-pick then silent deterministic handoff.

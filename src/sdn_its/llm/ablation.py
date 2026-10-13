@@ -63,6 +63,9 @@ def run_ablation_arm(
                 "tool_calls": ms.tool_calls,
                 "model_calls": ms.model_calls,
                 "bundle": ms.bundle,
+                "conclusion_kind": ms.conclusion_kind,
+                "pre_gate_action": ms.pre_gate_action,
+                "pre_gate_source": ms.pre_gate_source,
             },
         )
 
@@ -95,6 +98,9 @@ def run_ablation_arm(
             "include_camera": include_camera,
             "apply_gate": apply_gate,
             "planner": ms.planner,
+            "conclusion_kind": ms.conclusion_kind,
+            "pre_gate_action": ms.pre_gate_action,
+            "pre_gate_source": ms.pre_gate_source,
         },
     )
 

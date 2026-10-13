@@ -60,7 +60,16 @@ def _trace_tools(path_fusion: dict[str, Any] | None) -> list[dict[str, Any]]:
     for step in fus.get("trace") or []:
         phase = step.get("phase")
         detail = step.get("detail") or {}
-        if phase in {"select_evidence_tool", "retrieve_validate", "reason", "policy_gate", "detect", "identify_uncertainty"}:
+        if phase in {
+            "select_evidence_tool",
+            "retrieve_validate",
+            "reason",
+            "policy_gate",
+            "detect",
+            "identify_uncertainty",
+            "final_reason_prompt",
+            "audit",
+        }:
             out.append({"phase": phase, "detail": detail})
     return out
 
@@ -164,6 +173,9 @@ def main() -> int:
                 "planner": fus.get("planner"),
                 "model": None,
                 "nemotron_chose_tools": _nemotron_chose_tools(fus) if arm != "A_rule_only" else None,
+                "conclusion_kind": fus.get("conclusion_kind"),
+                "pre_gate_action": fus.get("pre_gate_action"),
+                "pre_gate_source": fus.get("pre_gate_source"),
                 "oracle_score": score,
                 "error": path.error,
                 "rationale": path.rationale,
@@ -218,10 +230,21 @@ def main() -> int:
             chose = [bool(r["arms"][arm].get("nemotron_chose_tools")) for r in scored]
             out["nemotron_chose_tools_rate"] = sum(chose) / n
             out["real_api_n"] = sum(1 for r in scored if r["arms"][arm].get("evidence_class") == "real_api")
+            kinds = [str(r["arms"][arm].get("conclusion_kind") or "") for r in scored]
+            out["conclusion_kind_counts"] = {
+                "nemotron_conclude": kinds.count("nemotron_conclude"),
+                "deterministic_fallback": kinds.count("deterministic_fallback"),
+                "policy_overridden": kinds.count("policy_overridden"),
+            }
+            out["nemotron_conclude_rate"] = kinds.count("nemotron_conclude") / n
+            out["pre_gate_nemotron_rate"] = (
+                sum(1 for r in scored if r["arms"][arm].get("pre_gate_source") == "nemotron_conclude") / n
+            )
         out["evidence_classes"] = sorted(
             {r["arms"][arm].get("evidence_class") for r in scored if r["arms"][arm].get("evidence_class")}
         )
         out["actions"] = {r["incident_id"]: r["arms"][arm].get("action") for r in scored}
+        out["conclusion_kinds"] = {r["incident_id"]: r["arms"][arm].get("conclusion_kind") for r in scored}
         return out
 
     report = {
@@ -277,6 +300,21 @@ def main() -> int:
                 },
                 "nemotron_tool_choice": {
                     a: report["summary"][a].get("nemotron_chose_tools_rate")
+                    for a in ARMS
+                    if a != "A_rule_only"
+                },
+                "nemotron_conclude_rate": {
+                    a: report["summary"][a].get("nemotron_conclude_rate")
+                    for a in ARMS
+                    if a != "A_rule_only"
+                },
+                "pre_gate_nemotron_rate": {
+                    a: report["summary"][a].get("pre_gate_nemotron_rate")
+                    for a in ARMS
+                    if a != "A_rule_only"
+                },
+                "conclusion_kind_counts": {
+                    a: report["summary"][a].get("conclusion_kind_counts")
                     for a in ARMS
                     if a != "A_rule_only"
                 },

@@ -40,9 +40,12 @@ from .schema import (
 )
 
 PlannerMode = Literal["offline", "real"]
+ConclusionKind = Literal["nemotron_conclude", "deterministic_fallback", "policy_overridden"]
 
+# Bounded loop: reserve ≥1 model call for final reasoning after tools (not all spent on tool_call).
 MAX_TOOLS_DEFAULT = 5
-MAX_MODEL_CALLS_DEFAULT = 4
+MAX_TOOL_MODEL_CALLS_DEFAULT = 3  # model tool_call rounds only
+MAX_MODEL_CALLS_DEFAULT = 5  # ≤3 tool rounds + reserved conclude (+ optional repair)
 
 AGENT_SYSTEM = """You are an SDN-ITS cyber-physical investigator for an ITS network operator / SOC analyst.
 A traffic surge is not always an attack. Before disrupting a cyber-physical system, investigate the evidence.
@@ -68,6 +71,7 @@ Final recommendation:
 
 Rules:
 - When uncertainties are listed, your FIRST reply MUST be action=tool_call (never conclude immediately).
+- After tools return, you MUST conclude with action=conclude (do not keep calling tools forever).
 - Choose the tool that addresses the most important missing evidence (quality, camera, contradiction, temporal).
 - High road traffic does NOT prove a cyberattack is harmless — use identify_contradictions, then decide carefully.
 - If physical evidence is insufficient/stale/unavailable, prefer observe; do not escalate containment.
@@ -106,6 +110,10 @@ class MultiStepResult:
     apply_gate: bool = True
     include_camera: bool = True
     planner: str = "deterministic"
+    # Who produced the advisory before/after gate (never claim fallback as nemotron_conclude)
+    conclusion_kind: ConclusionKind | str = "deterministic_fallback"
+    pre_gate_action: str | None = None
+    pre_gate_source: str | None = None  # nemotron_conclude | deterministic_fallback
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
@@ -247,6 +255,7 @@ def _finalize(
     tool_calls: int,
     model_calls: int,
     planner: str,
+    pre_gate_source: str = "deterministic_fallback",
 ) -> MultiStepResult:
     try:
         rec = validate_recommendation(rec_payload)
@@ -267,8 +276,11 @@ def _finalize(
             apply_gate=apply_gate,
             include_camera=bundle.include_camera,
             planner=planner,
+            conclusion_kind="deterministic_fallback",
+            pre_gate_source=pre_gate_source,
         )
 
+    pre_gate_action = rec.recommended_action
     notes: list[str] = []
     if apply_gate:
         gated, notes = gate_recommendation(
@@ -286,8 +298,36 @@ def _finalize(
     else:
         notes.append("gate:skipped_ablation_arm")
 
-    trace.append(TraceStep("policy_gate", {"gated_notes": notes, "apply_gate": apply_gate, "action": rec.recommended_action}))
-    trace.append(TraceStep("audit", {"evidence_class": evidence_class, "tool_calls": tool_calls}))
+    if apply_gate and rec.recommended_action != pre_gate_action:
+        conclusion_kind: ConclusionKind | str = "policy_overridden"
+    elif pre_gate_source == "nemotron_conclude":
+        conclusion_kind = "nemotron_conclude"
+    else:
+        conclusion_kind = "deterministic_fallback"
+
+    trace.append(
+        TraceStep(
+            "policy_gate",
+            {
+                "gated_notes": notes,
+                "apply_gate": apply_gate,
+                "pre_gate_action": pre_gate_action,
+                "action": rec.recommended_action,
+                "conclusion_kind": conclusion_kind,
+            },
+        )
+    )
+    trace.append(
+        TraceStep(
+            "audit",
+            {
+                "evidence_class": evidence_class,
+                "tool_calls": tool_calls,
+                "conclusion_kind": conclusion_kind,
+                "pre_gate_source": pre_gate_source,
+            },
+        )
+    )
 
     return MultiStepResult(
         ok=True,
@@ -306,6 +346,9 @@ def _finalize(
         apply_gate=apply_gate,
         include_camera=bundle.include_camera,
         planner=planner,
+        conclusion_kind=conclusion_kind,
+        pre_gate_action=pre_gate_action,
+        pre_gate_source=pre_gate_source,
     )
 
 
@@ -320,6 +363,7 @@ def run_multi_step_investigation(
     rule_fusion: dict[str, Any] | None = None,
     max_tools: int = MAX_TOOLS_DEFAULT,
     max_model_calls: int = MAX_MODEL_CALLS_DEFAULT,
+    max_tool_model_calls: int = MAX_TOOL_MODEL_CALLS_DEFAULT,
     client: NebiusTokenFactoryClient | None = None,
     model: str | None = None,
 ) -> MultiStepResult:
@@ -415,7 +459,35 @@ def run_multi_step_investigation(
                 apply_gate=apply_gate,
                 include_camera=include_camera,
                 planner=planner,
+                conclusion_kind="deterministic_fallback",
             )
+
+        def _one_completion(msgs: list[dict[str, str]]) -> Any:
+            nonlocal model_calls, usage, cost, model_name, evidence_class
+            try:
+                completion = tf.chat_completions(
+                    msgs,
+                    model=model,
+                    temperature=0.1,
+                    max_tokens=768,
+                    response_format={"type": "json_object"},
+                )
+            except NebiusAPIError as exc:
+                if exc.status_code not in {400, 422}:
+                    raise
+                completion = tf.chat_completions(
+                    msgs,
+                    model=model,
+                    temperature=0.1,
+                    max_tokens=768,
+                    response_format=None,
+                )
+            model_calls += 1
+            evidence_class = "real_api"
+            model_name = completion.model
+            usage = _merge_usage(usage, completion.usage or {})
+            cost += float(completion.estimated_cost_usd() or 0.0)
+            return completion
 
         tools = list_tools(include_camera=include_camera)
         messages: list[dict[str, str]] = [
@@ -427,6 +499,11 @@ def run_multi_step_investigation(
                         "phase": "investigate",
                         "available_tools": tools,
                         "uncertainties": uncertainties,
+                        "budget": {
+                            "max_tool_model_calls": max_tool_model_calls,
+                            "reserved_conclude_call": True,
+                            "max_model_calls": max_model_calls,
+                        },
                         "incident_stub": {
                             "id": bundle.incident_id,
                             "network_prediction": bundle.network_prediction,
@@ -435,9 +512,10 @@ def run_multi_step_investigation(
                         },
                         "instruction": (
                             "Uncertainties are open: your next JSON MUST be action=tool_call. "
-                            "Do not conclude until at least one relevant tool has returned evidence."
+                            "Do not conclude until at least one tool has returned evidence. "
+                            f"You may call at most {max_tool_model_calls} tools, then you must conclude."
                             if uncertainties
-                            else "Select a tool or conclude."
+                            else f"Select up to {max_tool_model_calls} tools, then conclude."
                         ),
                     },
                     indent=2,
@@ -446,66 +524,38 @@ def run_multi_step_investigation(
         ]
 
         concluded: dict[str, Any] | None = None
+        pre_gate_source = "deterministic_fallback"
         require_tool_first = bool(uncertainties)
-        while model_calls < max_model_calls and tool_calls <= max_tools:
-            try:
-                completion = tf.chat_completions(
-                    messages,
-                    model=model,
-                    temperature=0.1,
-                    max_tokens=768,
-                    response_format={"type": "json_object"},
-                )
-            except NebiusAPIError as exc:
-                if exc.status_code in {400, 422}:
-                    try:
-                        completion = tf.chat_completions(
-                            messages,
-                            model=model,
-                            temperature=0.1,
-                            max_tokens=768,
-                            response_format=None,
-                        )
-                    except NebiusAPIError as exc2:
-                        return MultiStepResult(
-                            ok=False,
-                            evidence_class="api_error",
-                            recommendation=None,
-                            error=str(exc2),
-                            trace=trace,
-                            tool_calls=tool_calls,
-                            model_calls=model_calls,
-                            usage=usage,
-                            estimated_cost_usd=cost or None,
-                            latency_ms=(time.perf_counter() - t0) * 1000.0,
-                            bundle=bundle.to_dict(),
-                            apply_gate=apply_gate,
-                            include_camera=include_camera,
-                            planner=planner,
-                        )
-                else:
-                    return MultiStepResult(
-                        ok=False,
-                        evidence_class="api_error",
-                        recommendation=None,
-                        error=str(exc),
-                        trace=trace,
-                        tool_calls=tool_calls,
-                        model_calls=model_calls,
-                        usage=usage,
-                        estimated_cost_usd=cost or None,
-                        latency_ms=(time.perf_counter() - t0) * 1000.0,
-                        bundle=bundle.to_dict(),
-                        apply_gate=apply_gate,
-                        include_camera=include_camera,
-                        planner=planner,
-                    )
+        tool_model_rounds = 0
 
-            model_calls += 1
-            evidence_class = "real_api"
-            model_name = completion.model
-            usage = _merge_usage(usage, completion.usage or {})
-            cost += float(completion.estimated_cost_usd() or 0.0)
+        # Phase 1 — tool selection (hard-capped; never consume the reserved conclude slot)
+        while (
+            model_calls < max_model_calls - 1
+            and tool_model_rounds < max_tool_model_calls
+            and tool_calls < max_tools
+            and concluded is None
+        ):
+            try:
+                completion = _one_completion(messages)
+            except NebiusAPIError as exc:
+                return MultiStepResult(
+                    ok=False,
+                    evidence_class="api_error",
+                    recommendation=None,
+                    error=str(exc),
+                    trace=trace,
+                    tool_calls=tool_calls,
+                    model_calls=model_calls,
+                    usage=usage,
+                    estimated_cost_usd=cost or None,
+                    latency_ms=(time.perf_counter() - t0) * 1000.0,
+                    bundle=bundle.to_dict(),
+                    apply_gate=apply_gate,
+                    include_camera=include_camera,
+                    planner=planner,
+                    conclusion_kind="deterministic_fallback",
+                )
+
             messages.append({"role": "assistant", "content": completion.content})
             try:
                 obj = extract_json_object(completion.content)
@@ -516,13 +566,21 @@ def run_multi_step_investigation(
             action = str(obj.get("action") or "").strip()
             if action == "tool_call":
                 tool = str(obj.get("tool") or "")
-                if tool_calls >= max_tools:
-                    trace.append(TraceStep("select_evidence_tool", {"blocked": "max_tools", "tool": tool}))
-                    break
                 tr = execute_tool(tool, bundle, dict(obj.get("args") or {}))
                 tool_calls += 1
-                trace.append(TraceStep("select_evidence_tool", {"tool": tool}))
+                tool_model_rounds += 1
+                trace.append(
+                    TraceStep(
+                        "select_evidence_tool",
+                        {
+                            "tool": tool,
+                            "tool_model_round": tool_model_rounds,
+                            "max_tool_model_calls": max_tool_model_calls,
+                        },
+                    )
+                )
                 trace.append(TraceStep("retrieve_validate", tr.to_dict()))
+                remaining_tools = max_tool_model_calls - tool_model_rounds
                 messages.append(
                     {
                         "role": "user",
@@ -530,7 +588,15 @@ def run_multi_step_investigation(
                             {
                                 "tool_result": tr.to_dict(),
                                 "uncertainties": identify_uncertainty(bundle),
-                                "instruction": "Call another tool or conclude with JSON recommendation.",
+                                "instruction": (
+                                    "Tool budget exhausted for this investigation. "
+                                    "Next reply MUST be action=conclude with a JSON recommendation."
+                                    if remaining_tools <= 0
+                                    else (
+                                        f"You may call {remaining_tools} more tool(s), or conclude now. "
+                                        "Prefer conclude once evidence is sufficient."
+                                    )
+                                ),
                             },
                             indent=2,
                             default=str,
@@ -538,16 +604,15 @@ def run_multi_step_investigation(
                     }
                 )
                 continue
+
             if action == "conclude" and isinstance(obj.get("recommendation"), dict):
                 if require_tool_first and tool_calls == 0:
-                    # Do not accept conclude-without-tools; ask Nemotron to choose a tool.
                     trace.append(
                         TraceStep(
                             "select_evidence_tool",
                             {
                                 "rejected_premature_conclude": True,
                                 "model_wanted_action": (obj.get("recommendation") or {}).get("recommended_action"),
-                                "instruction": "must_tool_call",
                             },
                         )
                     )
@@ -556,25 +621,9 @@ def run_multi_step_investigation(
                             "role": "user",
                             "content": json.dumps(
                                 {
-                                    "notice": (
-                                        "Conclude rejected: uncertainties remain and no tools have run. "
-                                        "Reply with action=tool_call choosing the best tool for the gap."
-                                    ),
-                                    "uncertainties": uncertainties,
+                                    "notice": "Conclude rejected until at least one tool runs. Reply with action=tool_call.",
                                     "available_tools": tools,
-                                    "suggested_priority": [
-                                        "check_physical_evidence_quality",
-                                        "inspect_camera_metadata",
-                                        "identify_contradictions",
-                                        "retrieve_network_telemetry",
-                                        "compare_temporal_windows",
-                                    ]
-                                    if include_camera
-                                    else [
-                                        "retrieve_network_telemetry",
-                                        "compare_temporal_windows",
-                                        "identify_contradictions",
-                                    ],
+                                    "uncertainties": uncertainties,
                                 },
                                 indent=2,
                             ),
@@ -582,53 +631,152 @@ def run_multi_step_investigation(
                     )
                     continue
                 concluded = dict(obj["recommendation"])
+                pre_gate_source = "nemotron_conclude"
                 trace.append(
                     TraceStep(
                         "reason",
                         {
                             "source": "nemotron_conclude",
+                            "phase": "during_tool_loop",
                             "preview": concluded,
                             "tool_calls_before_conclude": tool_calls,
                         },
                     )
                 )
                 break
-            # Tolerate bare recommendation objects
-            if "recommended_action" in obj:
-                if require_tool_first and tool_calls == 0:
+
+            if "recommended_action" in obj and not (require_tool_first and tool_calls == 0):
+                concluded = obj
+                pre_gate_source = "nemotron_conclude"
+                trace.append(
+                    TraceStep(
+                        "reason",
+                        {"source": "nemotron_bare_recommendation", "tool_calls": tool_calls},
+                    )
+                )
+                break
+
+            if "recommended_action" in obj and require_tool_first and tool_calls == 0:
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": json.dumps(
+                            {
+                                "notice": "Recommendation rejected until you call a tool.",
+                                "available_tools": tools,
+                            },
+                            indent=2,
+                        ),
+                    }
+                )
+                continue
+
+            trace.append(TraceStep("reason", {"unexpected_in_tool_phase": obj}))
+            break
+
+        # Phase 2 — reserved final reasoning (model must conclude from gathered evidence)
+        if concluded is None and tool_calls > 0 and model_calls < max_model_calls:
+            evidence_pack = {
+                "tool_results": [t.to_dict() for t in bundle.tool_results],
+                "physical_sufficient": bundle.physical_sufficient,
+                "physical_quality": bundle.physical_quality,
+                "contradictions": bundle.contradictions,
+                "human_escalation_requested": bundle.human_escalation_requested,
+                "network_prediction": bundle.network_prediction,
+                "include_camera": include_camera,
+                "camera_note": "synthetic_metadata_only" if include_camera else "camera_ablation_disabled",
+            }
+            messages.append(
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "phase": "final_reason",
+                            "notice": (
+                                "Evidence gathering is complete. Do NOT call more tools. "
+                                "Reply with action=conclude and a full recommendation JSON only."
+                            ),
+                            "evidence_pack": evidence_pack,
+                        },
+                        indent=2,
+                        default=str,
+                    ),
+                }
+            )
+            trace.append(TraceStep("final_reason_prompt", {"reserved_conclude": True, "tool_calls": tool_calls}))
+            for attempt in range(2):  # conclude + one repair if needed
+                if model_calls >= max_model_calls:
+                    break
+                try:
+                    completion = _one_completion(messages)
+                except NebiusAPIError as exc:
+                    trace.append(TraceStep("reason", {"conclude_api_error": str(exc)}))
+                    break
+                messages.append({"role": "assistant", "content": completion.content})
+                try:
+                    obj = extract_json_object(completion.content)
+                except RecommendationValidationError as exc:
                     trace.append(
                         TraceStep(
-                            "select_evidence_tool",
-                            {"rejected_premature_conclude": True, "bare_recommendation": True},
+                            "reason",
+                            {"conclude_parse_error": str(exc), "attempt": attempt, "preview": (completion.content or "")[:160]},
                         )
                     )
                     messages.append(
                         {
                             "role": "user",
-                            "content": json.dumps(
-                                {
-                                    "notice": "Recommendation rejected until you call at least one evidence tool.",
-                                    "available_tools": tools,
-                                    "uncertainties": uncertainties,
-                                },
-                                indent=2,
+                            "content": (
+                                "Invalid JSON. Reply again with ONLY "
+                                '{"action":"conclude","recommendation":{...}}'
                             ),
                         }
                     )
                     continue
-                concluded = obj
-                trace.append(TraceStep("reason", {"source": "nemotron_bare_recommendation", "tool_calls": tool_calls}))
-                break
-            trace.append(TraceStep("reason", {"unexpected": obj}))
-            break
+                if str(obj.get("action") or "") == "tool_call":
+                    trace.append(TraceStep("reason", {"rejected_tool_in_conclude_phase": obj.get("tool")}))
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": "Tools are closed. Reply with action=conclude only.",
+                        }
+                    )
+                    continue
+                rec_obj = obj.get("recommendation") if str(obj.get("action") or "") == "conclude" else obj
+                if isinstance(rec_obj, dict) and rec_obj.get("recommended_action"):
+                    concluded = dict(rec_obj)
+                    pre_gate_source = "nemotron_conclude"
+                    trace.append(
+                        TraceStep(
+                            "reason",
+                            {
+                                "source": "nemotron_conclude",
+                                "phase": "reserved_final_reason",
+                                "preview": concluded,
+                                "tool_calls_before_conclude": tool_calls,
+                            },
+                        )
+                    )
+                    break
+                trace.append(TraceStep("reason", {"conclude_unexpected": obj, "attempt": attempt}))
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": 'Reply with {"action":"conclude","recommendation":{...}} only.',
+                    }
+                )
 
         if concluded is None:
-            # Fail soft: deterministic conclude from gathered evidence (still real_api tools path)
             concluded = evidence_based_recommend(bundle)
-            trace.append(TraceStep("reason", {"source": "fallback_evidence_recommender_after_real_api"}))
-            # Keep evidence_class real_api if we paid for calls; note hybrid
-            if model_calls:
-                trace.append(TraceStep("audit", {"hybrid_conclude": True}))
+            pre_gate_source = "deterministic_fallback"
+            trace.append(
+                TraceStep(
+                    "reason",
+                    {
+                        "source": "deterministic_fallback",
+                        "note": "Used only after reserved conclude phase failed or no tools ran",
+                    },
+                )
+            )
 
         return _finalize(
             concluded,
@@ -646,6 +794,7 @@ def run_multi_step_investigation(
             tool_calls=tool_calls,
             model_calls=model_calls,
             planner=planner,
+            pre_gate_source=pre_gate_source,
         )
 
     # Offline: deterministic planner + real tool execution + evidence recommender
@@ -662,11 +811,13 @@ def run_multi_step_investigation(
         concluded = dict(incident["synthetic_model_output"])
         evidence_class = "synthetic_offline"
         planner = "synthetic_fixture"
+        pre_src = "deterministic_fallback"
         trace.append(TraceStep("reason", {"source": "synthetic_offline_fixture"}))
     else:
         concluded = evidence_based_recommend(bundle)
         evidence_class = "deterministic_planner"
         planner = "deterministic"
+        pre_src = "deterministic_fallback"
         trace.append(TraceStep("reason", {"source": "evidence_based_recommender", "recommendation": concluded}))
 
     return _finalize(
@@ -685,4 +836,5 @@ def run_multi_step_investigation(
         tool_calls=tool_calls,
         model_calls=0,
         planner=planner,
+        pre_gate_source=pre_src,
     )

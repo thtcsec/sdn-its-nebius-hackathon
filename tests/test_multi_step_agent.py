@@ -57,6 +57,8 @@ def test_missing_camera_scenario_observes():
     assert ms.tool_calls >= 3
     assert ms.recommendation.recommended_action == "observe"
     assert ms.evidence_class == "deterministic_planner"
+    assert ms.conclusion_kind in {"deterministic_fallback", "policy_overridden"}
+    assert ms.pre_gate_source == "deterministic_fallback"
     phases = [t.phase for t in ms.trace]
     assert "detect" in phases and "retrieve_validate" in phases and "policy_gate" in phases
 
@@ -89,6 +91,9 @@ def test_unsafe_synthetic_blocked():
     )
     assert ms.ok and ms.recommendation is not None
     assert ms.recommendation.recommended_action not in {"temporary_drop", "rate_limit"}
+    # Gate must remain authoritative when synthetic advises DROP
+    assert ms.conclusion_kind == "policy_overridden" or ms.recommendation.recommended_action == "observe"
+    assert ms.pre_gate_action in {"temporary_drop", "observe", "preserve_rush_hour", "rate_limit"}
 
 
 def test_ablation_arms_offline_same_case():
