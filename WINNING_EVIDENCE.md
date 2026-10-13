@@ -10,14 +10,14 @@
 
 | Item | Value |
 |------|-------|
-| Local + remote HEAD | **`a0f58532c9ff6a7ca647c817e2ffd8c92c1b1316`** (multi-step landing) |
-| Follow-up proof commit | *(this sprint — see `git log -1` after push)* |
+| Multi-step landing (pushed) | **`a0f58532c9ff6a7ca647c817e2ffd8c92c1b1316`** |
+| Live Nemotron proof HEAD | **`06b8bd7c5477779d55449edc68522565ee1a077f`** |
 | Branch | `hackathon/nebius-nvidia` |
 | Remote | `https://github.com/thtcsec/sdn-its-nebius-hackathon` |
 | Visibility | **PRIVATE** (unchanged; no flip without owner approval) |
-| Verify on GitHub | `gh api repos/thtcsec/sdn-its-nebius-hackathon/commits/a0f58532c9ff6a7ca647c817e2ffd8c92c1b1316` |
+| Verify tip | `git ls-remote origin hackathon/nebius-nvidia` → `06b8bd7…` |
 
-**Blocker cleared:** Independent reviewers previously saw `fedf93b` because `a0f5853` was local-only (`ahead 1`). Push completed: `fedf93b..a0f5853` → `origin/hackathon/nebius-nvidia`.
+**Blocker cleared:** Reviewers previously saw `fedf93b` because `a0f5853` was local-only. Pushed `fedf93b..a0f5853`, then proof commit `06b8bd7` with matched live traces.
 
 ---
 
