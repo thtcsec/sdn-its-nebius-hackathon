@@ -2,7 +2,7 @@
 
 **Branch:** `hackathon/nebius-nvidia`  
 **Base verified:** `65ec05b`  
-**This freeze tip:** *(see `git rev-parse HEAD` / remote after push)*  
+**This freeze tip:** 5fc3df247ecd6f2fd5ec47d8551b4d7b90e37ac3  
 **Visibility:** PRIVATE — do not flip or submit without owner approval.
 
 **Narrative:** A traffic surge is not always an attack. Before disrupting a cyber-physical system, investigate the evidence.  
