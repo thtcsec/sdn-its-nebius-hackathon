@@ -170,6 +170,7 @@ def run_nemotron_path(
             demo_mode=demo_mode,
             allow_containment_in_demo=allow_containment_in_demo,
             evidence_class="synthetic_malformed",
+            camera=cam,
         )
     elif mode == "offline" or force == "synthetic_json" or incident.get("synthetic_model_output"):
         payload = incident.get("synthetic_model_output")
@@ -189,6 +190,7 @@ def run_nemotron_path(
             demo_mode=demo_mode,
             allow_containment_in_demo=allow_containment_in_demo,
             evidence_class="synthetic_offline",
+            camera=cam,
         )
     else:
         result = investigate_incident(
@@ -286,19 +288,36 @@ def investigate_case(
     demo_mode: bool = True,
     allow_containment_in_demo: bool = False,
     record: bool = True,
+    multi_step: bool = False,
 ) -> InvestigationCaseResult:
     rule = run_rule_only(incident)
-    nemotron = run_nemotron_path(
-        incident,
-        mode=mode,
-        demo_mode=demo_mode,
-        allow_containment_in_demo=allow_containment_in_demo,
-        rule_fusion=rule.fusion,
-    )
+    if multi_step:
+        from sdn_its.llm.ablation import run_ablation_arm
+
+        nemotron = run_ablation_arm(
+            incident,
+            "D_net_cam_gate",
+            mode=mode,
+            demo_mode=demo_mode,
+            allow_containment_in_demo=allow_containment_in_demo,
+        )
+        nemotron.path = "nemotron_multistep"
+    else:
+        nemotron = run_nemotron_path(
+            incident,
+            mode=mode,
+            demo_mode=demo_mode,
+            allow_containment_in_demo=allow_containment_in_demo,
+            rule_fusion=rule.fusion,
+        )
     metrics = score_case(incident, rule, nemotron)
     metrics["rule_latency_ms"] = rule.latency_ms
     metrics["nemotron_latency_ms"] = nemotron.latency_ms
     metrics["estimated_cost_usd"] = nemotron.estimated_cost_usd
+    metrics["multi_step"] = multi_step
+    if multi_step and isinstance(nemotron.fusion, dict):
+        metrics["tool_calls"] = nemotron.fusion.get("tool_calls")
+        metrics["model_calls"] = nemotron.fusion.get("model_calls")
     case = InvestigationCaseResult(
         incident_id=str(incident.get("id")),
         title=str(incident.get("title") or incident.get("id")),
@@ -316,6 +335,7 @@ def investigate_case(
             {
                 "incident_id": case.incident_id,
                 "mode": mode,
+                "multi_step": multi_step,
                 "rule_action": rule.recommended_action,
                 "rule_policy": rule.policy_status,
                 "nemotron_action": nemotron.recommended_action,
@@ -324,6 +344,9 @@ def investigate_case(
                 "gated_notes": nemotron.gated_notes,
                 "metrics": metrics,
                 "rationale_preview": (nemotron.rationale or "")[:180],
+                "trace_preview": (
+                    (nemotron.fusion or {}).get("trace", [])[:6] if isinstance(nemotron.fusion, dict) else []
+                ),
             }
         )
     return case

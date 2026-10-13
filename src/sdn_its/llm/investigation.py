@@ -16,6 +16,7 @@ from .nebius_client import (
     NebiusConfigError,
     NebiusTokenFactoryClient,
 )
+from .evidence_tools import assess_physical_quality
 from .safety import gate_recommendation
 from .schema import (
     MitigationRecommendation,
@@ -44,7 +45,9 @@ Required JSON keys:
 - evidence_notes: array of short strings
 
 Policy guidance:
-- Network anomaly evidence is primary; camera is same-zone physical context only.
+- A network traffic surge is not always an attack — weigh same-zone physical context.
+- Camera fields are physical-context metadata (may be synthetic); never claim live RTSP inference.
+- If camera stream/analytics are missing, stale, or invalid, prefer observe — do not escalate containment.
 - If pedestrians/incident/safety_critical, prefer protect_safety.
 - If rush-hour physical activity explains a surge, prefer preserve_rush_hour or observe.
 - Prefer observe when uncertain.
@@ -175,12 +178,17 @@ def investigate_incident(
                 model=model or DEFAULT_MODEL,
             )
 
+    evidence_state = {
+        "physical_sufficient": assess_physical_quality(ctx.camera).get("sufficient"),
+        "include_camera": True,
+    }
     # If the model spent the budget on reasoning and never emitted JSON, one repair call
     finalized = _finalize_from_completion(
         completion,
         rule_fusion=ctx.rule_fusion,
         demo_mode=demo_mode,
         allow_containment_in_demo=allow_containment_in_demo,
+        evidence_state=evidence_state,
     )
     if finalized.ok or finalized.evidence_class != "validation_error":
         return finalized
@@ -230,6 +238,7 @@ def investigate_incident(
         rule_fusion=ctx.rule_fusion,
         demo_mode=demo_mode,
         allow_containment_in_demo=allow_containment_in_demo,
+        evidence_state=evidence_state,
     )
     if repaired.ok or repaired.evidence_class != "validation_error":
         return repaired
@@ -263,6 +272,7 @@ def investigate_incident(
         rule_fusion=ctx.rule_fusion,
         demo_mode=demo_mode,
         allow_containment_in_demo=allow_containment_in_demo,
+        evidence_state=evidence_state,
     )
     if out.ok:
         out.gated_notes = list(out.gated_notes) + [f"fallback_model:{fallback}"]
@@ -279,6 +289,8 @@ def investigate_from_model_text(
     model: str | None = None,
     usage: dict[str, int] | None = None,
     latency_ms: float | None = None,
+    evidence_state: dict[str, Any] | None = None,
+    camera: dict[str, Any] | None = None,
 ) -> InvestigationResult:
     """Parse/validate/gate a model string — used by unit tests (mocked_transport evidence)."""
     fake = ChatCompletionResult(
@@ -289,12 +301,16 @@ def investigate_from_model_text(
         latency_ms=latency_ms or 0.0,
         evidence_class=evidence_class,
     )
+    estate = evidence_state
+    if estate is None and camera is not None:
+        estate = {"physical_sufficient": assess_physical_quality(camera).get("sufficient")}
     return _finalize_from_completion(
         fake,
         rule_fusion=rule_fusion,
         demo_mode=demo_mode,
         allow_containment_in_demo=allow_containment_in_demo,
         evidence_class_override=evidence_class,
+        evidence_state=estate,
     )
 
 
@@ -305,6 +321,7 @@ def _finalize_from_completion(
     demo_mode: bool,
     allow_containment_in_demo: bool,
     evidence_class_override: str | None = None,
+    evidence_state: dict[str, Any] | None = None,
 ) -> InvestigationResult:
     preview = (completion.content or "")[:240]
     try:
@@ -315,6 +332,7 @@ def _finalize_from_completion(
             rule_fusion=rule_fusion,
             demo_mode=demo_mode,
             allow_containment_in_demo=allow_containment_in_demo,
+            evidence_state=evidence_state,
         )
     except RecommendationValidationError as exc:
         return InvestigationResult(

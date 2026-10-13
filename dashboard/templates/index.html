@@ -1369,17 +1369,19 @@
                 <span>synthetic fixtures · no private RTSP</span>
             </div>
             <div class="panel-body">
-                <div class="ev-note">Compare deterministic rules vs Nemotron-assisted investigation. Default OpenFlow = <b>mock</b>. Classifier checkpoint not required (fixture labels).</div>
-                <label for="hc-incident">Fixture</label>
+                <div class="ev-note">Product story: a network surge is not always an attack — investigate physical context before disruptive decisions. Multi-step tools use <b>fixture metadata</b> (not live RTSP). Default OpenFlow = <b>mock</b>.</div>
+                <label for="hc-incident">Fixture / scenario</label>
                 <select id="hc-incident" aria-label="Hackathon incident fixture"></select>
                 <div class="hc-actions">
                     <button type="button" class="primary" id="hc-run-offline">Run offline</button>
+                    <button type="button" id="hc-run-multistep" title="Evidence tools + gate (offline planner or real Nebius)">Investigate (multi-step)</button>
                     <button type="button" id="hc-run-real" title="Uses repo-root .env NEBIUS_API_KEY">Run real Nebius</button>
                     <button type="button" id="hc-refresh-audit">Refresh audit</button>
                 </div>
                 <div><span class="hc-pill" id="hc-mode-pill">mode: —</span>
                     <span class="hc-pill" id="hc-gate-pill">gate: —</span>
-                    <span class="hc-pill" id="hc-of-pill">OF: mock</span></div>
+                    <span class="hc-pill" id="hc-of-pill">OF: mock</span>
+                    <span class="hc-pill" id="hc-tools-pill">tools: —</span></div>
             </div>
         </article>
         <article class="panel" id="panel-hc-case">
@@ -1401,8 +1403,12 @@
                     <div id="hc-rule">—</div>
                 </div>
                 <div class="fusion-block">
-                    <div class="fusion-h">Nemotron (validated) → policy</div>
+                    <div class="fusion-h">Investigation → policy</div>
                     <div id="hc-nemotron">—</div>
+                </div>
+                <div class="fusion-block">
+                    <div class="fusion-h">Investigation trace</div>
+                    <div class="hc-pre" id="hc-trace">—</div>
                 </div>
                 <div class="fusion-block">
                     <div class="fusion-h">Reasoning / rationale</div>
@@ -2598,29 +2604,46 @@
         try {
             const data = await fetch("/api/v1/hackathon/incidents").then((r) => r.json());
             const items = data.incidents || [];
-            sel.innerHTML = items.map((i) =>
-                `<option value="${i.id}">${i.id} — ${i.title || ""}</option>`
-            ).join("");
+            const scenarios = data.scenarios || [];
+            const opts = [];
+            if (scenarios.length) {
+                opts.push(`<optgroup label="Multi-step scenarios">` +
+                    scenarios.map((i) => `<option value="${i.id}">${i.id} — ${i.title || ""}</option>`).join("") +
+                    `</optgroup>`);
+            }
+            opts.push(`<optgroup label="Regression fixtures">` +
+                items.map((i) => `<option value="${i.id}">${i.id} — ${i.title || ""}</option>`).join("") +
+                `</optgroup>`);
+            sel.innerHTML = opts.join("") || `<option value="">none</option>`;
         } catch (e) {
             sel.innerHTML = `<option value="">incidents unavailable</option>`;
         }
     }
 
     function hcRenderCase(payload) {
-        document.getElementById("hc-case-meta").textContent = `${payload.incident_id || "—"} · ${payload.mode || "—"}`;
-        document.getElementById("hc-mode-pill").textContent = `mode: ${payload.mode || "—"}`;
+        document.getElementById("hc-case-meta").textContent = `${payload.incident_id || payload.bundle?.incident_id || "—"} · ${payload.mode || "—"}`;
+        document.getElementById("hc-mode-pill").textContent = `mode: ${payload.mode || (payload.evidence_class || "—")}`;
         document.getElementById("hc-of-pill").textContent = `OF: ${payload.of_backend || "mock"}`;
-        document.getElementById("hc-telemetry").textContent = JSON.stringify(payload.telemetry || {}, null, 2);
-        document.getElementById("hc-camera").textContent = JSON.stringify(payload.camera || {}, null, 2);
+        const tel = payload.telemetry || payload.bundle?.telemetry || {};
+        const cam = payload.camera || payload.bundle?.camera || {};
+        document.getElementById("hc-telemetry").textContent = JSON.stringify(tel, null, 2);
+        document.getElementById("hc-camera").textContent = JSON.stringify(cam, null, 2);
         const rule = payload.rule || {};
-        const nem = payload.nemotron || {};
+        const nem = payload.nemotron || payload.recommendation || {};
+        const nemAction = nem.recommended_action || (payload.recommendation && payload.recommendation.recommended_action);
         document.getElementById("hc-rule").textContent =
             `${rule.recommended_action || "—"} → ${rule.policy_status || "—"} (${rule.evidence_class || "rules"})`;
+        const gates = nem.gated_notes || payload.gated_notes || [];
         document.getElementById("hc-nemotron").textContent =
-            `${nem.recommended_action || "—"} → ${nem.policy_status || "—"} · ${nem.evidence_class || "—"}` +
-            (nem.gated_notes && nem.gated_notes.length ? ` · gates=${nem.gated_notes.join(",")}` : "");
-        document.getElementById("hc-rationale").textContent = nem.rationale || nem.error || nem.raw_preview || "—";
-        const gateFired = (nem.gated_notes || []).some((n) => String(n).includes("gate:"));
+            `${nemAction || "—"} → ${nem.policy_status || "—"} · ${nem.evidence_class || payload.evidence_class || "—"}` +
+            (gates.length ? ` · gates=${gates.join(",")}` : "");
+        document.getElementById("hc-rationale").textContent =
+            nem.rationale || (payload.recommendation && payload.recommendation.rationale) || nem.error || payload.error || "—";
+        const trace = payload.investigation_trace || payload.trace || (nem.fusion && nem.fusion.trace) || [];
+        document.getElementById("hc-trace").textContent = trace.length ? JSON.stringify(trace, null, 2) : "—";
+        const tools = payload.tool_calls || (nem.fusion && nem.fusion.tool_calls) || 0;
+        document.getElementById("hc-tools-pill").textContent = `tools: ${tools}`;
+        const gateFired = gates.some((n) => String(n).includes("gate:"));
         document.getElementById("hc-gate-pill").textContent = gateFired ? "gate: BLOCKED/CLAMPED" : "gate: pass";
     }
 
@@ -2633,24 +2656,36 @@
         }
     }
 
-    async function hcRun(mode) {
+    async function hcRun(mode, multiStep) {
         const id = document.getElementById("hc-incident").value;
         if (!id) return;
-        logTerm(`Hackathon run · ${id} · ${mode}`, "t-info");
+        logTerm(`Hackathon run · ${id} · ${mode}${multiStep ? " · multi-step" : ""}`, "t-info");
         try {
-            const r = await fetch("/api/v1/hackathon/run", {
+            const endpoint = multiStep ? "/api/v1/hackathon/multistep" : "/api/v1/hackathon/run";
+            const body = multiStep
+                ? { scenario_id: id, mode, demo_mode: true, apply_gate: true, include_camera: true }
+                : { incident_id: id, mode, demo_mode: true, multi_step: !!multiStep };
+            const r = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ incident_id: id, mode, demo_mode: true }),
+                body: JSON.stringify(body),
             });
             const payload = await r.json();
-            if (!r.ok && !payload.rule) {
+            if (!r.ok && !payload.rule && !payload.recommendation) {
                 logTerm(`Hackathon run failed HTTP ${r.status}`, "t-err");
             }
+            if (!payload.telemetry && payload.bundle) {
+                payload.telemetry = payload.bundle.telemetry;
+                payload.camera = payload.bundle.camera;
+            }
+            if (!payload.incident_id && payload.bundle) payload.incident_id = payload.bundle.incident_id;
+            if (!payload.mode) payload.mode = mode;
             hcRenderCase(payload);
             await hcRefreshAudit();
+            const act = (payload.nemotron || {}).recommended_action
+                || (payload.recommendation || {}).recommended_action;
             logTerm(
-                `Hackathon · rule=${(payload.rule||{}).recommended_action} · nemotron=${(payload.nemotron||{}).recommended_action}`,
+                `Hackathon · rule=${(payload.rule||{}).recommended_action} · investigate=${act}`,
                 "t-ok",
             );
         } catch (e) {
@@ -2660,9 +2695,11 @@
 
     const hcOffline = document.getElementById("hc-run-offline");
     const hcReal = document.getElementById("hc-run-real");
+    const hcMulti = document.getElementById("hc-run-multistep");
     const hcAud = document.getElementById("hc-refresh-audit");
-    if (hcOffline) hcOffline.addEventListener("click", () => hcRun("offline"));
-    if (hcReal) hcReal.addEventListener("click", () => hcRun("real"));
+    if (hcOffline) hcOffline.addEventListener("click", () => hcRun("offline", false));
+    if (hcReal) hcReal.addEventListener("click", () => hcRun("real", true));
+    if (hcMulti) hcMulti.addEventListener("click", () => hcRun("offline", true));
     if (hcAud) hcAud.addEventListener("click", () => hcRefreshAudit());
 
     document.addEventListener("keydown", (e) => {

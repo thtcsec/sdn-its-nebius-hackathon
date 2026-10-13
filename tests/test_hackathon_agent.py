@@ -54,7 +54,9 @@ def test_api_hackathon_routes():
     c = app.test_client()
     r = c.get("/api/v1/hackathon/incidents")
     assert r.status_code == 200
-    assert len(r.get_json()["incidents"]) >= 4
+    body0 = r.get_json()
+    assert len(body0["incidents"]) >= 4
+    assert len(body0.get("scenarios") or []) >= 4
     r2 = c.post(
         "/api/v1/hackathon/run",
         json={"incident_id": "07_unsafe_escalation_blocked", "mode": "offline", "demo_mode": True},
@@ -62,6 +64,15 @@ def test_api_hackathon_routes():
     assert r2.status_code == 200
     body = r2.get_json()
     assert body["nemotron"]["recommended_action"] != "temporary_drop"
+    r_ms = c.post(
+        "/api/v1/hackathon/multistep",
+        json={"scenario_id": "scenario_missing_camera", "mode": "offline", "demo_mode": True, "apply_gate": True},
+    )
+    assert r_ms.status_code == 200
+    ms = r_ms.get_json()
+    assert ms.get("tool_calls", 0) >= 3
+    assert (ms.get("recommendation") or {}).get("recommended_action") == "observe"
+    assert ms.get("trace")
     r3 = c.get("/api/v1/hackathon/audit")
     assert r3.status_code == 200
     assert list_audit()

@@ -1,0 +1,35 @@
+{
+  "id": "scenario_missing_camera",
+  "title": "DDoS-like surge with unavailable camera evidence",
+  "story": "Without valid physical context, do not escalate containment from the investigator path.",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.0.9.21",
+  "telemetry": {
+    "context_source": "scenario_synthetic",
+    "packet_in_delta_pct": 95.0,
+    "source_dominance": 0.71,
+    "distributed_sources": false,
+    "window_id": "scen-miss-1"
+  },
+  "camera": {
+    "context_source": "scenario_synthetic_metadata",
+    "physical_label": "unknown",
+    "activity_band": "unknown",
+    "visible_vehicle_tracks": null,
+    "queue_length_proxy_m": null,
+    "is_vehicle_count": false,
+    "vehicle_count_is_real": false,
+    "stream_available": false,
+    "analytics_valid": false,
+    "stale": true,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "expected_demo": {
+    "prefer_actions": ["observe"],
+    "forbid_containment": true,
+    "gate_may_include": ["gate:evidence_insufficient_block_containment"],
+    "tools_should_include": ["check_physical_evidence_quality", "escalate_human_review"]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "scenario_rush_vs_attack",
+  "title": "Surge during rush hour — attack label vs physical queue",
+  "story": "A network traffic surge is not always an attack. Investigate physical context before disruptive decisions.",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.0.9.11",
+  "telemetry": {
+    "context_source": "scenario_synthetic",
+    "packet_in_delta_pct": 72.0,
+    "source_dominance": 0.32,
+    "distributed_sources": true,
+    "window_id": "scen-rush-1"
+  },
+  "camera": {
+    "context_source": "scenario_synthetic_metadata",
+    "physical_label": "rush_hour",
+    "activity_band": "high",
+    "visible_vehicle_tracks": 22,
+    "queue_length_proxy_m": 48.0,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "expected_demo": {
+    "prefer_actions": ["preserve_rush_hour", "observe"],
+    "forbid_containment": true,
+    "tools_should_include": ["check_physical_evidence_quality", "identify_contradictions"]
+  }
+}

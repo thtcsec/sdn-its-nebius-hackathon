@@ -15,14 +15,14 @@
 | Area | Location |
 |------|----------|
 | Nebius Token Factory client + `.env` loader | `src/sdn_its/llm/`, `src/sdn_its/utils/env.py` |
-| Schema validation + safety gates | `schema.py`, `safety.py` |
-| Cyber–physical investigation agent | `src/sdn_its/llm/agent.py` |
-| Public synthetic incident fixtures | `datasets/hackathon/incidents/` |
-| Rule vs Nemotron benchmark | `scripts/run_hackathon_benchmark.py` |
-| Judge demo script | `scripts/run_judge_demo.py` |
-| API: incidents / run / audit | `api/routes.py` (`/api/v1/hackathon/*`) |
-| Console investigation board | `dashboard/templates/index.html` |
-| Evidence / audit docs | `HACKATHON_AUDIT.md`, `docs/JUDGE_DEMO.md`, `artifacts/hackathon/` |
+| Schema validation + safety gates (incl. evidence sufficiency) | `schema.py`, `safety.py` |
+| Single-shot + multi-step investigation agent | `agent.py`, `multi_step.py`, `evidence_tools.py` |
+| Public synthetic incident fixtures + demo scenarios | `datasets/hackathon/incidents/`, `scenarios/` |
+| Held-out oracle eval + fair ablation A/B/C/D | `scripts/run_heldout_eval.py`, `run_ablation_study.py` |
+| Judge / multi-step demo scripts | `scripts/run_judge_demo.py`, `run_multistep_demo.py` |
+| API: incidents / run / multistep / audit | `api/routes.py` (`/api/v1/hackathon/*`) |
+| Console investigation board + traces | `dashboard/templates/index.html` |
+| Evidence / audit docs | `HACKATHON_AUDIT.md`, `docs/JUDGE_DEMO.md`, `COMPETITION_DELTA_REPORT.md`, `artifacts/hackathon/` |
 
 ## Honesty constraints
 

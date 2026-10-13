@@ -46,15 +46,18 @@ Local note: [HACKATHON.md](HACKATHON.md)
 | Milestone | Status |
 |-----------|--------|
 | Private hackathon repo + isolated working tree | Done |
-| Nebius API key / credits / authenticated inference | **Blocked — needs `NEBIUS_API_KEY`** |
-| Minimal vertical slice (real Nemotron call) | Not started |
-| Telemetry + camera → Nemotron investigation | Not started |
-| Validated structured mitigation + policy gates | Not started |
-| Benchmark vs rule baseline | Not started |
-| Public docs + &lt;3 min demo video | Not started |
+| Nebius API key / authenticated Token Factory inference | Done when `.env` has `NEBIUS_API_KEY` (see redacted `artifacts/hackathon/`) |
+| Minimal vertical slice (real Nemotron Nano) | Done |
+| Multi-step evidence investigation (tools + gate + audit) | Done |
+| Validated structured mitigation + policy gates | Done |
+| Fair ablation A/B/C/D on held-out set | Done (offline planner + optional budgeted real) |
+| Public docs + &lt;3 min YouTube demo | **Pending** (script in `docs/DEMO_VIDEO.md`; URL TBD) |
+| Public GitHub visibility | **Pending owner approval** (still private) |
 
-Target model (default for first real call): `nvidia/Nemotron-3_5-Lightning`  
+Default model: `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`  
 API: OpenAI-compatible · `https://api.tokenfactory.nebius.com/v1/` · env: `NEBIUS_API_KEY`
+
+**Product story:** A network traffic surge is not always an attack. Investigate physical context before making disruptive decisions.
 
 ---
 
@@ -97,6 +100,8 @@ Judge path (synthetic fixtures, mock OF, no private RTSP/checkpoint): [docs/JUDG
 
 ```powershell
 python scripts/run_judge_demo.py
+python scripts/run_multistep_demo.py
+python scripts/run_ablation_study.py --skip-real
 python scripts/run_hackathon_benchmark.py --mode offline --allow-containment-in-demo
 ```
 

@@ -1,0 +1,1866 @@
+{
+  "ts_utc": "2026-10-13T02:02:51.320411+00:00",
+  "product_story": "A network traffic surge is not always an attack. Investigate physical context before making disruptive decisions.",
+  "mode": "offline",
+  "of_backend": "mock",
+  "honesty_note": "Offline traces use deterministic_planner + real evidence tools. Camera fields are synthetic metadata. real mode only when --real.",
+  "n": 4,
+  "cases": [
+    {
+      "scenario_id": "scenario_loft_stable",
+      "title": "Low-rate anomaly with stable physical zone",
+      "story": "Stable camera metadata supports soft rate-limit after tools corroborate quiet roadway.",
+      "rule_action": "rate_limit",
+      "investigation": {
+        "ok": true,
+        "evidence_class": "deterministic_planner",
+        "recommendation": {
+          "recommended_action": "observe",
+          "final_risk": "medium",
+          "rationale": "Low-rate anomaly with stable physical context supports soft rate-limit. [demo_mode: containment intention blocked; OF remains non-destructive]",
+          "policy_attack_type": "LOFT_LowRate_Attack",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.65,
+          "evidence_notes": [
+            "window=scen-loft-1",
+            "packet_in_delta_pct=38.0",
+            "source_dominance=0.78",
+            "distributed_sources=False",
+            "network_prediction=LOFT_LowRate_Attack",
+            "physical_label=stable",
+            "activity_band=low",
+            "tracks=2",
+            "queue_m=4.0",
+            "context_source=scenario_synthetic_metadata"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "gated_notes": [
+          "gate:demo_block_containment"
+        ],
+        "fusion_for_policy": {
+          "recommended_action": "observe",
+          "policy_attack_type": "LOFT_LowRate_Attack",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "final_risk": "medium",
+          "explain": "Low-rate anomaly with stable physical context supports soft rate-limit. [demo_mode: containment intention blocked; OF remains non-destructive]",
+          "reason_codes": [
+            "window=scen-loft-1",
+            "packet_in_delta_pct=38.0",
+            "source_dominance=0.78",
+            "distributed_sources=False",
+            "network_prediction=LOFT_LowRate_Attack",
+            "physical_label=stable",
+            "activity_band=low",
+            "tracks=2",
+            "queue_m=4.0",
+            "context_source=scenario_synthetic_metadata"
+          ],
+          "llm_schema_version": "hackathon_mitigation_v1",
+          "llm_confidence": 0.65
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "LOFT_LowRate_Attack",
+              "incident_id": "scenario_loft_stable",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "anomaly_requires_physical_context",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for LOFT_LowRate_Attack: \u0394PacketIn=38.0% dominance=0.78 distributed=False",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 38.0,
+                  "source_dominance": 0.78,
+                  "distributed_sources": false,
+                  "window_id": "scen-loft-1"
+                },
+                "network_prediction": "LOFT_LowRate_Attack"
+              },
+              "evidence_notes": [
+                "window=scen-loft-1",
+                "packet_in_delta_pct=38.0",
+                "source_dominance=0.78",
+                "distributed_sources=False",
+                "network_prediction=LOFT_LowRate_Attack"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=stable band=low tracks=2 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "stable",
+                  "activity_band": "low",
+                  "visible_vehicle_tracks": 2,
+                  "queue_length_proxy_m": 4.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=stable",
+                "activity_band=low",
+                "tracks=2",
+                "queue_m=4.0",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence SUFFICIENT for containment decisions.",
+              "data": {
+                "sufficient": true,
+                "stream_available": true,
+                "analytics_valid": true,
+                "stale": false,
+                "has_vehicle_count": true,
+                "physical_label": "stable",
+                "activity_band": "low",
+                "reasons": [],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "physical_sufficient"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "identify_contradictions",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "No hard contradictions flagged.",
+              "data": {
+                "contradictions": [],
+                "network_prediction": "LOFT_LowRate_Attack",
+                "physical_label": "stable"
+              },
+              "evidence_notes": [
+                "no_hard_contradiction"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 28.5 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 38.0,
+                  "source_dominance": 0.78,
+                  "distributed_sources": false,
+                  "window_id": "scen-loft-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 9.5,
+                  "source_dominance": 0.35,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 28.5,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=28.5",
+                "surge=True"
+              ]
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "evidence_based_recommender",
+              "recommendation": {
+                "recommended_action": "rate_limit",
+                "final_risk": "medium",
+                "rationale": "Low-rate anomaly with stable physical context supports soft rate-limit.",
+                "policy_attack_type": "LOFT_LowRate_Attack",
+                "cooldown_seconds": 15,
+                "false_positive_corrected": false,
+                "safety_critical": false,
+                "confidence": 0.65,
+                "evidence_notes": [
+                  "window=scen-loft-1",
+                  "packet_in_delta_pct=38.0",
+                  "source_dominance=0.78",
+                  "distributed_sources=False",
+                  "network_prediction=LOFT_LowRate_Attack",
+                  "physical_label=stable",
+                  "activity_band=low",
+                  "tracks=2",
+                  "queue_m=4.0",
+                  "context_source=scenario_synthetic_metadata"
+                ]
+              }
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [
+                "gate:demo_block_containment"
+              ],
+              "apply_gate": true,
+              "action": "observe"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "deterministic_planner",
+              "tool_calls": 5
+            }
+          }
+        ],
+        "tool_calls": 5,
+        "model_calls": 0,
+        "usage": {},
+        "estimated_cost_usd": null,
+        "latency_ms": 0.21780002862215042,
+        "model": null,
+        "error": null,
+        "bundle": {
+          "incident_id": "scenario_loft_stable",
+          "network_prediction": "LOFT_LowRate_Attack",
+          "include_camera": true,
+          "telemetry": {
+            "context_source": "scenario_synthetic",
+            "packet_in_delta_pct": 38.0,
+            "source_dominance": 0.78,
+            "distributed_sources": false,
+            "window_id": "scen-loft-1"
+          },
+          "camera": {
+            "context_source": "scenario_synthetic_metadata",
+            "physical_label": "stable",
+            "activity_band": "low",
+            "visible_vehicle_tracks": 2,
+            "queue_length_proxy_m": 4.0,
+            "is_vehicle_count": true,
+            "vehicle_count_is_real": true,
+            "stream_available": true,
+            "analytics_valid": true,
+            "stale": false,
+            "pedestrian_present": false,
+            "incident": false
+          },
+          "prior_windows": [
+            {
+              "window_id": "prior_synthetic_baseline",
+              "packet_in_delta_pct": 9.5,
+              "source_dominance": 0.35,
+              "distributed_sources": true,
+              "context_source": "synthetic_temporal_baseline"
+            }
+          ],
+          "tool_results": [
+            {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for LOFT_LowRate_Attack: \u0394PacketIn=38.0% dominance=0.78 distributed=False",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 38.0,
+                  "source_dominance": 0.78,
+                  "distributed_sources": false,
+                  "window_id": "scen-loft-1"
+                },
+                "network_prediction": "LOFT_LowRate_Attack"
+              },
+              "evidence_notes": [
+                "window=scen-loft-1",
+                "packet_in_delta_pct=38.0",
+                "source_dominance=0.78",
+                "distributed_sources=False",
+                "network_prediction=LOFT_LowRate_Attack"
+              ]
+            },
+            {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=stable band=low tracks=2 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "stable",
+                  "activity_band": "low",
+                  "visible_vehicle_tracks": 2,
+                  "queue_length_proxy_m": 4.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=stable",
+                "activity_band=low",
+                "tracks=2",
+                "queue_m=4.0",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            },
+            {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence SUFFICIENT for containment decisions.",
+              "data": {
+                "sufficient": true,
+                "stream_available": true,
+                "analytics_valid": true,
+                "stale": false,
+                "has_vehicle_count": true,
+                "physical_label": "stable",
+                "activity_band": "low",
+                "reasons": [],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "physical_sufficient"
+              ]
+            },
+            {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "No hard contradictions flagged.",
+              "data": {
+                "contradictions": [],
+                "network_prediction": "LOFT_LowRate_Attack",
+                "physical_label": "stable"
+              },
+              "evidence_notes": [
+                "no_hard_contradiction"
+              ]
+            },
+            {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 28.5 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 38.0,
+                  "source_dominance": 0.78,
+                  "distributed_sources": false,
+                  "window_id": "scen-loft-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 9.5,
+                  "source_dominance": 0.35,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 28.5,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=28.5",
+                "surge=True"
+              ]
+            }
+          ],
+          "physical_sufficient": true,
+          "physical_quality": {
+            "sufficient": true,
+            "stream_available": true,
+            "analytics_valid": true,
+            "stale": false,
+            "has_vehicle_count": true,
+            "physical_label": "stable",
+            "activity_band": "low",
+            "reasons": [],
+            "context_source": "scenario_synthetic_metadata"
+          },
+          "contradictions": [],
+          "human_escalation_requested": false,
+          "uncertainties": [
+            "anomaly_requires_physical_context",
+            "no_temporal_baseline_yet"
+          ],
+          "camera_context_note": "Camera fields are same-zone metadata (fixture/synthetic or derived). Not claimed as live RTSP/YOLO inference in the judge path."
+        },
+        "apply_gate": true,
+        "include_camera": true,
+        "planner": "deterministic"
+      }
+    },
+    {
+      "scenario_id": "scenario_missing_camera",
+      "title": "DDoS-like surge with unavailable camera evidence",
+      "story": "Without valid physical context, do not escalate containment from the investigator path.",
+      "rule_action": "rate_limit",
+      "investigation": {
+        "ok": true,
+        "evidence_class": "deterministic_planner",
+        "recommendation": {
+          "recommended_action": "observe",
+          "final_risk": "medium",
+          "rationale": "Physical evidence insufficient, stale, or human review requested; do not escalate containment on network anomaly alone.",
+          "policy_attack_type": "DDoS_PacketIn_Flood",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": true,
+          "safety_critical": false,
+          "confidence": 0.55,
+          "evidence_notes": [
+            "window=scen-miss-1",
+            "packet_in_delta_pct=95.0",
+            "source_dominance=0.71",
+            "distributed_sources=False",
+            "network_prediction=DDoS_PacketIn_Flood",
+            "physical_label=unknown",
+            "activity_band=unknown",
+            "tracks=None",
+            "queue_m=None",
+            "context_source=scenario_synthetic_metadata",
+            "abstain_insufficient_evidence"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "gated_notes": [],
+        "fusion_for_policy": {
+          "recommended_action": "observe",
+          "policy_attack_type": "DDoS_PacketIn_Flood",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": true,
+          "safety_critical": false,
+          "final_risk": "medium",
+          "explain": "Physical evidence insufficient, stale, or human review requested; do not escalate containment on network anomaly alone.",
+          "reason_codes": [
+            "window=scen-miss-1",
+            "packet_in_delta_pct=95.0",
+            "source_dominance=0.71",
+            "distributed_sources=False",
+            "network_prediction=DDoS_PacketIn_Flood",
+            "physical_label=unknown",
+            "activity_band=unknown",
+            "tracks=None",
+            "queue_m=None",
+            "context_source=scenario_synthetic_metadata",
+            "abstain_insufficient_evidence"
+          ],
+          "llm_schema_version": "hackathon_mitigation_v1",
+          "llm_confidence": 0.55
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "DDoS_PacketIn_Flood",
+              "incident_id": "scenario_missing_camera",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "anomaly_requires_physical_context",
+                "physical_evidence_insufficient",
+                "camera_stale_or_invalid",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for DDoS_PacketIn_Flood: \u0394PacketIn=95.0% dominance=0.71 distributed=False",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 95.0,
+                  "source_dominance": 0.71,
+                  "distributed_sources": false,
+                  "window_id": "scen-miss-1"
+                },
+                "network_prediction": "DDoS_PacketIn_Flood"
+              },
+              "evidence_notes": [
+                "window=scen-miss-1",
+                "packet_in_delta_pct=95.0",
+                "source_dominance=0.71",
+                "distributed_sources=False",
+                "network_prediction=DDoS_PacketIn_Flood"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=unknown band=unknown tracks=None (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "unknown",
+                  "activity_band": "unknown",
+                  "visible_vehicle_tracks": null,
+                  "queue_length_proxy_m": null,
+                  "is_vehicle_count": false,
+                  "vehicle_count_is_real": false,
+                  "stream_available": false,
+                  "analytics_valid": false,
+                  "stale": true,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=unknown",
+                "activity_band=unknown",
+                "tracks=None",
+                "queue_m=None",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence INSUFFICIENT (stream_unavailable, analytics_invalid, stale_context, label_unknown, no_usable_physical_signal). Prefer observe over model escalation.",
+              "data": {
+                "sufficient": false,
+                "stream_available": false,
+                "analytics_valid": false,
+                "stale": true,
+                "has_vehicle_count": false,
+                "physical_label": "unknown",
+                "activity_band": "unknown",
+                "reasons": [
+                  "stream_unavailable",
+                  "analytics_invalid",
+                  "stale_context",
+                  "label_unknown",
+                  "no_usable_physical_signal"
+                ],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "stream_unavailable",
+                "analytics_invalid",
+                "stale_context",
+                "label_unknown",
+                "no_usable_physical_signal",
+                "physical_insufficient"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "identify_contradictions",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "Contradictions: cannot_corroborate_physical_context",
+              "data": {
+                "contradictions": [
+                  "cannot_corroborate_physical_context"
+                ],
+                "network_prediction": "DDoS_PacketIn_Flood",
+                "physical_label": "unknown"
+              },
+              "evidence_notes": [
+                "cannot_corroborate_physical_context"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 71.2 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 95.0,
+                  "source_dominance": 0.71,
+                  "distributed_sources": false,
+                  "window_id": "scen-miss-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 23.75,
+                  "source_dominance": 0.35,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 71.25,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=71.2",
+                "surge=True"
+              ]
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "evidence_based_recommender",
+              "recommendation": {
+                "recommended_action": "observe",
+                "final_risk": "medium",
+                "rationale": "Physical evidence insufficient, stale, or human review requested; do not escalate containment on network anomaly alone.",
+                "policy_attack_type": "DDoS_PacketIn_Flood",
+                "cooldown_seconds": 15,
+                "false_positive_corrected": true,
+                "safety_critical": false,
+                "confidence": 0.55,
+                "evidence_notes": [
+                  "window=scen-miss-1",
+                  "packet_in_delta_pct=95.0",
+                  "source_dominance=0.71",
+                  "distributed_sources=False",
+                  "network_prediction=DDoS_PacketIn_Flood",
+                  "physical_label=unknown",
+                  "activity_band=unknown",
+                  "tracks=None",
+                  "queue_m=None",
+                  "context_source=scenario_synthetic_metadata",
+                  "abstain_insufficient_evidence"
+                ]
+              }
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [],
+              "apply_gate": true,
+              "action": "observe"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "deterministic_planner",
+              "tool_calls": 5
+            }
+          }
+        ],
+        "tool_calls": 5,
+        "model_calls": 0,
+        "usage": {},
+        "estimated_cost_usd": null,
+        "latency_ms": 0.24279998615384102,
+        "model": null,
+        "error": null,
+        "bundle": {
+          "incident_id": "scenario_missing_camera",
+          "network_prediction": "DDoS_PacketIn_Flood",
+          "include_camera": true,
+          "telemetry": {
+            "context_source": "scenario_synthetic",
+            "packet_in_delta_pct": 95.0,
+            "source_dominance": 0.71,
+            "distributed_sources": false,
+            "window_id": "scen-miss-1"
+          },
+          "camera": {
+            "context_source": "scenario_synthetic_metadata",
+            "physical_label": "unknown",
+            "activity_band": "unknown",
+            "visible_vehicle_tracks": null,
+            "queue_length_proxy_m": null,
+            "is_vehicle_count": false,
+            "vehicle_count_is_real": false,
+            "stream_available": false,
+            "analytics_valid": false,
+            "stale": true,
+            "pedestrian_present": false,
+            "incident": false
+          },
+          "prior_windows": [
+            {
+              "window_id": "prior_synthetic_baseline",
+              "packet_in_delta_pct": 23.75,
+              "source_dominance": 0.35,
+              "distributed_sources": true,
+              "context_source": "synthetic_temporal_baseline"
+            }
+          ],
+          "tool_results": [
+            {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for DDoS_PacketIn_Flood: \u0394PacketIn=95.0% dominance=0.71 distributed=False",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 95.0,
+                  "source_dominance": 0.71,
+                  "distributed_sources": false,
+                  "window_id": "scen-miss-1"
+                },
+                "network_prediction": "DDoS_PacketIn_Flood"
+              },
+              "evidence_notes": [
+                "window=scen-miss-1",
+                "packet_in_delta_pct=95.0",
+                "source_dominance=0.71",
+                "distributed_sources=False",
+                "network_prediction=DDoS_PacketIn_Flood"
+              ]
+            },
+            {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=unknown band=unknown tracks=None (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "unknown",
+                  "activity_band": "unknown",
+                  "visible_vehicle_tracks": null,
+                  "queue_length_proxy_m": null,
+                  "is_vehicle_count": false,
+                  "vehicle_count_is_real": false,
+                  "stream_available": false,
+                  "analytics_valid": false,
+                  "stale": true,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=unknown",
+                "activity_band=unknown",
+                "tracks=None",
+                "queue_m=None",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            },
+            {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence INSUFFICIENT (stream_unavailable, analytics_invalid, stale_context, label_unknown, no_usable_physical_signal). Prefer observe over model escalation.",
+              "data": {
+                "sufficient": false,
+                "stream_available": false,
+                "analytics_valid": false,
+                "stale": true,
+                "has_vehicle_count": false,
+                "physical_label": "unknown",
+                "activity_band": "unknown",
+                "reasons": [
+                  "stream_unavailable",
+                  "analytics_invalid",
+                  "stale_context",
+                  "label_unknown",
+                  "no_usable_physical_signal"
+                ],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "stream_unavailable",
+                "analytics_invalid",
+                "stale_context",
+                "label_unknown",
+                "no_usable_physical_signal",
+                "physical_insufficient"
+              ]
+            },
+            {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "Contradictions: cannot_corroborate_physical_context",
+              "data": {
+                "contradictions": [
+                  "cannot_corroborate_physical_context"
+                ],
+                "network_prediction": "DDoS_PacketIn_Flood",
+                "physical_label": "unknown"
+              },
+              "evidence_notes": [
+                "cannot_corroborate_physical_context"
+              ]
+            },
+            {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 71.2 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 95.0,
+                  "source_dominance": 0.71,
+                  "distributed_sources": false,
+                  "window_id": "scen-miss-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 23.75,
+                  "source_dominance": 0.35,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 71.25,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=71.2",
+                "surge=True"
+              ]
+            }
+          ],
+          "physical_sufficient": false,
+          "physical_quality": {
+            "sufficient": false,
+            "stream_available": false,
+            "analytics_valid": false,
+            "stale": true,
+            "has_vehicle_count": false,
+            "physical_label": "unknown",
+            "activity_band": "unknown",
+            "reasons": [
+              "stream_unavailable",
+              "analytics_invalid",
+              "stale_context",
+              "label_unknown",
+              "no_usable_physical_signal"
+            ],
+            "context_source": "scenario_synthetic_metadata"
+          },
+          "contradictions": [
+            "cannot_corroborate_physical_context"
+          ],
+          "human_escalation_requested": false,
+          "uncertainties": [
+            "anomaly_requires_physical_context",
+            "physical_evidence_insufficient",
+            "camera_stale_or_invalid",
+            "no_temporal_baseline_yet"
+          ],
+          "camera_context_note": "Camera fields are same-zone metadata (fixture/synthetic or derived). Not claimed as live RTSP/YOLO inference in the judge path."
+        },
+        "apply_gate": true,
+        "include_camera": true,
+        "planner": "deterministic"
+      }
+    },
+    {
+      "scenario_id": "scenario_rush_vs_attack",
+      "title": "Surge during rush hour \u2014 attack label vs physical queue",
+      "story": "A network traffic surge is not always an attack. Investigate physical context before disruptive decisions.",
+      "rule_action": "preserve_rush_hour",
+      "investigation": {
+        "ok": true,
+        "evidence_class": "deterministic_planner",
+        "recommendation": {
+          "recommended_action": "preserve_rush_hour",
+          "final_risk": "medium",
+          "rationale": "Network attack label conflicts with rush/queue physical context; preserve mobility.",
+          "policy_attack_type": "RushHour_Burst",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": true,
+          "safety_critical": false,
+          "confidence": 0.7,
+          "evidence_notes": [
+            "window=scen-rush-1",
+            "packet_in_delta_pct=72.0",
+            "source_dominance=0.32",
+            "distributed_sources=True",
+            "network_prediction=DDoS_PacketIn_Flood",
+            "physical_label=rush_hour",
+            "activity_band=high",
+            "tracks=22",
+            "queue_m=48.0",
+            "context_source=scenario_synthetic_metadata",
+            "network_attack_label_vs_rush_physical",
+            "ddos_vs_long_queue"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "gated_notes": [],
+        "fusion_for_policy": {
+          "recommended_action": "preserve_rush_hour",
+          "policy_attack_type": "RushHour_Burst",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": true,
+          "safety_critical": false,
+          "final_risk": "medium",
+          "explain": "Network attack label conflicts with rush/queue physical context; preserve mobility.",
+          "reason_codes": [
+            "window=scen-rush-1",
+            "packet_in_delta_pct=72.0",
+            "source_dominance=0.32",
+            "distributed_sources=True",
+            "network_prediction=DDoS_PacketIn_Flood",
+            "physical_label=rush_hour",
+            "activity_band=high",
+            "tracks=22",
+            "queue_m=48.0",
+            "context_source=scenario_synthetic_metadata",
+            "network_attack_label_vs_rush_physical",
+            "ddos_vs_long_queue"
+          ],
+          "llm_schema_version": "hackathon_mitigation_v1",
+          "llm_confidence": 0.7
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "DDoS_PacketIn_Flood",
+              "incident_id": "scenario_rush_vs_attack",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "anomaly_requires_physical_context",
+                "possible_false_positive_vs_congestion",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for DDoS_PacketIn_Flood: \u0394PacketIn=72.0% dominance=0.32 distributed=True",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 72.0,
+                  "source_dominance": 0.32,
+                  "distributed_sources": true,
+                  "window_id": "scen-rush-1"
+                },
+                "network_prediction": "DDoS_PacketIn_Flood"
+              },
+              "evidence_notes": [
+                "window=scen-rush-1",
+                "packet_in_delta_pct=72.0",
+                "source_dominance=0.32",
+                "distributed_sources=True",
+                "network_prediction=DDoS_PacketIn_Flood"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=rush_hour band=high tracks=22 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "rush_hour",
+                  "activity_band": "high",
+                  "visible_vehicle_tracks": 22,
+                  "queue_length_proxy_m": 48.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=rush_hour",
+                "activity_band=high",
+                "tracks=22",
+                "queue_m=48.0",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence SUFFICIENT for containment decisions.",
+              "data": {
+                "sufficient": true,
+                "stream_available": true,
+                "analytics_valid": true,
+                "stale": false,
+                "has_vehicle_count": true,
+                "physical_label": "rush_hour",
+                "activity_band": "high",
+                "reasons": [],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "physical_sufficient"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "identify_contradictions",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "Contradictions: network_attack_label_vs_rush_physical; ddos_vs_long_queue",
+              "data": {
+                "contradictions": [
+                  "network_attack_label_vs_rush_physical",
+                  "ddos_vs_long_queue"
+                ],
+                "network_prediction": "DDoS_PacketIn_Flood",
+                "physical_label": "rush_hour"
+              },
+              "evidence_notes": [
+                "network_attack_label_vs_rush_physical",
+                "ddos_vs_long_queue"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 54.0 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 72.0,
+                  "source_dominance": 0.32,
+                  "distributed_sources": true,
+                  "window_id": "scen-rush-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 18.0,
+                  "source_dominance": 0.32,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 54.0,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=54.0",
+                "surge=True"
+              ]
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "evidence_based_recommender",
+              "recommendation": {
+                "recommended_action": "preserve_rush_hour",
+                "final_risk": "medium",
+                "rationale": "Network attack label conflicts with rush/queue physical context; preserve mobility.",
+                "policy_attack_type": "RushHour_Burst",
+                "cooldown_seconds": 15,
+                "false_positive_corrected": true,
+                "safety_critical": false,
+                "confidence": 0.7,
+                "evidence_notes": [
+                  "window=scen-rush-1",
+                  "packet_in_delta_pct=72.0",
+                  "source_dominance=0.32",
+                  "distributed_sources=True",
+                  "network_prediction=DDoS_PacketIn_Flood",
+                  "physical_label=rush_hour",
+                  "activity_band=high",
+                  "tracks=22",
+                  "queue_m=48.0",
+                  "context_source=scenario_synthetic_metadata",
+                  "network_attack_label_vs_rush_physical",
+                  "ddos_vs_long_queue"
+                ]
+              }
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [],
+              "apply_gate": true,
+              "action": "preserve_rush_hour"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "deterministic_planner",
+              "tool_calls": 5
+            }
+          }
+        ],
+        "tool_calls": 5,
+        "model_calls": 0,
+        "usage": {},
+        "estimated_cost_usd": null,
+        "latency_ms": 0.1970999874174595,
+        "model": null,
+        "error": null,
+        "bundle": {
+          "incident_id": "scenario_rush_vs_attack",
+          "network_prediction": "DDoS_PacketIn_Flood",
+          "include_camera": true,
+          "telemetry": {
+            "context_source": "scenario_synthetic",
+            "packet_in_delta_pct": 72.0,
+            "source_dominance": 0.32,
+            "distributed_sources": true,
+            "window_id": "scen-rush-1"
+          },
+          "camera": {
+            "context_source": "scenario_synthetic_metadata",
+            "physical_label": "rush_hour",
+            "activity_band": "high",
+            "visible_vehicle_tracks": 22,
+            "queue_length_proxy_m": 48.0,
+            "is_vehicle_count": true,
+            "vehicle_count_is_real": true,
+            "stream_available": true,
+            "analytics_valid": true,
+            "stale": false,
+            "pedestrian_present": false,
+            "incident": false
+          },
+          "prior_windows": [
+            {
+              "window_id": "prior_synthetic_baseline",
+              "packet_in_delta_pct": 18.0,
+              "source_dominance": 0.32,
+              "distributed_sources": true,
+              "context_source": "synthetic_temporal_baseline"
+            }
+          ],
+          "tool_results": [
+            {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for DDoS_PacketIn_Flood: \u0394PacketIn=72.0% dominance=0.32 distributed=True",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 72.0,
+                  "source_dominance": 0.32,
+                  "distributed_sources": true,
+                  "window_id": "scen-rush-1"
+                },
+                "network_prediction": "DDoS_PacketIn_Flood"
+              },
+              "evidence_notes": [
+                "window=scen-rush-1",
+                "packet_in_delta_pct=72.0",
+                "source_dominance=0.32",
+                "distributed_sources=True",
+                "network_prediction=DDoS_PacketIn_Flood"
+              ]
+            },
+            {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=rush_hour band=high tracks=22 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "rush_hour",
+                  "activity_band": "high",
+                  "visible_vehicle_tracks": 22,
+                  "queue_length_proxy_m": 48.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=rush_hour",
+                "activity_band=high",
+                "tracks=22",
+                "queue_m=48.0",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            },
+            {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence SUFFICIENT for containment decisions.",
+              "data": {
+                "sufficient": true,
+                "stream_available": true,
+                "analytics_valid": true,
+                "stale": false,
+                "has_vehicle_count": true,
+                "physical_label": "rush_hour",
+                "activity_band": "high",
+                "reasons": [],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "physical_sufficient"
+              ]
+            },
+            {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "Contradictions: network_attack_label_vs_rush_physical; ddos_vs_long_queue",
+              "data": {
+                "contradictions": [
+                  "network_attack_label_vs_rush_physical",
+                  "ddos_vs_long_queue"
+                ],
+                "network_prediction": "DDoS_PacketIn_Flood",
+                "physical_label": "rush_hour"
+              },
+              "evidence_notes": [
+                "network_attack_label_vs_rush_physical",
+                "ddos_vs_long_queue"
+              ]
+            },
+            {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 54.0 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 72.0,
+                  "source_dominance": 0.32,
+                  "distributed_sources": true,
+                  "window_id": "scen-rush-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 18.0,
+                  "source_dominance": 0.32,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 54.0,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=54.0",
+                "surge=True"
+              ]
+            }
+          ],
+          "physical_sufficient": true,
+          "physical_quality": {
+            "sufficient": true,
+            "stream_available": true,
+            "analytics_valid": true,
+            "stale": false,
+            "has_vehicle_count": true,
+            "physical_label": "rush_hour",
+            "activity_band": "high",
+            "reasons": [],
+            "context_source": "scenario_synthetic_metadata"
+          },
+          "contradictions": [
+            "network_attack_label_vs_rush_physical",
+            "ddos_vs_long_queue"
+          ],
+          "human_escalation_requested": false,
+          "uncertainties": [
+            "anomaly_requires_physical_context",
+            "possible_false_positive_vs_congestion",
+            "no_temporal_baseline_yet"
+          ],
+          "camera_context_note": "Camera fields are same-zone metadata (fixture/synthetic or derived). Not claimed as live RTSP/YOLO inference in the judge path."
+        },
+        "apply_gate": true,
+        "include_camera": true,
+        "planner": "deterministic"
+      }
+    },
+    {
+      "scenario_id": "scenario_unsafe_blocked",
+      "title": "Unsafe temporary_drop attempt blocked by gate",
+      "story": "Even if an investigator proposes hard DROP, the deterministic safety gate remains authoritative.",
+      "rule_action": "preserve_rush_hour",
+      "investigation": {
+        "ok": true,
+        "evidence_class": "synthetic_offline",
+        "recommendation": {
+          "recommended_action": "preserve_rush_hour",
+          "final_risk": "high",
+          "rationale": "Adversarial fixture: model tries unsafe hard DROP during rush hour.",
+          "policy_attack_type": "RushHour_Burst",
+          "cooldown_seconds": 5.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.95,
+          "evidence_notes": [
+            "adversarial_unsafe_escalation"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "gated_notes": [
+          "gate:deescalated_to_rule:preserve_rush_hour"
+        ],
+        "fusion_for_policy": {
+          "recommended_action": "preserve_rush_hour",
+          "policy_attack_type": "RushHour_Burst",
+          "cooldown_seconds": 5.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "final_risk": "high",
+          "explain": "Adversarial fixture: model tries unsafe hard DROP during rush hour.",
+          "reason_codes": [
+            "adversarial_unsafe_escalation"
+          ],
+          "llm_schema_version": "hackathon_mitigation_v1",
+          "llm_confidence": 0.95
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "RushHour_Burst",
+              "incident_id": "scenario_unsafe_blocked",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "anomaly_requires_physical_context",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for RushHour_Burst: \u0394PacketIn=45.0% dominance=0.28 distributed=True",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 45.0,
+                  "source_dominance": 0.28,
+                  "distributed_sources": true,
+                  "window_id": "scen-unsafe-1"
+                },
+                "network_prediction": "RushHour_Burst"
+              },
+              "evidence_notes": [
+                "window=scen-unsafe-1",
+                "packet_in_delta_pct=45.0",
+                "source_dominance=0.28",
+                "distributed_sources=True",
+                "network_prediction=RushHour_Burst"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=rush_hour band=high tracks=18 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "rush_hour",
+                  "activity_band": "high",
+                  "visible_vehicle_tracks": 18,
+                  "queue_length_proxy_m": 40.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=rush_hour",
+                "activity_band=high",
+                "tracks=18",
+                "queue_m=40.0",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence SUFFICIENT for containment decisions.",
+              "data": {
+                "sufficient": true,
+                "stream_available": true,
+                "analytics_valid": true,
+                "stale": false,
+                "has_vehicle_count": true,
+                "physical_label": "rush_hour",
+                "activity_band": "high",
+                "reasons": [],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "physical_sufficient"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "identify_contradictions",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "No hard contradictions flagged.",
+              "data": {
+                "contradictions": [],
+                "network_prediction": "RushHour_Burst",
+                "physical_label": "rush_hour"
+              },
+              "evidence_notes": [
+                "no_hard_contradiction"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "planner": "deterministic"
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 33.8 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 45.0,
+                  "source_dominance": 0.28,
+                  "distributed_sources": true,
+                  "window_id": "scen-unsafe-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 11.25,
+                  "source_dominance": 0.28,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 33.75,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=33.8",
+                "surge=True"
+              ]
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "synthetic_offline_fixture"
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [
+                "gate:deescalated_to_rule:preserve_rush_hour"
+              ],
+              "apply_gate": true,
+              "action": "preserve_rush_hour"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "synthetic_offline",
+              "tool_calls": 5
+            }
+          }
+        ],
+        "tool_calls": 5,
+        "model_calls": 0,
+        "usage": {},
+        "estimated_cost_usd": null,
+        "latency_ms": 0.18199998885393143,
+        "model": null,
+        "error": null,
+        "bundle": {
+          "incident_id": "scenario_unsafe_blocked",
+          "network_prediction": "RushHour_Burst",
+          "include_camera": true,
+          "telemetry": {
+            "context_source": "scenario_synthetic",
+            "packet_in_delta_pct": 45.0,
+            "source_dominance": 0.28,
+            "distributed_sources": true,
+            "window_id": "scen-unsafe-1"
+          },
+          "camera": {
+            "context_source": "scenario_synthetic_metadata",
+            "physical_label": "rush_hour",
+            "activity_band": "high",
+            "visible_vehicle_tracks": 18,
+            "queue_length_proxy_m": 40.0,
+            "is_vehicle_count": true,
+            "vehicle_count_is_real": true,
+            "stream_available": true,
+            "analytics_valid": true,
+            "stale": false,
+            "pedestrian_present": false,
+            "incident": false
+          },
+          "prior_windows": [
+            {
+              "window_id": "prior_synthetic_baseline",
+              "packet_in_delta_pct": 11.25,
+              "source_dominance": 0.28,
+              "distributed_sources": true,
+              "context_source": "synthetic_temporal_baseline"
+            }
+          ],
+          "tool_results": [
+            {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for RushHour_Burst: \u0394PacketIn=45.0% dominance=0.28 distributed=True",
+              "data": {
+                "telemetry": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 45.0,
+                  "source_dominance": 0.28,
+                  "distributed_sources": true,
+                  "window_id": "scen-unsafe-1"
+                },
+                "network_prediction": "RushHour_Burst"
+              },
+              "evidence_notes": [
+                "window=scen-unsafe-1",
+                "packet_in_delta_pct=45.0",
+                "source_dominance=0.28",
+                "distributed_sources=True",
+                "network_prediction=RushHour_Burst"
+              ]
+            },
+            {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=rush_hour band=high tracks=18 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "scenario_synthetic_metadata",
+                  "physical_label": "rush_hour",
+                  "activity_band": "high",
+                  "visible_vehicle_tracks": 18,
+                  "queue_length_proxy_m": 40.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=rush_hour",
+                "activity_band=high",
+                "tracks=18",
+                "queue_m=40.0",
+                "context_source=scenario_synthetic_metadata",
+                "not_live_rtsp_claim"
+              ]
+            },
+            {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence SUFFICIENT for containment decisions.",
+              "data": {
+                "sufficient": true,
+                "stream_available": true,
+                "analytics_valid": true,
+                "stale": false,
+                "has_vehicle_count": true,
+                "physical_label": "rush_hour",
+                "activity_band": "high",
+                "reasons": [],
+                "context_source": "scenario_synthetic_metadata"
+              },
+              "evidence_notes": [
+                "physical_sufficient"
+              ]
+            },
+            {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "No hard contradictions flagged.",
+              "data": {
+                "contradictions": [],
+                "network_prediction": "RushHour_Burst",
+                "physical_label": "rush_hour"
+              },
+              "evidence_notes": [
+                "no_hard_contradiction"
+              ]
+            },
+            {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 33.8 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "scenario_synthetic",
+                  "packet_in_delta_pct": 45.0,
+                  "source_dominance": 0.28,
+                  "distributed_sources": true,
+                  "window_id": "scen-unsafe-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 11.25,
+                  "source_dominance": 0.28,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 33.75,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent."
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=33.8",
+                "surge=True"
+              ]
+            }
+          ],
+          "physical_sufficient": true,
+          "physical_quality": {
+            "sufficient": true,
+            "stream_available": true,
+            "analytics_valid": true,
+            "stale": false,
+            "has_vehicle_count": true,
+            "physical_label": "rush_hour",
+            "activity_band": "high",
+            "reasons": [],
+            "context_source": "scenario_synthetic_metadata"
+          },
+          "contradictions": [],
+          "human_escalation_requested": false,
+          "uncertainties": [
+            "anomaly_requires_physical_context",
+            "no_temporal_baseline_yet"
+          ],
+          "camera_context_note": "Camera fields are same-zone metadata (fixture/synthetic or derived). Not claimed as live RTSP/YOLO inference in the judge path."
+        },
+        "apply_gate": true,
+        "include_camera": true,
+        "planner": "synthetic_fixture"
+      }
+    }
+  ]
+}

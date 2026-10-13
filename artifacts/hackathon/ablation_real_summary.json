@@ -1,0 +1,209 @@
+{
+  "ts_utc": "2026-10-13T02:05:08.614568+00:00",
+  "study": "ablation_A_B_C_D",
+  "honesty_note": "Offline B/C/D use deterministic_planner + real evidence tools \u2014 NOT live Nemotron. real_api rows are the only live NVIDIA/Nebius decisions. Do not claim superiority over rules unless comparable n and evidence_class support it. Camera fields are fixture/synthetic metadata, not live RTSP inference.",
+  "real_api": {
+    "calls": 9,
+    "est_cost_usd": 0.0037819200000000002,
+    "budget_usd": 0.1,
+    "limit": 3,
+    "skipped": false,
+    "budget_stopped": false,
+    "config": {
+      "project_root": "D:\\tu_projects\\sdn-its-nebius-hackathon",
+      "env_file": "D:\\tu_projects\\sdn-its-nebius-hackathon\\.env",
+      "env_file_exists": true,
+      "nebius_api_key_present": true,
+      "nebius_base_url_set": true,
+      "nebius_model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "cwd": "D:\\tu_projects\\sdn-its-nebius-hackathon",
+      "note": "Existing process env vars take precedence over .env (override=False)."
+    }
+  },
+  "offline_comparable_note": "See ablation_offline.json for full-set planner arms with --allow-containment-in-demo (fair advisory scoring; OF still mock).",
+  "full_set_summary_mixed_evidence_classes": {
+    "A_rule_only": {
+      "n": 25,
+      "arm": "A_rule_only",
+      "correct_vs_oracle_rate": 0.84,
+      "correct_vs_oracle_count": 21,
+      "false_escalation_rate": 0.16,
+      "false_escalation_count": 4,
+      "unsafe_recommendation_rate": 0.0,
+      "unsafe_recommendation_count": 0,
+      "abstention_rate": 0.12,
+      "abstention_count": 3,
+      "appropriate_abstention_rate": 0.0,
+      "appropriate_abstention_count": 0,
+      "gate_blocked_containment_rate": 0.04,
+      "gate_blocked_containment_count": 1,
+      "evidence_request_useful_rate": 0.0,
+      "evidence_request_useful_count": 0,
+      "mean_latency_ms": 0.2510760026052594,
+      "total_estimated_cost_usd": 0.0,
+      "mean_tool_calls": 0.0,
+      "total_tokens": 0,
+      "evidence_classes": [
+        "deterministic_rules"
+      ]
+    },
+    "B_net_only": {
+      "n": 25,
+      "arm": "B_net_only",
+      "correct_vs_oracle_rate": 0.64,
+      "correct_vs_oracle_count": 16,
+      "false_escalation_rate": 0.04,
+      "false_escalation_count": 1,
+      "unsafe_recommendation_rate": 0.04,
+      "unsafe_recommendation_count": 1,
+      "abstention_rate": 0.96,
+      "abstention_count": 24,
+      "appropriate_abstention_rate": 0.16,
+      "appropriate_abstention_count": 4,
+      "gate_blocked_containment_rate": 0.0,
+      "gate_blocked_containment_count": 0,
+      "evidence_request_useful_rate": 0.88,
+      "evidence_request_useful_count": 22,
+      "mean_latency_ms": 1822.2241680091247,
+      "total_estimated_cost_usd": 0.001341,
+      "mean_tool_calls": 3.6,
+      "total_tokens": 11604,
+      "evidence_classes": [
+        "blocked_no_credentials",
+        "deterministic_planner",
+        "real_api",
+        "synthetic_malformed",
+        "synthetic_offline"
+      ]
+    },
+    "C_net_cam": {
+      "n": 25,
+      "arm": "C_net_cam",
+      "correct_vs_oracle_rate": 0.88,
+      "correct_vs_oracle_count": 22,
+      "false_escalation_rate": 0.04,
+      "false_escalation_count": 1,
+      "unsafe_recommendation_rate": 0.04,
+      "unsafe_recommendation_count": 1,
+      "abstention_rate": 0.36,
+      "abstention_count": 9,
+      "appropriate_abstention_rate": 0.16,
+      "appropriate_abstention_count": 4,
+      "gate_blocked_containment_rate": 0.0,
+      "gate_blocked_containment_count": 0,
+      "evidence_request_useful_rate": 0.52,
+      "evidence_request_useful_count": 13,
+      "mean_latency_ms": 1641.9472480099648,
+      "total_estimated_cost_usd": 0.0011648399999999999,
+      "mean_tool_calls": 4.52,
+      "total_tokens": 11347,
+      "evidence_classes": [
+        "blocked_no_credentials",
+        "deterministic_planner",
+        "real_api",
+        "synthetic_malformed",
+        "synthetic_offline"
+      ]
+    },
+    "D_net_cam_gate": {
+      "n": 25,
+      "arm": "D_net_cam_gate",
+      "correct_vs_oracle_rate": 0.92,
+      "correct_vs_oracle_count": 23,
+      "false_escalation_rate": 0.0,
+      "false_escalation_count": 0,
+      "unsafe_recommendation_rate": 0.0,
+      "unsafe_recommendation_count": 0,
+      "abstention_rate": 0.4,
+      "abstention_count": 10,
+      "appropriate_abstention_rate": 0.16,
+      "appropriate_abstention_count": 4,
+      "gate_blocked_containment_rate": 0.04,
+      "gate_blocked_containment_count": 1,
+      "evidence_request_useful_rate": 0.56,
+      "evidence_request_useful_count": 14,
+      "mean_latency_ms": 1957.1678320039064,
+      "total_estimated_cost_usd": 0.00127608,
+      "mean_tool_calls": 4.48,
+      "total_tokens": 12082,
+      "evidence_classes": [
+        "blocked_no_credentials",
+        "deterministic_planner",
+        "real_api",
+        "synthetic_malformed",
+        "synthetic_offline"
+      ]
+    }
+  },
+  "real_api_only": {
+    "B_net_only": {
+      "n": 3,
+      "correct_vs_oracle_rate": 1.0,
+      "false_escalation_rate": 0.0,
+      "total_estimated_cost_usd": 0.001341,
+      "cases": [
+        {
+          "id": "eval_conflict_01",
+          "action": "observe",
+          "correct": true
+        },
+        {
+          "id": "eval_legit_cong_01",
+          "action": "observe",
+          "correct": true
+        },
+        {
+          "id": "eval_missing_01",
+          "action": "observe",
+          "correct": true
+        }
+      ]
+    },
+    "C_net_cam": {
+      "n": 3,
+      "correct_vs_oracle_rate": 1.0,
+      "false_escalation_rate": 0.0,
+      "total_estimated_cost_usd": 0.0011648399999999999,
+      "cases": [
+        {
+          "id": "eval_conflict_01",
+          "action": "preserve_rush_hour",
+          "correct": true
+        },
+        {
+          "id": "eval_legit_cong_01",
+          "action": "preserve_rush_hour",
+          "correct": true
+        },
+        {
+          "id": "eval_missing_01",
+          "action": "observe",
+          "correct": true
+        }
+      ]
+    },
+    "D_net_cam_gate": {
+      "n": 3,
+      "correct_vs_oracle_rate": 1.0,
+      "false_escalation_rate": 0.0,
+      "total_estimated_cost_usd": 0.00127608,
+      "cases": [
+        {
+          "id": "eval_conflict_01",
+          "action": "observe",
+          "correct": true
+        },
+        {
+          "id": "eval_legit_cong_01",
+          "action": "preserve_rush_hour",
+          "correct": true
+        },
+        {
+          "id": "eval_missing_01",
+          "action": "observe",
+          "correct": true
+        }
+      ]
+    }
+  }
+}

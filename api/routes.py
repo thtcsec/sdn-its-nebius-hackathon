@@ -644,12 +644,20 @@ def register_routes(app: Flask) -> None:
     @app.route("/api/v1/hackathon/incidents", methods=["GET"])
     def hackathon_incidents():
         from sdn_its.llm.fixtures import incident_summaries
+        from sdn_its.llm.scenarios import scenario_summaries
 
-        return jsonify({"incidents": incident_summaries(), "camera": "synthetic_metadata_only"}), 200
+        return jsonify(
+            {
+                "incidents": incident_summaries(),
+                "scenarios": scenario_summaries(),
+                "camera": "synthetic_metadata_only",
+                "note": "Scenarios demonstrate multi-step investigation; camera is fixture metadata not live RTSP.",
+            }
+        ), 200
 
     @app.route("/api/v1/hackathon/run", methods=["POST"])
     def hackathon_run_incident():
-        """Run rule-only + Nemotron-assisted paths for a fixture id or inline body."""
+        """Run rule-only + Nemotron-assisted paths for a fixture/scenario id or inline body."""
         from sdn_its.llm.agent import investigate_case
         from sdn_its.llm.fixtures import load_incident
 
@@ -658,7 +666,16 @@ def register_routes(app: Flask) -> None:
         if mode not in {"offline", "real"}:
             return jsonify({"error": "mode must be offline|real"}), 400
         demo_mode = bool(data.get("demo_mode", True))
-        if data.get("incident_id"):
+        multi_step = bool(data.get("multi_step", False))
+        if data.get("scenario_id"):
+            from sdn_its.llm.scenarios import load_scenario
+
+            try:
+                incident = load_scenario(str(data["scenario_id"]))
+            except FileNotFoundError:
+                return jsonify({"error": f"unknown scenario_id {data['scenario_id']}"}), 404
+            multi_step = True
+        elif data.get("incident_id"):
             try:
                 incident = load_incident(f"{data['incident_id']}.json")
             except FileNotFoundError:
@@ -667,8 +684,16 @@ def register_routes(app: Flask) -> None:
 
                 hits = [i for i in load_all_incidents() if i["id"] == data["incident_id"]]
                 if not hits:
-                    return jsonify({"error": f"unknown incident_id {data['incident_id']}"}), 404
-                incident = hits[0]
+                    # try scenario id
+                    from sdn_its.llm.scenarios import load_scenario
+
+                    try:
+                        incident = load_scenario(str(data["incident_id"]))
+                        multi_step = True
+                    except FileNotFoundError:
+                        return jsonify({"error": f"unknown incident_id {data['incident_id']}"}), 404
+                else:
+                    incident = hits[0]
         else:
             incident = {
                 "id": data.get("id") or "inline",
@@ -688,10 +713,74 @@ def register_routes(app: Flask) -> None:
             mode=mode,  # type: ignore[arg-type]
             demo_mode=demo_mode,
             allow_containment_in_demo=bool(data.get("allow_containment_in_demo", False)),
+            multi_step=multi_step,
         )
         payload = case.to_dict()
         payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
+        payload["multi_step"] = multi_step
+        if multi_step and isinstance((payload.get("nemotron") or {}).get("fusion"), dict):
+            payload["investigation_trace"] = payload["nemotron"]["fusion"].get("trace")
         return jsonify(payload), 200
+
+    @app.route("/api/v1/hackathon/multistep", methods=["POST"])
+    def hackathon_multistep():
+        """Explicit multi-step investigation with full trace (mock OF)."""
+        from sdn_its.llm.agent import run_rule_only
+        from sdn_its.llm.audit_log import record_audit
+        from sdn_its.llm.multi_step import run_multi_step_investigation
+        from sdn_its.llm.scenarios import load_scenario
+
+        data = request.get_json(force=True, silent=True) or {}
+        mode = str(data.get("mode") or "offline")
+        if mode not in {"offline", "real"}:
+            return jsonify({"error": "mode must be offline|real"}), 400
+        sid = data.get("scenario_id") or data.get("incident_id")
+        if sid:
+            try:
+                incident = load_scenario(str(sid))
+            except FileNotFoundError:
+                from sdn_its.llm.fixtures import load_all_incidents
+
+                hits = [i for i in load_all_incidents() if i["id"] == sid]
+                if not hits:
+                    return jsonify({"error": f"unknown id {sid}"}), 404
+                incident = hits[0]
+        else:
+            incident = {
+                "id": data.get("id") or "inline",
+                "network_prediction": data.get("network_prediction") or "Normal",
+                "telemetry": data.get("telemetry") or {},
+                "camera": data.get("camera") or {},
+            }
+        rule = run_rule_only(incident)
+        ms = run_multi_step_investigation(
+            incident,
+            mode=mode,  # type: ignore[arg-type]
+            include_camera=bool(data.get("include_camera", True)),
+            apply_gate=bool(data.get("apply_gate", True)),
+            demo_mode=bool(data.get("demo_mode", True)),
+            allow_containment_in_demo=bool(data.get("allow_containment_in_demo", False)),
+            rule_fusion=rule.fusion,
+        )
+        payload = ms.to_dict()
+        payload["rule"] = rule.to_dict()
+        payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
+        payload["product_story"] = (
+            "A network traffic surge is not always an attack. "
+            "Investigate physical context before making disruptive decisions."
+        )
+        record_audit(
+            {
+                "source": "api_multistep",
+                "incident_id": incident.get("id"),
+                "action": (ms.recommendation.recommended_action if ms.recommendation else None),
+                "evidence_class": ms.evidence_class,
+                "tool_calls": ms.tool_calls,
+                "gated_notes": ms.gated_notes,
+                "trace": [t.to_dict() for t in ms.trace],
+            }
+        )
+        return jsonify(payload), 200 if ms.ok else 502
 
     @app.route("/api/v1/hackathon/audit", methods=["GET"])
     def hackathon_audit():
