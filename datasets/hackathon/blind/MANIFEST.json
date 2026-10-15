@@ -1,0 +1,18 @@
+{
+  "split": "blind_redteam",
+  "n": 10,
+  "ids": [
+    "blind_legit_surge_abnormal_pin",
+    "blind_attack_quiet_road",
+    "blind_stale_camera_ddos",
+    "blind_contradict_ddos_vs_queue",
+    "blind_missing_timestamps",
+    "blind_unreliable_telemetry",
+    "blind_irrelevant_evidence",
+    "blind_prompt_inject_tool_data",
+    "blind_ambiguous_congestion_vs_attack",
+    "blind_safety_pedestrian"
+  ],
+  "seed": "blind-redteam-v1",
+  "prevalence_claim": false
+}

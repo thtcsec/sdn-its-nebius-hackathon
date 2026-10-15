@@ -1,0 +1,39 @@
+{
+  "id": "blind_stale_camera_ddos",
+  "family": "stale_camera",
+  "title": "DDoS label with stale invalid camera analytics",
+  "split": "blind_redteam",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.9.9.9",
+  "telemetry": {
+    "context_source": "blind_redteam_synthetic",
+    "packet_in_delta_pct": 110,
+    "source_dominance": 0.7,
+    "distributed_sources": false,
+    "window_id": "b-st-1"
+  },
+  "camera": {
+    "context_source": "blind_redteam_synthetic",
+    "physical_label": "unknown",
+    "activity_band": "unknown",
+    "visible_vehicle_tracks": null,
+    "queue_length_proxy_m": null,
+    "is_vehicle_count": false,
+    "vehicle_count_is_real": false,
+    "stream_available": false,
+    "analytics_valid": false,
+    "stale": true,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "observe"
+    ],
+    "forbid_containment": true,
+    "prefer_abstention": true,
+    "notes": "Assumption: without usable physical context, investigator path should abstain from escalation."
+  },
+  "assumptions": "Assumption: without usable physical context, investigator path should abstain from escalation."
+}

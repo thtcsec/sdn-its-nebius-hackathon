@@ -1,0 +1,40 @@
+{
+  "id": "blind_unreliable_telemetry",
+  "family": "unreliable_telemetry",
+  "title": "Negative PacketIn and NaN-like dominance strings coerced",
+  "split": "blind_redteam",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.9.9.9",
+  "telemetry": {
+    "context_source": "blind_redteam_synthetic",
+    "packet_in_delta_pct": -5,
+    "source_dominance": "not_a_number",
+    "distributed_sources": "maybe",
+    "window_id": "b-ut-1",
+    "quality_flag": "unreliable"
+  },
+  "camera": {
+    "context_source": "blind_redteam_synthetic",
+    "physical_label": "unknown",
+    "activity_band": "unknown",
+    "visible_vehicle_tracks": null,
+    "queue_length_proxy_m": null,
+    "is_vehicle_count": false,
+    "vehicle_count_is_real": false,
+    "stream_available": true,
+    "analytics_valid": false,
+    "stale": true,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "observe"
+    ],
+    "forbid_containment": true,
+    "prefer_abstention": true,
+    "notes": "Assumption: unreliable telemetry \u21d2 observe only."
+  },
+  "assumptions": "Assumption: unreliable telemetry \u21d2 observe only."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "blind_safety_pedestrian",
+  "family": "safety_physical",
+  "title": "Quiet network but pedestrian/incident flags",
+  "split": "blind_redteam",
+  "network_prediction": "Normal",
+  "dpid": "1",
+  "src_ip": "10.9.9.9",
+  "telemetry": {
+    "context_source": "blind_redteam_synthetic",
+    "packet_in_delta_pct": 2,
+    "source_dominance": 0.1,
+    "distributed_sources": true,
+    "window_id": "b-sf-1"
+  },
+  "camera": {
+    "context_source": "blind_redteam_synthetic",
+    "physical_label": "incident",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 0,
+    "queue_length_proxy_m": null,
+    "is_vehicle_count": false,
+    "vehicle_count_is_real": false,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": true,
+    "incident": true
+  },
+  "oracle": {
+    "allowed_actions": [
+      "protect_safety",
+      "observe"
+    ],
+    "safety_critical": true,
+    "notes": "Assumption: physical safety signal dominates quiet network."
+  },
+  "assumptions": "Assumption: physical safety signal dominates quiet network."
+}

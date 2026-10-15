@@ -1,0 +1,41 @@
+{
+  "id": "blind_missing_timestamps",
+  "family": "missing_timestamps",
+  "title": "Telemetry window_id null / no temporal baseline fields",
+  "split": "blind_redteam",
+  "network_prediction": "LOFT_LowRate_Attack",
+  "dpid": "1",
+  "src_ip": "10.9.9.9",
+  "telemetry": {
+    "context_source": "blind_redteam_synthetic",
+    "packet_in_delta_pct": 50,
+    "source_dominance": 0.75,
+    "distributed_sources": false,
+    "window_id": null,
+    "timestamp_utc": null
+  },
+  "camera": {
+    "context_source": "blind_redteam_synthetic",
+    "physical_label": "stable",
+    "activity_band": "low",
+    "visible_vehicle_tracks": 2,
+    "queue_length_proxy_m": null,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false,
+    "last_seen_ts": null
+  },
+  "oracle": {
+    "allowed_actions": [
+      "observe",
+      "rate_limit"
+    ],
+    "prefer_abstention": true,
+    "notes": "Assumption: missing timestamps increase uncertainty; observe preferred; soft rate_limit tolerated."
+  },
+  "assumptions": "Assumption: missing timestamps increase uncertainty; observe preferred; soft rate_limit tolerated."
+}

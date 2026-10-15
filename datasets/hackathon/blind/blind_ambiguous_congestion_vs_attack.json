@@ -1,0 +1,40 @@
+{
+  "id": "blind_ambiguous_congestion_vs_attack",
+  "family": "indistinguishable",
+  "title": "Moderate pin + mid dominance + mid camera activity \u2014 cannot distinguish",
+  "split": "blind_redteam",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.9.9.9",
+  "telemetry": {
+    "context_source": "blind_redteam_synthetic",
+    "packet_in_delta_pct": 55,
+    "source_dominance": 0.45,
+    "distributed_sources": true,
+    "window_id": "b-am-1"
+  },
+  "camera": {
+    "context_source": "blind_redteam_synthetic",
+    "physical_label": "busy",
+    "activity_band": "mid",
+    "visible_vehicle_tracks": 10,
+    "queue_length_proxy_m": 20,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "observe",
+      "preserve_rush_hour"
+    ],
+    "forbid_containment": true,
+    "prefer_abstention": true,
+    "notes": "Assumption: physical context cannot cleanly separate attack vs congestion \u21d2 no containment."
+  },
+  "assumptions": "Assumption: physical context cannot cleanly separate attack vs congestion \u21d2 no containment."
+}

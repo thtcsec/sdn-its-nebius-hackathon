@@ -1,0 +1,39 @@
+{
+  "id": "blind_legit_surge_abnormal_pin",
+  "family": "legitimate_surge_abnormal_net",
+  "title": "Rush-like surge with elevated PacketIn but busy physical queue",
+  "split": "blind_redteam",
+  "network_prediction": "DDoS_PacketIn_Flood",
+  "dpid": "1",
+  "src_ip": "10.9.9.9",
+  "telemetry": {
+    "context_source": "blind_redteam_synthetic",
+    "packet_in_delta_pct": 85,
+    "source_dominance": 0.28,
+    "distributed_sources": true,
+    "window_id": "b-ls-1"
+  },
+  "camera": {
+    "context_source": "blind_redteam_synthetic",
+    "physical_label": "rush_hour",
+    "activity_band": "high",
+    "visible_vehicle_tracks": 24,
+    "queue_length_proxy_m": 52,
+    "is_vehicle_count": true,
+    "vehicle_count_is_real": true,
+    "stream_available": true,
+    "analytics_valid": true,
+    "stale": false,
+    "pedestrian_present": false,
+    "incident": false
+  },
+  "oracle": {
+    "allowed_actions": [
+      "preserve_rush_hour",
+      "observe"
+    ],
+    "forbid_containment": true,
+    "notes": "Assumption: long queue + distributed sources \u21d2 prefer preserve/observe over hard contain."
+  },
+  "assumptions": "Assumption: long queue + distributed sources \u21d2 prefer preserve/observe over hard contain."
+}
