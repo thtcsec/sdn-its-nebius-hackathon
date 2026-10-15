@@ -2,7 +2,7 @@
 
 **Branch:** `hackathon/nebius-nvidia`  
 **Base (pre-rescue report push):** `419d1a2` (JUDGE_ACCEPTANCE_REPORT + blind set)  
-**This rescue tip:** _(filled after push)_  
+**This rescue tip:** `319076b13d8e6875a7faa20ff9f559947e515454`  
 
 ## Mission A — Robustness
 
@@ -55,7 +55,7 @@ Post-fix regression (`scripts/run_p0_regression_eval.py`, budget ≤$0.10, spend
 - Workflow: `.github/workflows/hackathon-light.yml` on `hackathon/nebius-nvidia`.
 - Light deps + targeted pytest (incl. sanitize/schema tests).
 
-**CI URL / result:** _(filled after Actions run)_
+**CI URL / result:** https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/38766235602 — **success** (head `319076b`)
 
 ## Mission E — Working app + hosted plan
 
