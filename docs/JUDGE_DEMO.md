@@ -1,5 +1,12 @@
 # Judge demo — Nebius × NVIDIA (SOLO)
 
+## Product entry point
+
+**JunctionTrace** (hackathon product UI): open `http://127.0.0.1:8080/`  
+Hero: *A traffic surge is not always an attack. Investigate before disrupting critical infrastructure.*
+
+Preserved research / IEDE lab console (not the competition product): `http://127.0.0.1:8080/research`
+
 ## What you are evaluating
 
 A **cyber–physical multi-step investigation agent** for SDN-ITS:

@@ -1,0 +1,72 @@
+{
+  "ts_utc": "2026-10-15T16:43:31.292947+00:00",
+  "base": "http://127.0.0.1:8080",
+  "checks": [
+    {
+      "name": "fresh_root_product",
+      "passed": true,
+      "detail": "JunctionTrace \u2014 Incident Investigator"
+    },
+    {
+      "name": "hero_problem",
+      "passed": true,
+      "detail": "A traffic surge is not always an attack."
+    },
+    {
+      "name": "cta_present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "scenario_selector",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no_tsinghua_iede",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "offline_not_labeled_live",
+      "passed": true,
+      "detail": "deterministic planner (offline)\nsynthetic camera metadata\nOF mock\ngate PASS\nScenario\nMissing / stale evidence (scenario_missing_camera)\nNetwork alarm\nDDoS_PacketIn_Flood\nRSU / DPID\nzone demo \u00b7 dpid mo"
+    },
+    {
+      "name": "timeline_has_detail",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "real_nebius_path",
+      "passed": true,
+      "detail": "LIVE Nebius / real_api\nsynthetic camera metadata\nOF mock\ngate PASS\nScenario\nCredible cyberattack (scenario_loft_stable)\nNetwork alarm\nLOFT_LowRate_Attack\nRSU / DPID\nzone demo \u00b7 dpid mock\nTelemetry \u0394PIN\n38 \u00b7 dominance 0.7"
+    },
+    {
+      "name": "research_preserved",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "mobile_cta_visible",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "malformed_fail_closed_api",
+      "passed": true,
+      "detail": "{'status': 502, 'body': {'apply_gate': True, 'bundle': {'camera': {'activity_band': 'low', 'analytics_valid': True, 'context_source': 'synthetic_fixture', 'incident': False, 'is_vehicle_count': True, 'pedestrian_present': False, 'physical_l"
+    }
+  ],
+  "screenshots": [
+    "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\01_landing_1440x900.png",
+    "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\02_investigating_1440x900.png",
+    "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\03_complete_offline_1440x900.png",
+    "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\04_complete_real_1440x900.png",
+    "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\05_research_1440x900.png",
+    "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\06_mobile_390x844.png"
+  ],
+  "passed": true,
+  "pass_count": 11,
+  "total": 11
+}

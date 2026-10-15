@@ -140,7 +140,34 @@ _REPLAY_SCRIPTS = {
 def register_routes(app: Flask) -> None:
     @app.route("/", methods=["GET"])
     def index():
+        """Hackathon product home — JunctionTrace investigator (not the research console)."""
+        return render_template("junctiontrace.html")
+
+    @app.route("/research", methods=["GET"])
+    def research_console():
+        """Preserved IEDE / SDN research dashboard (pre-existing lab UI)."""
         return render_template("index.html")
+
+    @app.route("/api/v1/hackathon/capabilities", methods=["GET"])
+    def hackathon_capabilities():
+        """Non-secret capability flags for the product UI (never returns API keys)."""
+        from sdn_its.utils.env import nebius_config_summary
+
+        cfg = nebius_config_summary()
+        return jsonify(
+            {
+                "product": "JunctionTrace",
+                "nebius_api_key_present": bool(cfg.get("nebius_api_key_present")),
+                "nebius_model": cfg.get("nebius_model") or "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+                "of_backend_default": "mock",
+                "camera_label": "synthetic_metadata_only",
+                "modes": ["offline", "real"],
+                "note": (
+                    "Offline uses a deterministic planner. Real mode calls Nebius Token Factory "
+                    "only when NEBIUS_API_KEY is configured server-side."
+                ),
+            }
+        ), 200
 
     @app.route("/api/v1/status", methods=["GET"])
     def status():

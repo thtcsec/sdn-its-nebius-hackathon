@@ -32,4 +32,5 @@ jobs:
             tests/test_multi_step_agent.py \
             tests/test_paired_gate.py \
             tests/test_input_sanitize.py \
-            tests/test_schema_repair.py
+            tests/test_schema_repair.py \
+            tests/test_product_ui.py

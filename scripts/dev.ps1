@@ -42,20 +42,24 @@ $ControllerJob = Start-Job -ScriptBlock {
 } -ArgumentList $PythonExec, $ProjectRoot
 
 Start-Sleep -Seconds 3
-# Smoke: new UI markers must be present (catches stale template cache / wrong process)
+# Smoke: JunctionTrace product UI at / (research lab remains at /research)
 try {
     $html = (Invoke-WebRequest -Uri "http://127.0.0.1:8080/" -UseBasicParsing -TimeoutSec 8).Content
-    if ($html -notmatch "btn-lang") {
-        Write-Host "[!] Dashboard HTML looks stale (missing VI/EN button). Hard-refresh browser after restart." -ForegroundColor Red
+    if ($html -notmatch "JunctionTrace") {
+        Write-Host "[!] Product UI missing JunctionTrace markers. Hard-refresh browser after restart." -ForegroundColor Red
     } else {
-        Write-Host "[+] Dashboard HTML includes i18n / settings help markers." -ForegroundColor Green
+        Write-Host "[+] JunctionTrace product UI is serving at /" -ForegroundColor Green
+    }
+    $research = (Invoke-WebRequest -Uri "http://127.0.0.1:8080/research" -UseBasicParsing -TimeoutSec 8).Content
+    if ($research -match "IEDE|AI-Assisted SDN-ITS") {
+        Write-Host "[+] Research console preserved at /research" -ForegroundColor Green
     }
 } catch {
     Write-Host "[!] API not reachable yet: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 
-# 2. Open Web Browser
-Write-Host "[*] Step 2: Opening Command Center Dashboard in Browser..." -ForegroundColor Green
+# 2. Open Web Browser — hackathon product first
+Write-Host "[*] Step 2: Opening JunctionTrace product UI..." -ForegroundColor Green
 Start-Process "http://127.0.0.1:8080/"
 
 # 3. Start Automated Live Telemetry Generator

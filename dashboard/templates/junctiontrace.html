@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JunctionTrace — Incident Investigator</title>
+  <meta name="description" content="A traffic surge is not always an attack. Investigate before disrupting critical infrastructure." />
+  <link rel="stylesheet" href="/static/junctiontrace.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">JT</div>
+        <div class="brand-text">
+          <strong>JunctionTrace</strong>
+          <span>Incident Investigator · cyber-physical SOC assist</span>
+        </div>
+      </div>
+      <div class="top-links">
+        <span class="chip" id="cap-mode">checking credentials…</span>
+        <span class="chip chip-model" id="cap-model">Nemotron via Nebius</span>
+        <span class="chip" id="cap-of">OpenFlow: mock</span>
+        <a class="link-quiet" href="/research">Research lab console</a>
+      </div>
+    </header>
+
+    <section class="hero" id="hero">
+      <div>
+        <p class="eyebrow">NVIDIA Nemotron · Nebius Token Factory</p>
+        <h1>A traffic surge is not always an attack.</h1>
+        <p class="hero-lead">
+          Investigate before disrupting critical infrastructure.
+          JunctionTrace helps ITS operators and SOC analysts gather physical context
+          before containment — with a deterministic safety gate that stays in charge.
+        </p>
+        <div class="hero-actions">
+          <button type="button" class="btn btn-primary" id="btn-investigate">Investigate incident</button>
+          <button type="button" class="btn btn-secondary" id="btn-scroll-scenarios">Choose a scenario</button>
+        </div>
+        <div class="integration" aria-label="Integration disclosure">
+          <span class="chip on">Live path: Nebius Token Factory</span>
+          <span class="chip on">Model: NVIDIA Nemotron Nano</span>
+          <span class="chip warn">Camera: synthetic metadata</span>
+        </div>
+      </div>
+      <aside class="diff-box">
+        <h2>What the agent does differently</h2>
+        <ul>
+          <li><strong>Does not jump to drop rules</strong> from a single anomaly label.</li>
+          <li><strong>Calls evidence tools</strong> for telemetry, camera quality, and contradictions.</li>
+          <li><strong>Separates</strong> deterministic planner vs live Nemotron conclude.</li>
+          <li><strong>Policy gate</strong> can override unsafe or under-evidenced containment.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <p class="section-label" id="scenarios-label">Demo scenarios</p>
+    <div class="scenarios" id="scenario-grid" role="listbox" aria-labelledby="scenarios-label"></div>
+
+    <div class="mode-row">
+      <div class="mode-toggle" role="group" aria-label="Investigation mode">
+        <button type="button" id="mode-offline" class="active">Safe offline</button>
+        <button type="button" id="mode-real">Real Nebius</button>
+      </div>
+      <p class="mode-hint" id="mode-hint">
+        Offline uses a deterministic planner with real tool logic — never labeled as live Nemotron.
+      </p>
+    </div>
+
+    <div class="error-banner" id="error-banner" role="alert"></div>
+
+    <div class="board" id="investigation-board">
+      <section class="panel" aria-labelledby="timeline-title">
+        <h2 id="timeline-title">Investigation journey</h2>
+        <ol class="timeline" id="timeline">
+          <li class="step" data-step="1"><div class="step-num">1</div><div><h3>Incident appears</h3><p>Network anomaly + RSU zone context.</p><div class="detail" id="d1"></div></div></li>
+          <li class="step" data-step="2"><div class="step-num">2</div><div><h3>Missing evidence</h3><p>What is still unknown.</p><div class="detail" id="d2"></div></div></li>
+          <li class="step" data-step="3"><div class="step-num">3</div><div><h3>Evidence tool selected</h3><p>Planner or Nemotron chooses a tool.</p><div class="detail" id="d3"></div></div></li>
+          <li class="step" data-step="4"><div class="step-num">4</div><div><h3>Evidence retrieved</h3><p>Telemetry and camera metadata.</p><div class="detail" id="d4"></div></div></li>
+          <li class="step" data-step="5"><div class="step-num">5</div><div><h3>Final recommendation</h3><p>Action, source, latency, fallback.</p><div class="detail" id="d5"></div></div></li>
+          <li class="step" data-step="6"><div class="step-num">6</div><div><h3>Policy gate</h3><p>PASS / OVERRIDE / ABSTAIN.</p><div class="detail" id="d6"></div></div></li>
+          <li class="step" data-step="7"><div class="step-num">7</div><div><h3>Operator outcome</h3><p>Next action and audit.</p><div class="detail" id="d7"></div></div></li>
+        </ol>
+      </section>
+
+      <section class="panel" aria-labelledby="result-title">
+        <h2 id="result-title">Live board</h2>
+        <div id="loading-state" hidden>
+          <p class="pulse">Running investigation… model calls can take 10–20 seconds.</p>
+          <div class="skeleton"></div>
+          <div class="skeleton" style="width:70%"></div>
+          <div class="skeleton" style="width:85%"></div>
+        </div>
+        <div id="result-body">
+          <p class="mode-hint">Select a scenario, then Investigate incident.</p>
+        </div>
+      </section>
+    </div>
+
+    <p class="footer-note">
+      JunctionTrace is a hackathon demonstration product. It does not claim endorsement by Tsinghua University,
+      NVIDIA, or Nebius. OpenFlow actuation remains <strong>mock</strong>. Camera fields in the judge path are
+      <strong>synthetic metadata</strong>, not live RTSP. Pre-existing research lab UI is available at
+      <a href="/research">/research</a>.
+    </p>
+  </div>
+  <script src="/static/junctiontrace.js" defer></script>
+</body>
+</html>
