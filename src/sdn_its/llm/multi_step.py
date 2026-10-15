@@ -24,6 +24,7 @@ from .evidence_tools import (
     identify_uncertainty,
     list_tools,
 )
+from .input_sanitize import sanitize_camera, sanitize_telemetry
 from .nebius_client import (
     DEFAULT_MODEL,
     NebiusAPIError,
@@ -33,9 +34,11 @@ from .nebius_client import (
 )
 from .safety import gate_recommendation
 from .schema import (
+    ALLOWED_ACTIONS,
     MitigationRecommendation,
     RecommendationValidationError,
     extract_json_object,
+    try_validate_recommendation,
     validate_recommendation,
 )
 
@@ -75,10 +78,12 @@ Rules:
 - Choose the tool that addresses the most important missing evidence (quality, camera, contradiction, temporal).
 - High road traffic does NOT prove a cyberattack is harmless — use identify_contradictions, then decide carefully.
 - If physical evidence is insufficient/stale/unavailable, prefer observe; do not escalate containment.
+- If telemetry_unreliable / NaN / non-numeric fields appear in tool results, you MUST conclude observe (fail closed). Never preserve_rush_hour or contain on bad numbers.
 - If network attack label conflicts with rush-hour physical activity, prefer preserve_rush_hour or observe.
 - If safety_critical / pedestrian / incident, prefer protect_safety.
 - Never invent packet counters or claim live camera inference.
 - Prefer escalate_human_review when still uncertain after tools.
+- recommended_action must be exactly one of observe|rate_limit|temporary_drop|preserve_rush_hour|protect_safety — never placeholders like "...".
 """
 
 
@@ -135,11 +140,23 @@ def evidence_based_recommend(bundle: EvidenceBundle) -> dict[str, Any]:
     """Deterministic conclude step for offline / fail-closed paths (not live Nemotron)."""
     net = bundle.network_prediction
     cam = bundle.camera if bundle.include_camera else {}
+    tel = bundle.telemetry or {}
     q = bundle.physical_quality or (
         assess_physical_quality(cam) if bundle.include_camera else {"sufficient": False, "reasons": ["no_camera"]}
     )
     contradictions = list(bundle.contradictions)
     notes = [n for t in bundle.tool_results for n in t.evidence_notes][:10]
+
+    if tel.get("_telemetry_unreliable") or tel.get("_sanitize_issues"):
+        return {
+            "recommended_action": "observe",
+            "final_risk": "low",
+            "rationale": "Untrusted/malformed telemetry fields — fail closed to observe (no containment).",
+            "confidence": 0.2,
+            "evidence_notes": notes + ["telemetry_unreliable", "fail_closed"],
+            "false_positive_corrected": False,
+            "safety_critical": False,
+        }
 
     if bool(cam.get("incident")) or bool(cam.get("pedestrian_present")) or bool(cam.get("safety_critical")):
         return {
@@ -239,6 +256,14 @@ def evidence_based_recommend(bundle: EvidenceBundle) -> dict[str, Any]:
     }
 
 
+def _schema_accept(rec_payload: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    """Accept model recommendation only after schema validation (+ safe aliases, never containment coercion)."""
+    rec, err = try_validate_recommendation(rec_payload, allow_safe_alias=True)
+    if rec is None:
+        return None, err
+    return rec.to_dict(), None
+
+
 def _finalize(
     rec_payload: dict[str, Any],
     *,
@@ -261,6 +286,7 @@ def _finalize(
     try:
         rec = validate_recommendation(rec_payload)
     except RecommendationValidationError as exc:
+        # Fail closed: no advisory recommendation; keep source label (do not claim Nemotron success)
         return MultiStepResult(
             ok=False,
             evidence_class="validation_error",
@@ -277,13 +303,20 @@ def _finalize(
             apply_gate=apply_gate,
             include_camera=bundle.include_camera,
             planner=planner,
-            conclusion_kind="deterministic_fallback",
-            pre_gate_source=pre_gate_source,
+            conclusion_kind="validation_error",
+            pre_gate_source=pre_gate_source if pre_gate_source == "nemotron_conclude" else "deterministic_fallback",
+            pre_gate_recommendation=dict(rec_payload) if isinstance(rec_payload, dict) else None,
+            pre_gate_action=str((rec_payload or {}).get("recommended_action") or "") or None,
         )
 
     pre_gate_rec = rec.to_dict()
     pre_gate_action = rec.recommended_action
     notes: list[str] = []
+    tel_unreliable = bool(
+        (bundle.telemetry or {}).get("_telemetry_unreliable")
+        or (bundle.telemetry or {}).get("_sanitize_issues")
+        or "telemetry_unreliable" in (bundle.uncertainties or [])
+    )
     if apply_gate:
         gated, notes = gate_recommendation(
             rec,
@@ -294,6 +327,7 @@ def _finalize(
                 "physical_sufficient": bundle.physical_sufficient,
                 "human_escalation_requested": bundle.human_escalation_requested,
                 "include_camera": bundle.include_camera,
+                "telemetry_unreliable": tel_unreliable,
             },
         )
         rec = gated
@@ -373,15 +407,22 @@ def run_multi_step_investigation(
     """Run bounded investigation loop. Never fabricates real_api evidence."""
     ensure_repo_env()
     t0 = time.perf_counter()
-    cam = dict(incident.get("camera") or {}) if include_camera else {}
+    tel_raw = dict(incident.get("telemetry") or {})
+    cam_raw = dict(incident.get("camera") or {}) if include_camera else {}
+    tel, tel_issues = sanitize_telemetry(tel_raw)
+    cam, cam_issues = sanitize_camera(cam_raw) if include_camera else ({}, [])
     bundle = EvidenceBundle(
         incident_id=str(incident.get("id") or "unknown"),
         network_prediction=str(incident.get("network_prediction") or "Normal"),
         include_camera=include_camera,
-        telemetry=dict(incident.get("telemetry") or {}),
+        telemetry=tel,
         camera=cam,
         prior_windows=list(incident.get("prior_windows") or []),
     )
+    if tel_issues or cam_issues:
+        bundle.uncertainties = list(bundle.uncertainties) + (
+            ["telemetry_unreliable"] if tel_issues else []
+        ) + (["camera_fields_untrusted"] if cam_issues else [])
     trace: list[TraceStep] = []
     trace.append(
         TraceStep(
@@ -633,7 +674,32 @@ def run_multi_step_investigation(
                         }
                     )
                     continue
-                concluded = dict(obj["recommendation"])
+                accepted, schema_err = _schema_accept(dict(obj["recommendation"]))
+                if accepted is None:
+                    trace.append(
+                        TraceStep(
+                            "reason",
+                            {
+                                "rejected_invalid_conclude": True,
+                                "phase": "during_tool_loop",
+                                "error": schema_err,
+                                "raw_action": (obj.get("recommendation") or {}).get("recommended_action"),
+                            },
+                        )
+                    )
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                f"Invalid recommendation ({schema_err}). "
+                                f"recommended_action MUST be one of {sorted(ALLOWED_ACTIONS)}. "
+                                "Never use placeholders like '...'. Reply with action=conclude and a valid recommendation. "
+                                "Do not invent containment actions outside the allow-list."
+                            ),
+                        }
+                    )
+                    continue
+                concluded = accepted
                 pre_gate_source = "nemotron_conclude"
                 trace.append(
                     TraceStep(
@@ -649,7 +715,25 @@ def run_multi_step_investigation(
                 break
 
             if "recommended_action" in obj and not (require_tool_first and tool_calls == 0):
-                concluded = obj
+                accepted, schema_err = _schema_accept(obj)
+                if accepted is None:
+                    trace.append(
+                        TraceStep(
+                            "reason",
+                            {"rejected_invalid_bare_recommendation": True, "error": schema_err},
+                        )
+                    )
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                f"Invalid recommendation ({schema_err}). "
+                                f"Use recommended_action in {sorted(ALLOWED_ACTIONS)} only."
+                            ),
+                        }
+                    )
+                    continue
+                concluded = accepted
                 pre_gate_source = "nemotron_conclude"
                 trace.append(
                     TraceStep(
@@ -707,7 +791,7 @@ def run_multi_step_investigation(
                 }
             )
             trace.append(TraceStep("final_reason_prompt", {"reserved_conclude": True, "tool_calls": tool_calls}))
-            for attempt in range(2):  # conclude + one repair if needed
+            for attempt in range(2):  # conclude + at most one schema/JSON repair
                 if model_calls >= max_model_calls:
                     break
                 try:
@@ -730,7 +814,10 @@ def run_multi_step_investigation(
                             "role": "user",
                             "content": (
                                 "Invalid JSON. Reply again with ONLY "
-                                '{"action":"conclude","recommendation":{...}}'
+                                '{"action":"conclude","recommendation":{'
+                                f'"recommended_action": one of {sorted(ALLOWED_ACTIONS)}, '
+                                '"final_risk":"low|medium|high|critical","rationale":"...",'
+                                '"confidence":0.0,"evidence_notes":[]}}'
                             ),
                         }
                     )
@@ -745,8 +832,36 @@ def run_multi_step_investigation(
                     )
                     continue
                 rec_obj = obj.get("recommendation") if str(obj.get("action") or "") == "conclude" else obj
-                if isinstance(rec_obj, dict) and rec_obj.get("recommended_action"):
-                    concluded = dict(rec_obj)
+                if isinstance(rec_obj, dict) and rec_obj.get("recommended_action") is not None:
+                    accepted, schema_err = _schema_accept(dict(rec_obj))
+                    if accepted is None:
+                        trace.append(
+                            TraceStep(
+                                "reason",
+                                {
+                                    "conclude_schema_error": schema_err,
+                                    "attempt": attempt,
+                                    "raw_action": rec_obj.get("recommended_action"),
+                                    "note": "No containment coercion from unknown/placeholder actions",
+                                },
+                            )
+                        )
+                        if attempt == 0:
+                            messages.append(
+                                {
+                                    "role": "user",
+                                    "content": (
+                                        f"Schema validation failed: {schema_err}. "
+                                        f"Repair once: recommended_action MUST be exactly one of {sorted(ALLOWED_ACTIONS)}. "
+                                        "Never use '...', null, or free-text verbs. "
+                                        "If uncertain, use observe. Do not invent new containment actions."
+                                    ),
+                                }
+                            )
+                            continue
+                        # Repair exhausted — do not accept invalid model conclusion
+                        break
+                    concluded = accepted
                     pre_gate_source = "nemotron_conclude"
                     trace.append(
                         TraceStep(
@@ -756,6 +871,7 @@ def run_multi_step_investigation(
                                 "phase": "reserved_final_reason",
                                 "preview": concluded,
                                 "tool_calls_before_conclude": tool_calls,
+                                "repair_attempt": attempt,
                             },
                         )
                     )
@@ -764,7 +880,10 @@ def run_multi_step_investigation(
                 messages.append(
                     {
                         "role": "user",
-                        "content": 'Reply with {"action":"conclude","recommendation":{...}} only.',
+                        "content": (
+                            'Reply with {"action":"conclude","recommendation":{...}} only. '
+                            f"recommended_action in {sorted(ALLOWED_ACTIONS)}."
+                        ),
                     }
                 )
 
@@ -776,7 +895,11 @@ def run_multi_step_investigation(
                     "reason",
                     {
                         "source": "deterministic_fallback",
-                        "note": "Used only after reserved conclude phase failed or no tools ran",
+                        "note": (
+                            "Used only after reserved conclude phase failed, schema rejected "
+                            "(incl. placeholder actions like '...'), or no tools ran. "
+                            "Not labeled as nemotron_conclude."
+                        ),
                     },
                 )
             )

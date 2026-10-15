@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from sdn_its.llm.input_sanitize import safe_bool, safe_float, safe_int, sanitize_camera, sanitize_telemetry
+
 
 @dataclass
 class FusionThresholds:
@@ -59,42 +61,109 @@ class FusionEngine:
         source_dominance: float | None = None,
         distributed_sources: bool | None = None,
         packet_in_delta_pct: float | None = None,
+        telemetry: dict[str, Any] | None = None,
     ) -> FusionDecision:
         th = self.th
         thr_meta = asdict(th)
         net = network_prediction or "Normal"
+
+        # Untrusted inputs: sanitize camera + optional full telemetry blob
+        physical, cam_issues = sanitize_camera(physical)
+        tel_issues: list[str] = []
+        if telemetry is not None:
+            tel_clean, tel_issues = sanitize_telemetry(telemetry)
+            if source_dominance is None:
+                source_dominance = tel_clean.get("source_dominance")
+            if distributed_sources is None:
+                distributed_sources = tel_clean.get("distributed_sources")
+            if packet_in_delta_pct is None:
+                packet_in_delta_pct = tel_clean.get("packet_in_delta_pct")
+            if tel_clean.get("_telemetry_unreliable"):
+                tel_issues = list(tel_clean.get("_sanitize_issues") or tel_issues)
+
+        # Coerce explicit kwargs safely (callers may still pass raw strings)
+        dominance_parsed = safe_float(source_dominance, default=None, min_v=0.0, max_v=1.0)
+        if source_dominance is not None and dominance_parsed is None:
+            tel_issues.append("invalid_source_dominance")
+        pin_parsed = safe_float(packet_in_delta_pct, default=None, min_v=-100.0, max_v=10_000.0)
+        if packet_in_delta_pct is not None and pin_parsed is None:
+            tel_issues.append("invalid_packet_in_delta_pct")
+        if pin_parsed is not None and pin_parsed < 0:
+            tel_issues.append("negative_packet_in_delta_pct")
+            pin_parsed = None
+        dist_parsed = safe_bool(distributed_sources, default=None)
+        if distributed_sources is not None and dist_parsed is None:
+            tel_issues.append("invalid_distributed_sources")
+
+        unreliable = bool(tel_issues) or bool(physical.get("_telemetry_unreliable"))
+
         phys = str(physical.get("physical_label") or "unknown")
         is_vc = bool(
             physical.get("is_vehicle_count")
             or physical.get("vehicle_count_is_real")
             or physical.get("visible_vehicle_tracks") is not None
         )
-        vehicles = int(
-            physical.get("visible_vehicle_tracks")
-            if physical.get("visible_vehicle_tracks") is not None
-            else (physical.get("vehicle_count") or 0)
+        vehicles = (
+            safe_int(
+                physical.get("visible_vehicle_tracks")
+                if physical.get("visible_vehicle_tracks") is not None
+                else physical.get("vehicle_count"),
+                default=0,
+                min_v=0,
+                max_v=100_000,
+            )
+            or 0
         ) if is_vc else 0
-        queue = float(
-            physical.get("queue_length_proxy_m")
-            if physical.get("queue_length_proxy_m") is not None
-            else (physical.get("queue_length_m") or 0.0)
+        queue = (
+            safe_float(
+                physical.get("queue_length_proxy_m")
+                if physical.get("queue_length_proxy_m") is not None
+                else physical.get("queue_length_m"),
+                default=0.0,
+                min_v=0.0,
+                max_v=10_000.0,
+            )
+            or 0.0
         ) if is_vc else 0.0
         band = str(physical.get("activity_band") or "unknown")
-        ped = bool(physical.get("pedestrian_present"))
-        incident = bool(physical.get("incident"))
-        stale = bool(physical.get("stale"))
-        analytics_valid = physical.get("analytics_valid")
+        ped = bool(safe_bool(physical.get("pedestrian_present"), default=False))
+        incident = bool(safe_bool(physical.get("incident"), default=False))
+        stale = bool(safe_bool(physical.get("stale"), default=False))
+        analytics_valid = safe_bool(physical.get("analytics_valid"), default=None)
         if analytics_valid is None:
             analytics_valid = not stale
-        dominance = 0.5 if source_dominance is None else float(source_dominance)
+        dominance = 0.5 if dominance_parsed is None else dominance_parsed
         distributed = (
-            bool(distributed_sources)
-            if distributed_sources is not None
+            dist_parsed
+            if dist_parsed is not None
             else dominance < th.distributed_below
         )
-        pin = packet_in_delta_pct
+        pin = pin_parsed
 
-        reasons: list[str] = []
+        reasons: list[str] = list(cam_issues)
+        if tel_issues:
+            reasons.extend(tel_issues)
+            reasons.append("TELEMETRY_UNRELIABLE")
+
+        # Fail closed: unreliable telemetry → observe only (never crash / never contain)
+        if unreliable:
+            return FusionDecision(
+                network_prediction=net,
+                physical_context=phys,
+                final_risk="low",
+                recommended_action="observe",
+                reason_codes=reasons + ["FAIL_CLOSED_UNTRUSTED_TELEMETRY"],
+                policy_attack_type=None,
+                cooldown_seconds=0.0,
+                false_positive_corrected=False,
+                safety_critical=False,
+                explain=(
+                    "Telemetry or numeric fields failed validation (NaN/non-numeric/unreliable). "
+                    "Observe only — no containment from untrusted inputs."
+                ),
+                thresholds_used=thr_meta,
+            )
+
         if pin is not None and pin >= th.pin_high_pct:
             reasons.append("HIGH_PACKET_IN")
         if is_vc and (vehicles >= th.tracks_high or queue >= th.queue_high_m or phys == "rush_hour"):

@@ -1,0 +1,35 @@
+name: hackathon-light
+
+# Lightweight regression for the Nebius×NVIDIA hackathon branch tip.
+# Avoids full torch install so CI stays fast and actually runs.
+
+on:
+  push:
+    branches: [hackathon/nebius-nvidia]
+  pull_request:
+    branches: [hackathon/nebius-nvidia]
+
+jobs:
+  light-pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install light deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install "python-dotenv>=1.0" "requests>=2.31" "pyyaml>=6" "Flask>=2.3" "pytest>=7"
+      - name: Hackathon light regression
+        env:
+          PYTHONPATH: src:.
+        run: |
+          pytest -q \
+            tests/test_hackathon_agent.py \
+            tests/test_nebius_llm.py \
+            tests/test_heldout_eval.py \
+            tests/test_multi_step_agent.py \
+            tests/test_paired_gate.py \
+            tests/test_input_sanitize.py \
+            tests/test_schema_repair.py

@@ -10,6 +10,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
+from sdn_its.llm.input_sanitize import safe_float, sanitize_telemetry
+
 TOOL_NAMES = (
     "retrieve_network_telemetry",
     "inspect_camera_metadata",
@@ -118,6 +120,8 @@ def identify_uncertainty(bundle: EvidenceBundle) -> list[str]:
     u: list[str] = []
     net = bundle.network_prediction
     tel = bundle.telemetry
+    if tel.get("_telemetry_unreliable") or tel.get("_sanitize_issues"):
+        u.append("telemetry_unreliable")
     pin = tel.get("packet_in_delta_pct")
     if pin is None:
         u.append("missing_packet_in_delta")
@@ -144,7 +148,8 @@ def identify_uncertainty(bundle: EvidenceBundle) -> list[str]:
 
 
 def _tool_retrieve_network(bundle: EvidenceBundle, args: dict[str, Any]) -> ToolResult:
-    tel = dict(bundle.telemetry)
+    tel, issues = sanitize_telemetry(bundle.telemetry)
+    bundle.telemetry = tel
     pin = tel.get("packet_in_delta_pct")
     dom = tel.get("source_dominance")
     dist = tel.get("distributed_sources")
@@ -155,15 +160,18 @@ def _tool_retrieve_network(bundle: EvidenceBundle, args: dict[str, Any]) -> Tool
         f"distributed_sources={dist}",
         f"network_prediction={bundle.network_prediction}",
     ]
+    if issues:
+        notes.append("telemetry_unreliable=" + ",".join(issues))
     summary = (
         f"Telemetry window retrieved for {bundle.network_prediction}: "
         f"ΔPacketIn={pin}% dominance={dom} distributed={dist}"
+        + (" [UNRELIABLE fields]" if issues else "")
     )
     return ToolResult(
         tool="retrieve_network_telemetry",
-        ok=True,
+        ok=not bool(issues),
         summary=summary,
-        data={"telemetry": tel, "network_prediction": bundle.network_prediction},
+        data={"telemetry": tel, "network_prediction": bundle.network_prediction, "sanitize_issues": issues},
         evidence_notes=notes,
     )
 
@@ -230,22 +238,32 @@ def _tool_check_quality(bundle: EvidenceBundle, args: dict[str, Any]) -> ToolRes
 
 
 def _tool_compare_windows(bundle: EvidenceBundle, args: dict[str, Any]) -> ToolResult:
-    current = dict(bundle.telemetry)
+    current, issues = sanitize_telemetry(bundle.telemetry)
+    bundle.telemetry = current
     priors = list(bundle.prior_windows or [])
+    cur_pin = safe_float(current.get("packet_in_delta_pct"), default=None)
+    cur_dom = safe_float(current.get("source_dominance"), default=None, min_v=0.0, max_v=1.0)
+    if cur_pin is None:
+        return ToolResult(
+            tool="compare_temporal_windows",
+            ok=False,
+            summary="Temporal compare skipped: current packet_in_delta_pct unusable/unreliable.",
+            data={"current": current, "sanitize_issues": issues},
+            evidence_notes=["temporal_compare_unavailable", "telemetry_unreliable"],
+        )
     if not priors:
         # Synthesize a calm prior from fixture convention when absent (declared synthetic)
         priors = [
             {
                 "window_id": "prior_synthetic_baseline",
-                "packet_in_delta_pct": max(0.0, float(current.get("packet_in_delta_pct") or 0) * 0.25),
-                "source_dominance": min(0.35, float(current.get("source_dominance") or 0.2)),
+                "packet_in_delta_pct": max(0.0, cur_pin * 0.25),
+                "source_dominance": min(0.35, cur_dom if cur_dom is not None else 0.2),
                 "distributed_sources": True,
                 "context_source": "synthetic_temporal_baseline",
             }
         ]
         bundle.prior_windows = priors
-    cur_pin = float(current.get("packet_in_delta_pct") or 0)
-    base_pin = float(priors[-1].get("packet_in_delta_pct") or 0)
+    base_pin = safe_float(priors[-1].get("packet_in_delta_pct"), default=0.0) or 0.0
     delta = cur_pin - base_pin
     rising = delta >= 15.0
     data = {
@@ -254,6 +272,7 @@ def _tool_compare_windows(bundle: EvidenceBundle, args: dict[str, Any]) -> ToolR
         "delta_packet_in_pct_points": delta,
         "surge_vs_baseline": rising,
         "baseline_note": "Prior window may be fixture-synthesized when history absent.",
+        "sanitize_issues": issues,
     }
     return ToolResult(
         tool="compare_temporal_windows",
@@ -270,7 +289,7 @@ def _tool_contradictions(bundle: EvidenceBundle, args: dict[str, Any]) -> ToolRe
     cam = bundle.camera if bundle.include_camera else {}
     label = str(cam.get("physical_label") or "unknown")
     band = str(cam.get("activity_band") or "unknown")
-    pin = float((bundle.telemetry or {}).get("packet_in_delta_pct") or 0)
+    pin = safe_float((bundle.telemetry or {}).get("packet_in_delta_pct"), default=0.0) or 0.0
     q = bundle.physical_quality or assess_physical_quality(cam if bundle.include_camera else {})
 
     if bundle.include_camera and q.get("sufficient"):

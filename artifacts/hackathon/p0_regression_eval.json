@@ -1,0 +1,1152 @@
+{
+  "ts_utc": "2026-10-15T16:05:09.583057+00:00",
+  "study": "p0_regression_v1",
+  "regression_ids": [
+    "blind_unreliable_telemetry",
+    "blind_attack_quiet_road",
+    "eval_missing_01",
+    "eval_legit_cong_01"
+  ],
+  "honesty": "Fixed ID list chosen for crash/placeholder regressions + two held-out cases. Oracles not altered. Not claimed as full blind prevalence.",
+  "real_api": {
+    "nebius_api_key_present": true,
+    "nebius_model": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+    "spent_usd": 0.00430704
+  },
+  "summary": {
+    "n": 4,
+    "spent_usd": 0.00430704,
+    "budget_usd": 0.1,
+    "A_correct": 0.75,
+    "B_correct": 1.0,
+    "C_correct": 1.0,
+    "D_correct": 1.0,
+    "C_nemotron_conclude_rate": 0.75,
+    "C_fallback_rate": 0.25,
+    "C_validation_error_rate": 0.0,
+    "C_containment_rate": 0.25,
+    "C_mean_latency_ms": 12308.283899999878,
+    "C_mean_tool_calls": 3.0,
+    "unreliable_no_crash": true
+  },
+  "cases": [
+    {
+      "incident_id": "blind_unreliable_telemetry",
+      "family": "unreliable_telemetry",
+      "A_rules": {
+        "action": "observe",
+        "ok": true,
+        "oracle_score": {
+          "action": "observe",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": true,
+          "appropriate_abstention": true,
+          "gate_blocked_containment": null
+        }
+      },
+      "B_planner": {
+        "action": "observe",
+        "ok": true,
+        "conclusion_kind": "deterministic_fallback",
+        "oracle_score": {
+          "action": "observe",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": true,
+          "appropriate_abstention": true,
+          "gate_blocked_containment": null
+        }
+      },
+      "C_nemotron": {
+        "action": "observe",
+        "ok": true,
+        "evidence_class": "real_api",
+        "conclusion_kind": "nemotron_conclude",
+        "pre_gate_source": "nemotron_conclude",
+        "tool_calls": 3,
+        "model_calls": 5,
+        "latency_ms": 12535.579799998231,
+        "estimated_cost_usd": 0.00103044,
+        "error": null,
+        "oracle_score": {
+          "action": "observe",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": true,
+          "appropriate_abstention": true,
+          "gate_blocked_containment": null
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "DDoS_PacketIn_Flood",
+              "incident_id": "blind_unreliable_telemetry",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "telemetry_unreliable",
+                "missing_packet_in_delta",
+                "anomaly_requires_physical_context",
+                "physical_evidence_insufficient",
+                "camera_stale_or_invalid",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "tool_model_round": 1,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=unknown band=unknown tracks=None (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "blind_redteam_synthetic",
+                  "physical_label": "unknown",
+                  "activity_band": "unknown",
+                  "visible_vehicle_tracks": null,
+                  "queue_length_proxy_m": null,
+                  "is_vehicle_count": false,
+                  "vehicle_count_is_real": false,
+                  "stream_available": true,
+                  "analytics_valid": false,
+                  "stale": true,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=unknown",
+                "activity_band=unknown",
+                "tracks=None",
+                "queue_m=None",
+                "context_source=blind_redteam_synthetic",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "tool_model_round": 2,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "ok": false,
+              "summary": "Telemetry window retrieved for DDoS_PacketIn_Flood: \u0394PacketIn=None% dominance=None distributed=None [UNRELIABLE fields]",
+              "data": {
+                "telemetry": {
+                  "context_source": "blind_redteam_synthetic",
+                  "packet_in_delta_pct": null,
+                  "source_dominance": null,
+                  "distributed_sources": null,
+                  "window_id": "b-ut-1",
+                  "quality_flag": "unreliable",
+                  "_telemetry_unreliable": true,
+                  "_sanitize_issues": [
+                    "quality_flag_unreliable"
+                  ]
+                },
+                "network_prediction": "DDoS_PacketIn_Flood",
+                "sanitize_issues": [
+                  "quality_flag_unreliable"
+                ]
+              },
+              "evidence_notes": [
+                "window=b-ut-1",
+                "packet_in_delta_pct=None",
+                "source_dominance=None",
+                "distributed_sources=None",
+                "network_prediction=DDoS_PacketIn_Flood",
+                "telemetry_unreliable=quality_flag_unreliable"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "identify_contradictions",
+              "tool_model_round": 3,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "identify_contradictions",
+              "ok": true,
+              "summary": "Contradictions: cannot_corroborate_physical_context",
+              "data": {
+                "contradictions": [
+                  "cannot_corroborate_physical_context"
+                ],
+                "network_prediction": "DDoS_PacketIn_Flood",
+                "physical_label": "unknown"
+              },
+              "evidence_notes": [
+                "cannot_corroborate_physical_context"
+              ]
+            }
+          },
+          {
+            "phase": "final_reason_prompt",
+            "detail": {
+              "reserved_conclude": true,
+              "tool_calls": 3
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "conclude_parse_error": "could not parse JSON object: Unterminated string starting at: line 15 column 7 (char 661)",
+              "attempt": 0,
+              "preview": "{\n  \"action\": \"conclude\",\n  \"recommendation\": {\n    \"recommended_action\": \"observe\",\n    \"final_risk\": \"low\",\n    \"rationale\": \"Telemetry is marked unreliable w"
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "nemotron_conclude",
+              "phase": "reserved_final_reason",
+              "preview": {
+                "recommended_action": "observe",
+                "final_risk": "low",
+                "rationale": "Telemetry is unreliable with missing packet delta; camera metadata is stale synthetic and cannot corroborate physical context; no safety-critical elements; therefore the DDoS label is likely a false positive and the appropriate response is to observe.",
+                "policy_attack_type": null,
+                "cooldown_seconds": 30.0,
+                "false_positive_corrected": false,
+                "safety_critical": false,
+                "confidence": 0.0,
+                "evidence_notes": [
+                  "telemetry_unreliable",
+                  "camera_stale_or_invalid",
+                  "cannot_corroborate_physical_context"
+                ],
+                "schema_version": "hackathon_mitigation_v1"
+              },
+              "tool_calls_before_conclude": 3,
+              "repair_attempt": 1
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [
+                "gate:skipped_ablation_arm"
+              ],
+              "apply_gate": false,
+              "pre_gate_action": "observe",
+              "action": "observe",
+              "conclusion_kind": "nemotron_conclude"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "real_api",
+              "tool_calls": 3,
+              "conclusion_kind": "nemotron_conclude",
+              "pre_gate_source": "nemotron_conclude"
+            }
+          }
+        ],
+        "pre_gate_recommendation": {
+          "recommended_action": "observe",
+          "final_risk": "low",
+          "rationale": "Telemetry is unreliable with missing packet delta; camera metadata is stale synthetic and cannot corroborate physical context; no safety-critical elements; therefore the DDoS label is likely a false positive and the appropriate response is to observe.",
+          "policy_attack_type": null,
+          "cooldown_seconds": 30.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.0,
+          "evidence_notes": [
+            "telemetry_unreliable",
+            "camera_stale_or_invalid",
+            "cannot_corroborate_physical_context"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "containment": false
+      },
+      "D_gate_replay": {
+        "action": "observe",
+        "action_changed": false,
+        "oracle_score": {
+          "action": "observe",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": true,
+          "appropriate_abstention": true,
+          "gate_blocked_containment": null
+        }
+      }
+    },
+    {
+      "incident_id": "blind_attack_quiet_road",
+      "family": "credible_attack_quiet_physical",
+      "A_rules": {
+        "action": "rate_limit",
+        "ok": true,
+        "oracle_score": {
+          "action": "rate_limit",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        }
+      },
+      "B_planner": {
+        "action": "rate_limit",
+        "ok": true,
+        "conclusion_kind": "deterministic_fallback",
+        "oracle_score": {
+          "action": "rate_limit",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        }
+      },
+      "C_nemotron": {
+        "action": "rate_limit",
+        "ok": true,
+        "evidence_class": "real_api",
+        "conclusion_kind": "deterministic_fallback",
+        "pre_gate_source": "deterministic_fallback",
+        "tool_calls": 3,
+        "model_calls": 5,
+        "latency_ms": 12630.769400002464,
+        "estimated_cost_usd": 0.0011097,
+        "error": null,
+        "oracle_score": {
+          "action": "rate_limit",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "LOFT_LowRate_Attack",
+              "incident_id": "blind_attack_quiet_road",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "anomaly_requires_physical_context",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "tool_model_round": 1,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=stable band=low tracks=1 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "blind_redteam_synthetic",
+                  "physical_label": "stable",
+                  "activity_band": "low",
+                  "visible_vehicle_tracks": 1,
+                  "queue_length_proxy_m": 2.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=stable",
+                "activity_band=low",
+                "tracks=1",
+                "queue_m=2.0",
+                "context_source=blind_redteam_synthetic",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "tool_model_round": 2,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for LOFT_LowRate_Attack: \u0394PacketIn=42.0% dominance=0.82 distributed=False",
+              "data": {
+                "telemetry": {
+                  "context_source": "blind_redteam_synthetic",
+                  "packet_in_delta_pct": 42.0,
+                  "source_dominance": 0.82,
+                  "distributed_sources": false,
+                  "window_id": "b-aq-1"
+                },
+                "network_prediction": "LOFT_LowRate_Attack",
+                "sanitize_issues": []
+              },
+              "evidence_notes": [
+                "window=b-aq-1",
+                "packet_in_delta_pct=42.0",
+                "source_dominance=0.82",
+                "distributed_sources=False",
+                "network_prediction=LOFT_LowRate_Attack"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "tool_model_round": 3,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 31.5 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "blind_redteam_synthetic",
+                  "packet_in_delta_pct": 42.0,
+                  "source_dominance": 0.82,
+                  "distributed_sources": false,
+                  "window_id": "b-aq-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 10.5,
+                  "source_dominance": 0.35,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 31.5,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent.",
+                "sanitize_issues": []
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=31.5",
+                "surge=True"
+              ]
+            }
+          },
+          {
+            "phase": "final_reason_prompt",
+            "detail": {
+              "reserved_conclude": true,
+              "tool_calls": 3
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "conclude_parse_error": "could not parse JSON object: Unterminated string starting at: line 5 column 5 (char 86)",
+              "attempt": 0,
+              "preview": "{\n  \"action\":\"conclude\",\n  \"recommendation\":{\n    \"recommended_action\":\"observe\",\n    \"final_r"
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "conclude_parse_error": "could not parse JSON object: Unterminated string starting at: line 6 column 17 (char 122)",
+              "attempt": 1,
+              "preview": "{\n  \"action\":\"conclude\",\n  \"recommendation\":{\n    \"recommended_action\":\"observe\",\n    \"final_risk\":\"low\",\n    \"rationale\":\"Network telemetry indicates a low\u2011rat"
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "deterministic_fallback",
+              "note": "Used only after reserved conclude phase failed, schema rejected (incl. placeholder actions like '...'), or no tools ran. Not labeled as nemotron_conclude."
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [
+                "gate:skipped_ablation_arm"
+              ],
+              "apply_gate": false,
+              "pre_gate_action": "rate_limit",
+              "action": "rate_limit",
+              "conclusion_kind": "deterministic_fallback"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "real_api",
+              "tool_calls": 3,
+              "conclusion_kind": "deterministic_fallback",
+              "pre_gate_source": "deterministic_fallback"
+            }
+          }
+        ],
+        "pre_gate_recommendation": {
+          "recommended_action": "rate_limit",
+          "final_risk": "medium",
+          "rationale": "Low-rate anomaly with stable physical context supports soft rate-limit.",
+          "policy_attack_type": "LOFT_LowRate_Attack",
+          "cooldown_seconds": 15.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.65,
+          "evidence_notes": [
+            "physical_label=stable",
+            "activity_band=low",
+            "tracks=1",
+            "queue_m=2.0",
+            "context_source=blind_redteam_synthetic",
+            "not_live_rtsp_claim",
+            "window=b-aq-1",
+            "packet_in_delta_pct=42.0",
+            "source_dominance=0.82",
+            "distributed_sources=False"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "containment": true
+      },
+      "D_gate_replay": {
+        "action": "rate_limit",
+        "action_changed": false,
+        "oracle_score": {
+          "action": "rate_limit",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        }
+      }
+    },
+    {
+      "incident_id": "eval_missing_01",
+      "family": "missing_evidence",
+      "A_rules": {
+        "action": "rate_limit",
+        "ok": true,
+        "oracle_score": {
+          "action": "rate_limit",
+          "ok": true,
+          "correct_vs_oracle": false,
+          "false_escalation": true,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        }
+      },
+      "B_planner": {
+        "action": "observe",
+        "ok": true,
+        "conclusion_kind": "deterministic_fallback",
+        "oracle_score": {
+          "action": "observe",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": true,
+          "appropriate_abstention": true,
+          "gate_blocked_containment": null
+        }
+      },
+      "C_nemotron": {
+        "action": "observe",
+        "ok": true,
+        "evidence_class": "real_api",
+        "conclusion_kind": "nemotron_conclude",
+        "pre_gate_source": "nemotron_conclude",
+        "tool_calls": 3,
+        "model_calls": 5,
+        "latency_ms": 10858.700400000089,
+        "estimated_cost_usd": 0.00107076,
+        "error": null,
+        "oracle_score": {
+          "action": "observe",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": true,
+          "appropriate_abstention": true,
+          "gate_blocked_containment": null
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "DDoS_PacketIn_Flood",
+              "incident_id": "eval_missing_01",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "anomaly_requires_physical_context",
+                "physical_evidence_insufficient",
+                "camera_stale_or_invalid",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "tool_model_round": 1,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "retrieve_network_telemetry",
+              "ok": true,
+              "summary": "Telemetry window retrieved for DDoS_PacketIn_Flood: \u0394PacketIn=90.0% dominance=0.6000000000000001 distributed=False",
+              "data": {
+                "telemetry": {
+                  "context_source": "heldout_eval_synthetic",
+                  "packet_in_delta_pct": 90.0,
+                  "source_dominance": 0.6000000000000001,
+                  "distributed_sources": false,
+                  "window_id": "eval-miss-1"
+                },
+                "network_prediction": "DDoS_PacketIn_Flood",
+                "sanitize_issues": []
+              },
+              "evidence_notes": [
+                "window=eval-miss-1",
+                "packet_in_delta_pct=90.0",
+                "source_dominance=0.6000000000000001",
+                "distributed_sources=False",
+                "network_prediction=DDoS_PacketIn_Flood"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "tool_model_round": 2,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=unknown band=unknown tracks=None (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "heldout_eval_synthetic",
+                  "physical_label": "unknown",
+                  "activity_band": "unknown",
+                  "visible_vehicle_tracks": null,
+                  "queue_length_proxy_m": null,
+                  "is_vehicle_count": false,
+                  "vehicle_count_is_real": false,
+                  "stream_available": false,
+                  "analytics_valid": false,
+                  "stale": true,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=unknown",
+                "activity_band=unknown",
+                "tracks=None",
+                "queue_m=None",
+                "context_source=heldout_eval_synthetic",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "tool_model_round": 3,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 67.5 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "heldout_eval_synthetic",
+                  "packet_in_delta_pct": 90.0,
+                  "source_dominance": 0.6000000000000001,
+                  "distributed_sources": false,
+                  "window_id": "eval-miss-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 22.5,
+                  "source_dominance": 0.35,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 67.5,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent.",
+                "sanitize_issues": []
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=67.5",
+                "surge=True"
+              ]
+            }
+          },
+          {
+            "phase": "final_reason_prompt",
+            "detail": {
+              "reserved_conclude": true,
+              "tool_calls": 3
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "conclude_parse_error": "could not parse JSON object: Expecting value: line 12 column 22 (char 739)",
+              "attempt": 0,
+              "preview": "{\n  \"action\": \"conclude\",\n  \"recommendation\": {\n    \"recommended_action\": \"observe\",\n    \"final_risk\": \"medium\",\n    \"rationale\": \"Network telemetry shows a 90%"
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "nemotron_conclude",
+              "phase": "reserved_final_reason",
+              "preview": {
+                "recommended_action": "observe",
+                "final_risk": "medium",
+                "rationale": "Network telemetry indicates a flood-like surge but camera metadata is stale and synthetic, providing no physical corroboration; thus we observe before any containment.",
+                "policy_attack_type": null,
+                "cooldown_seconds": 30.0,
+                "false_positive_corrected": false,
+                "safety_critical": false,
+                "confidence": 0.0,
+                "evidence_notes": [],
+                "schema_version": "hackathon_mitigation_v1"
+              },
+              "tool_calls_before_conclude": 3,
+              "repair_attempt": 1
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [
+                "gate:skipped_ablation_arm"
+              ],
+              "apply_gate": false,
+              "pre_gate_action": "observe",
+              "action": "observe",
+              "conclusion_kind": "nemotron_conclude"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "real_api",
+              "tool_calls": 3,
+              "conclusion_kind": "nemotron_conclude",
+              "pre_gate_source": "nemotron_conclude"
+            }
+          }
+        ],
+        "pre_gate_recommendation": {
+          "recommended_action": "observe",
+          "final_risk": "medium",
+          "rationale": "Network telemetry indicates a flood-like surge but camera metadata is stale and synthetic, providing no physical corroboration; thus we observe before any containment.",
+          "policy_attack_type": null,
+          "cooldown_seconds": 30.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.0,
+          "evidence_notes": [],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "containment": false
+      },
+      "D_gate_replay": {
+        "action": "observe",
+        "action_changed": false,
+        "oracle_score": {
+          "action": "observe",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": true,
+          "appropriate_abstention": true,
+          "gate_blocked_containment": null
+        }
+      }
+    },
+    {
+      "incident_id": "eval_legit_cong_01",
+      "family": "legitimate_congestion",
+      "A_rules": {
+        "action": "preserve_rush_hour",
+        "ok": true,
+        "oracle_score": {
+          "action": "preserve_rush_hour",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        }
+      },
+      "B_planner": {
+        "action": "preserve_rush_hour",
+        "ok": true,
+        "conclusion_kind": "deterministic_fallback",
+        "oracle_score": {
+          "action": "preserve_rush_hour",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        }
+      },
+      "C_nemotron": {
+        "action": "preserve_rush_hour",
+        "ok": true,
+        "evidence_class": "real_api",
+        "conclusion_kind": "nemotron_conclude",
+        "pre_gate_source": "nemotron_conclude",
+        "tool_calls": 3,
+        "model_calls": 5,
+        "latency_ms": 13208.08599999873,
+        "estimated_cost_usd": 0.00109614,
+        "error": null,
+        "oracle_score": {
+          "action": "preserve_rush_hour",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        },
+        "trace": [
+          {
+            "phase": "detect",
+            "detail": {
+              "network_prediction": "RushHour_Burst",
+              "incident_id": "eval_legit_cong_01",
+              "include_camera": true
+            }
+          },
+          {
+            "phase": "identify_uncertainty",
+            "detail": {
+              "uncertainties": [
+                "anomaly_requires_physical_context",
+                "no_temporal_baseline_yet"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "tool_model_round": 1,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "inspect_camera_metadata",
+              "ok": true,
+              "summary": "Same-zone camera metadata: label=rush_hour band=high tracks=14 (metadata only; not live RTSP inference)",
+              "data": {
+                "camera": {
+                  "context_source": "heldout_eval_synthetic",
+                  "physical_label": "rush_hour",
+                  "activity_band": "high",
+                  "visible_vehicle_tracks": 14,
+                  "queue_length_proxy_m": 38.0,
+                  "is_vehicle_count": true,
+                  "vehicle_count_is_real": true,
+                  "stream_available": true,
+                  "analytics_valid": true,
+                  "stale": false,
+                  "pedestrian_present": false,
+                  "incident": false
+                }
+              },
+              "evidence_notes": [
+                "physical_label=rush_hour",
+                "activity_band=high",
+                "tracks=14",
+                "queue_m=38.0",
+                "context_source=heldout_eval_synthetic",
+                "not_live_rtsp_claim"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "tool_model_round": 2,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "compare_temporal_windows",
+              "ok": true,
+              "summary": "Temporal compare: \u0394PacketIn vs prior = 21.0 pp; surge=True",
+              "data": {
+                "current": {
+                  "context_source": "heldout_eval_synthetic",
+                  "packet_in_delta_pct": 28.0,
+                  "source_dominance": 0.27,
+                  "distributed_sources": true,
+                  "window_id": "eval-lc-1"
+                },
+                "prior": {
+                  "window_id": "prior_synthetic_baseline",
+                  "packet_in_delta_pct": 7.0,
+                  "source_dominance": 0.27,
+                  "distributed_sources": true,
+                  "context_source": "synthetic_temporal_baseline"
+                },
+                "delta_packet_in_pct_points": 21.0,
+                "surge_vs_baseline": true,
+                "baseline_note": "Prior window may be fixture-synthesized when history absent.",
+                "sanitize_issues": []
+              },
+              "evidence_notes": [
+                "temporal_delta_pp=21.0",
+                "surge=True"
+              ]
+            }
+          },
+          {
+            "phase": "select_evidence_tool",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "tool_model_round": 3,
+              "max_tool_model_calls": 3
+            }
+          },
+          {
+            "phase": "retrieve_validate",
+            "detail": {
+              "tool": "check_physical_evidence_quality",
+              "ok": true,
+              "summary": "Physical evidence SUFFICIENT for containment decisions.",
+              "data": {
+                "sufficient": true,
+                "stream_available": true,
+                "analytics_valid": true,
+                "stale": false,
+                "has_vehicle_count": true,
+                "physical_label": "rush_hour",
+                "activity_band": "high",
+                "reasons": [],
+                "context_source": "heldout_eval_synthetic"
+              },
+              "evidence_notes": [
+                "physical_sufficient"
+              ]
+            }
+          },
+          {
+            "phase": "final_reason_prompt",
+            "detail": {
+              "reserved_conclude": true,
+              "tool_calls": 3
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "conclude_parse_error": "could not parse JSON object: Unterminated string starting at: line 13 column 7 (char 517)",
+              "attempt": 0,
+              "preview": "{\n  \"action\": \"conclude\",\n  \"recommendation\": {\n    \"recommended_action\": \"preserve_rush_hour\",\n    \"final_risk\": \"low\",\n    \"rationale\": \"Physical camera metad"
+            }
+          },
+          {
+            "phase": "reason",
+            "detail": {
+              "source": "nemotron_conclude",
+              "phase": "reserved_final_reason",
+              "preview": {
+                "recommended_action": "preserve_rush_hour",
+                "final_risk": "low",
+                "rationale": "Physical camera metadata confirms rush_hour high activity with 14 vehicles and 38m queue, matching surge in packet_in delta; no contradictions, evidence sufficient, no safety or incident flags.",
+                "policy_attack_type": null,
+                "cooldown_seconds": 30.0,
+                "false_positive_corrected": false,
+                "safety_critical": false,
+                "confidence": 0.0,
+                "evidence_notes": [
+                  "physical_label=rush_hour",
+                  "activity_band=high",
+                  "tracks=14",
+                  "queue_m=38.0",
+                  "temporal_delta_pp=21.0",
+                  "surge=True"
+                ],
+                "schema_version": "hackathon_mitigation_v1"
+              },
+              "tool_calls_before_conclude": 3,
+              "repair_attempt": 1
+            }
+          },
+          {
+            "phase": "policy_gate",
+            "detail": {
+              "gated_notes": [
+                "gate:skipped_ablation_arm"
+              ],
+              "apply_gate": false,
+              "pre_gate_action": "preserve_rush_hour",
+              "action": "preserve_rush_hour",
+              "conclusion_kind": "nemotron_conclude"
+            }
+          },
+          {
+            "phase": "audit",
+            "detail": {
+              "evidence_class": "real_api",
+              "tool_calls": 3,
+              "conclusion_kind": "nemotron_conclude",
+              "pre_gate_source": "nemotron_conclude"
+            }
+          }
+        ],
+        "pre_gate_recommendation": {
+          "recommended_action": "preserve_rush_hour",
+          "final_risk": "low",
+          "rationale": "Physical camera metadata confirms rush_hour high activity with 14 vehicles and 38m queue, matching surge in packet_in delta; no contradictions, evidence sufficient, no safety or incident flags.",
+          "policy_attack_type": null,
+          "cooldown_seconds": 30.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.0,
+          "evidence_notes": [
+            "physical_label=rush_hour",
+            "activity_band=high",
+            "tracks=14",
+            "queue_m=38.0",
+            "temporal_delta_pp=21.0",
+            "surge=True"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "containment": false
+      },
+      "D_gate_replay": {
+        "action": "preserve_rush_hour",
+        "action_changed": false,
+        "oracle_score": {
+          "action": "preserve_rush_hour",
+          "ok": true,
+          "correct_vs_oracle": true,
+          "false_escalation": false,
+          "unsafe_recommendation": false,
+          "abstention": false,
+          "appropriate_abstention": false,
+          "gate_blocked_containment": null
+        }
+      }
+    }
+  ],
+  "analysis_prior_blind_gap": {
+    "why_planner_beat_nemotron": [
+      "blind_attack_quiet_road: Nemotron reserved conclude emitted recommended_action='...' (placeholder) \u2192 schema reject; planner used rate_limit from evidence rules.",
+      "blind_contradict: Nemotron tools ran (real_api) but final conclude fell to deterministic_fallback \u2014 tool selection value without successful model conclude.",
+      "Overall: planner encodes explicit physical/gate heuristics; model contribution is tool selection + conclude quality, which was brittle on placeholders."
+    ]
+  }
+}

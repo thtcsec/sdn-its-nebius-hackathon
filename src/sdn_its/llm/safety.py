@@ -67,6 +67,16 @@ def gate_recommendation(
         rec.recommended_action = "observe"
         rec.rationale = (rec.rationale + " [gate: human review requested]").strip()
 
+    # Untrusted telemetry: fail closed — no preserve/contain from bad numbers
+    if estate.get("telemetry_unreliable") and rec.recommended_action != "protect_safety":
+        if rec.recommended_action != "observe":
+            notes.append("gate:telemetry_unreliable_force_observe")
+            rec.recommended_action = "observe"
+            rec.rationale = (
+                rec.rationale
+                + " [gate: telemetry unreliable/NaN — fail closed to observe]"
+            ).strip()
+
     rule_action = fusion.get("recommended_action")
     if rule_action in ALLOWED_ACTIONS:
         if _ACTION_RANK.get(rec.recommended_action, 0) > _ACTION_RANK.get(str(rule_action), 0):

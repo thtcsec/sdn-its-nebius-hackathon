@@ -19,9 +19,34 @@ ALLOWED_ACTIONS = frozenset(
 
 ALLOWED_RISK = frozenset({"low", "medium", "high", "critical"})
 
+# Explicit aliases only. NEVER map placeholders / vague verbs into containment.
+_SAFE_ACTION_ALIASES: dict[str, str] = {
+    "observe": "observe",
+    "watch": "observe",
+    "abstain": "observe",
+    "monitor": "observe",
+    "wait": "observe",
+    "no_action": "observe",
+    "preserve_rush_hour": "preserve_rush_hour",
+    "preserve": "preserve_rush_hour",
+    "preserve-rush-hour": "preserve_rush_hour",
+    "rush_hour": "preserve_rush_hour",
+    "protect_safety": "protect_safety",
+    "protect-safety": "protect_safety",
+    "safety": "protect_safety",
+    "rate_limit": "rate_limit",
+    "rate-limit": "rate_limit",
+    "temporary_drop": "temporary_drop",
+    "temporary-drop": "temporary_drop",
+}
+
+_PLACEHOLDER_ACTIONS = frozenset({"", "...", "…", "null", "none", "n/a", "na", "unknown", "todo", "tbd", "action"})
+
 # Cooldown bounds enforced before policy sees the recommendation
 COOLDOWN_MIN_S = 5.0
 COOLDOWN_MAX_S = 60.0
+
+CONTAINMENT_ACTIONS = frozenset({"rate_limit", "temporary_drop"})
 
 
 class RecommendationValidationError(ValueError):
@@ -123,6 +148,42 @@ def extract_json_object(text: str) -> dict[str, Any]:
     raise RecommendationValidationError(f"could not parse JSON object: {last_err}")
 
 
+def normalize_action_name(raw: Any) -> str | None:
+    """Map only explicit safe aliases. Placeholders and unknown verbs → None (no containment coercion)."""
+    if raw is None:
+        return None
+    action = str(raw).strip()
+    if not action:
+        return None
+    key = action.lower().replace(" ", "_")
+    if key in _PLACEHOLDER_ACTIONS or action in _PLACEHOLDER_ACTIONS:
+        return None
+    if action in ALLOWED_ACTIONS:
+        return action
+    if key in ALLOWED_ACTIONS:
+        return key
+    mapped = _SAFE_ACTION_ALIASES.get(key)
+    return mapped
+
+
+def try_validate_recommendation(
+    payload: dict[str, Any] | MitigationRecommendation,
+    *,
+    allow_safe_alias: bool = True,
+) -> tuple[MitigationRecommendation | None, str | None]:
+    """Validate without raising. Returns (rec, error_message)."""
+    try:
+        if allow_safe_alias and isinstance(payload, dict):
+            data = dict(payload)
+            mapped = normalize_action_name(data.get("recommended_action"))
+            if mapped:
+                data["recommended_action"] = mapped
+            return validate_recommendation(data), None
+        return validate_recommendation(payload), None
+    except RecommendationValidationError as exc:
+        return None, str(exc)
+
+
 def validate_recommendation(payload: dict[str, Any] | MitigationRecommendation) -> MitigationRecommendation:
     """Validate and normalize a recommendation dict."""
     if isinstance(payload, MitigationRecommendation):
@@ -134,6 +195,7 @@ def validate_recommendation(payload: dict[str, Any] | MitigationRecommendation) 
 
     action = str(data.get("recommended_action") or "").strip()
     if action not in ALLOWED_ACTIONS:
+        # Do not silently coerce unknowns (including "...") into containment or observe here.
         raise RecommendationValidationError(
             f"recommended_action must be one of {sorted(ALLOWED_ACTIONS)}; got {action!r}"
         )

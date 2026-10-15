@@ -93,9 +93,11 @@ def run_rule_only(incident: dict[str, Any]) -> PathResult:
     tel = dict(incident.get("telemetry") or {})
     cam = dict(incident.get("camera") or {})
     net = str(incident.get("network_prediction") or "Normal")
+    # Untrusted telemetry/camera — FusionEngine sanitizes; never crash on NaN/strings
     fusion = FusionEngine().fuse(
         network_prediction=net,
         physical=cam,
+        telemetry=tel,
         source_dominance=tel.get("source_dominance"),
         distributed_sources=tel.get("distributed_sources"),
         packet_in_delta_pct=tel.get("packet_in_delta_pct"),
