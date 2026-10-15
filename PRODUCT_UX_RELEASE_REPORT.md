@@ -2,7 +2,7 @@
 
 **Branch:** `hackathon/nebius-nvidia`  
 **Base verified:** `bf358a882623036750cc20cd7e887aa9dca8ad3a`  
-**Release tip:** _(filled after push)_  
+**Release tip:** `1770415d46c1d2876a3ed3df9e01a1b380222e80`  
 
 ## Naming
 
@@ -77,7 +77,7 @@ Visual QA: landing and investigation boards inspected; mobile header chips compa
 ## CI
 
 Workflow: `.github/workflows/hackathon-light.yml` (includes `tests/test_product_ui.py`).  
-**CI URL:** _(filled after push)_  
+**CI URL:** https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/38771544924 — **success**
 
 ## Remaining blockers (owner approval)
 
