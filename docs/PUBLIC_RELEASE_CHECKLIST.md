@@ -1,36 +1,45 @@
 # Public-release checklist (do NOT flip visibility without approval)
 
-Repository is currently **private**. Changing GitHub visibility requires an explicit human approval.
+Repository is currently **private**. Changing GitHub visibility requires explicit human approval.
+
+## Automated scans (run before asking)
+
+```bash
+python scripts/scan_secrets_and_license.py
+git ls-files .env deploy/judge/.env   # must be empty
+git log -p --all -S 'NEBIUS_API' -- '*.env' '*.md' '*.json' | Select-Object -First 40
+```
+
+Record results in `artifacts/hackathon/secret_license_scan.json` and `artifacts/hackathon/public_release_scan.md`.
 
 ## Before requesting public
 
-- [ ] `python scripts/scan_secrets_and_license.py` → `ok: true`
-- [ ] `.env` not tracked (`git ls-files .env` empty)
+- [ ] Secret/license scan `ok: true` (working tree)
+- [ ] Git history review for leaked keys (see scan report)
+- [ ] `.env` / `deploy/judge/.env` not tracked
 - [ ] No RTSP URLs / `1.cameras.json` / private camera inventories in git
-- [ ] No `*.pt` checkpoints required for judge path
-- [ ] `docs/JUDGE_DEMO.md` current (multi-step + ablation commands)
+- [ ] No required `*.pt` checkpoints for judge path
+- [ ] Screenshots in `artifacts/hackathon/product_screens/` contain no tokens/keys
 - [ ] `docs/HACKATHON_CONTRIBUTIONS.md` separates research vs hackathon
-- [ ] `COMPETITION_DELTA_REPORT.md` present with honest metrics
-- [ ] Held-out + ablation artifacts regenerated; honesty notes reviewed
-- [ ] Multi-step demo traces in `artifacts/hackathon/multistep_demo_traces.json`
-- [ ] Demo video (&lt;3 min) uploaded; URL recorded in `docs/DEMO_VIDEO.md`
-- [ ] Hosted working demo URL prepared (or clear local judge path + credentials note)
-- [ ] `WINNING_EVIDENCE.md` remote SHA matches GitHub tip
-- [ ] Matched live proof artifact present (`matched_nemotron_proof.json`) — never pitch offline 92% as Nemotron
-- [ ] Devpost feedback draft reviewed (`docs/NEBIUS_NVIDIA_FEEDBACK.md`)
-- [ ] LICENSE present (MIT) and visible on GitHub About after public flip
-- [ ] README status table matches reality; mock OF; no fabricated Nebius results
-- [ ] Competition rules re-checked (public repo, YouTube, Token Factory runtime, track, pre-existing explanation, feedback form)
+- [ ] `SUBMISSION_DEVPOST.md` reviewed
+- [ ] Demo video recorded locally; YouTube URL only after approval
+- [ ] Hosted judge URL only after approved deploy (`docs/JUDGE_HOSTING.md`)
+- [ ] LICENSE (MIT) present
+- [ ] README matches reality: mock OF, synthetic camera, no fabricated Nebius accuracy
+- [ ] Competition rules re-checked the day of submit
+
+## Assets that may be non-publishable
+
+| Asset | Risk | Action |
+|-------|------|--------|
+| `.env` / API keys | Secret | Never commit; rotate if ever leaked |
+| Live camera inventories / RTSP | Privacy / ToS | Keep gitignored |
+| Model checkpoints `*.pt` | Size / license | Not required for judge path |
+| Third-party academic branding misuse | Legal | JunctionTrace must not claim Tsinghua/NVIDIA/Nebius endorsement |
+| IEDE / prior research IP | Attribution | Keep `/research` clearly labeled; cite baseline honestly |
 
 ## Explicit non-actions
 
-- Do **not** run `gh repo edit --visibility public` without approval.
-- Do **not** commit `.env` or API keys.
-- Do **not** enable real OpenFlow containment for demos (`of_backend: mock`).
-
-## Suggested release command (after approval only)
-
-```powershell
-# ONLY after explicit approval:
-# gh repo edit thtcsec/sdn-its-nebius-hackathon --visibility public
-```
+- Do **not** `gh repo edit --visibility public` without approval.
+- Do **not** deploy paid infra / upload YouTube / submit Devpost without approval.
+- Do **not** enable real OpenFlow containment for demos.

@@ -313,21 +313,30 @@ class HackathonInferenceGuard:
         )
 
     def _reclaim_orphans(self) -> None:
-        """On process start, release open reservations left by a crash."""
+        """On process start, convert crash-orphaned open reservations into spend.
+
+        An interrupted real-mode call may already have incurred Nebius usage.
+        Conservatively charge the full reserved amount into estimated_spent_usd
+        (do NOT refund) and clear the reservation so concurrency slots reopen.
+        """
         with self._lock:
             with self._connect() as conn:
                 conn.execute("BEGIN IMMEDIATE")
                 rows = conn.execute(
                     "SELECT id, day_utc, amount_usd FROM reservations WHERE status='open'"
                 ).fetchall()
+                now = time.time()
                 for row in rows:
+                    amount = float(row["amount_usd"])
                     conn.execute(
-                        "UPDATE reservations SET status='released', settled_at=? WHERE id=?",
-                        (time.time(), row["id"]),
+                        "UPDATE reservations SET status='settled_crash', estimated_usd=?, "
+                        "settled_at=? WHERE id=?",
+                        (amount, now, row["id"]),
                     )
                     conn.execute(
-                        "UPDATE daily_quota SET reserved_usd = MAX(0, reserved_usd - ?) WHERE day_utc=?",
-                        (float(row["amount_usd"]), row["day_utc"]),
+                        "UPDATE daily_quota SET reserved_usd = MAX(0, reserved_usd - ?), "
+                        "estimated_spent_usd = estimated_spent_usd + ? WHERE day_utc=?",
+                        (amount, amount, row["day_utc"]),
                     )
                 conn.commit()
 

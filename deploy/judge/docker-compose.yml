@@ -1,0 +1,67 @@
+# JunctionTrace judge stack — single worker + Caddy TLS.
+# Do NOT deploy without owner approval. Keep running through 2026-12-15 if submitted.
+#
+# Usage (after secrets are filled):
+#   cp deploy/judge/.env.example deploy/judge/.env   # edit secrets
+#   cd deploy/judge && docker compose up -d --build
+# Rollback:
+#   docker compose down
+#   # or: docker compose up -d --build  after git checkout <previous-sha>
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.judge
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SDN_HOSTED_DEMO: "1"
+      SDN_OF_BACKEND: mock
+      SDN_BIND_HOST: "0.0.0.0"
+      JT_TRUSTED_PROXY: "1"
+      JT_QUOTA_DB_PATH: /data/quota/nebius_daily_quota.sqlite
+      PYTHONPATH: /app/src:/app
+    volumes:
+      - jt_quota:/data/quota
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/v1/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Gunicorn access log: do not enable request body logging (secrets).
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      JT_DOMAIN: ${JT_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+volumes:
+  jt_quota:
+  caddy_data:
+  caddy_config:

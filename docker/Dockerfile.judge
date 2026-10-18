@@ -1,0 +1,34 @@
+# Lightweight JunctionTrace judge image (no torch / no camera stack).
+# Single-worker only — SQLite quota is not multi-worker safe.
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-judge.txt ./
+RUN pip install --no-cache-dir -r requirements-judge.txt gunicorn
+
+COPY src ./src
+COPY api ./api
+COPY dashboard ./dashboard
+COPY configs ./configs
+COPY datasets/hackathon ./datasets/hackathon
+COPY scripts ./scripts
+
+ENV PYTHONPATH=/app/src:/app
+ENV SDN_HOSTED_DEMO=1
+ENV SDN_OF_BACKEND=mock
+ENV SDN_BIND_HOST=0.0.0.0
+ENV JT_TRUSTED_PROXY=1
+ENV JT_QUOTA_DB_PATH=/data/quota/nebius_daily_quota.sqlite
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8080/api/v1/status >/dev/null || exit 1
+
+# Fail closed: create_app raises if token/OF misconfigured
+CMD ["gunicorn", "-w", "1", "-b", "0.0.0.0:8080", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "api.app:create_app()"]

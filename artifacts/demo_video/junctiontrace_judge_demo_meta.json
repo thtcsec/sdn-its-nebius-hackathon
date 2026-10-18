@@ -1,0 +1,25 @@
+{
+  "ts_utc": "2026-10-18T02:00:25.485287+00:00",
+  "base": "http://127.0.0.1:8080",
+  "segments": [
+    "landing_pain_point",
+    "scenario_a_offline_congestion",
+    "scenario_b_real_nemotron",
+    "research_preserved",
+    "limitations_footer"
+  ],
+  "note": "Screen capture of live JunctionTrace UI. Do not upload without owner approval.",
+  "voiceover_cues": [
+    "0:00 Pain point: surge labels can destroy legitimate mobility traffic",
+    "0:15 JunctionTrace homepage \u2014 NVIDIA Nemotron via Nebius Token Factory",
+    "0:40 Scenario A offline congestion vs rule-only",
+    "1:10 Scenario B real Nemotron tools + evidence + gate",
+    "2:10 Limitations: synthetic camera, mock OF, advisory; research at /research"
+  ],
+  "nebius_api_key_present": true,
+  "real_body_excerpt": "LIVE Nebius / real_api\nsynthetic camera metadata\nOF mock\ngate PASS\nScenario\nQuiet zone + low-rate anomaly (scenario_loft_stable)\nNetwork alarm\nLOFT_LowRate_Attack\nRSU / DPID\nzone demo \u00b7 dpid mock\nTelemetry \u0394PIN\n38 \u00b7 dominance 0.78\nCamera\nstable / low \u00b7 tracks 2 \u00b7 stale=false\nConclusion source\nnemotron_conclude\nLatency / cost\n28206 ms \u00b7 $0.00116 12437 tokens\nRecommended next action\n\nobserve\n\nNetwork surge detected but camera metadata shows stable low activity (physical_label=stable, activity_band",
+  "webm": "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\demo_video\\junctiontrace_judge_demo.webm",
+  "mp4": "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\demo_video\\junctiontrace_judge_demo.mp4",
+  "duration_s": 167.84,
+  "converted_mp4": true
+}

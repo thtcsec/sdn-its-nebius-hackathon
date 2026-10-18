@@ -65,6 +65,11 @@ extracted_report.txt
 tmp/
 temp_dummy_dataset.csv
 .env
+**/.env
+deploy/judge/.env
+artifacts/demo_video/*.webm
+artifacts/demo_video/*.mp4
+artifacts/demo_video/raw_*/
 
 # Ephemeral console reports (keep paper metrics under results/*/)
 results/console/

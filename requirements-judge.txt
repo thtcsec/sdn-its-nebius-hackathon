@@ -1,0 +1,6 @@
+# Minimal deps for JunctionTrace hosted judge (no torch).
+python-dotenv>=1.0
+requests>=2.31
+PyYAML>=6
+Flask>=2.3
+gunicorn>=21.2

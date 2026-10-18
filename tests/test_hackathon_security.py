@@ -157,6 +157,26 @@ class TestPersistentQuota(unittest.TestCase):
         snap = g2.snapshot()
         self.assertGreaterEqual(snap["estimated_spent_usd"], 0.10 - 1e-9)
 
+    def test_crash_before_settle_does_not_refund_quota(self):
+        """Interrupted billable request must keep reserved amount as estimated spend."""
+        os.environ["NEBIUS_DAILY_BUDGET_USD"] = "0.05"
+        os.environ["JT_RESERVE_USD_PER_REAL"] = "0.05"
+        g1 = reset_inference_guard_for_tests(self.db)
+        d = g1.admit_real("ip:crash")
+        self.assertTrue(d.ok)
+        # Simulate process death before settle — leave reservation open, drop guard
+        g1.close()
+
+        g2 = reset_inference_guard_for_tests(self.db)
+        snap = g2.snapshot()
+        self.assertEqual(snap["inflight_real"], 0)
+        self.assertGreaterEqual(snap["estimated_spent_usd"], 0.05 - 1e-9)
+        self.assertLessEqual(snap["reserved_usd"], 1e-9)
+        # Budget remains exhausted — no refund after crash reclaim
+        d2 = g2.admit_real("ip:after-crash")
+        self.assertFalse(d2.ok)
+        self.assertEqual(d2.error, "budget_exhausted")
+
     def test_concurrent_admit_respects_inflight(self):
         os.environ["JT_MAX_CONCURRENT_REAL"] = "1"
         os.environ["NEBIUS_DAILY_BUDGET_USD"] = "10"
