@@ -67,8 +67,8 @@ These are **release packaging** blockers, not security-gate failures:
 
 | Item | Value |
 |------|-------|
-| Commit SHA | _filled after push_ |
-| GitHub Actions | _filled after push_ |
+| Commit SHA | `75a2f239f04f9938339b2696e0aa30dc77391c66` |
+| GitHub Actions | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39087423749 — **success** |
 
 ---
 
