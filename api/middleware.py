@@ -25,14 +25,23 @@ def register_middleware(app: Flask) -> None:
 
     @app.before_request
     def _enforce_api_token():
+        from sdn_its.llm.hackathon_guard import hosted_demo_flag
+
         expected = api_token()
         ctrl = app.extensions.get("sdn_controller")
         host = getattr(ctrl, "host", None) or os.environ.get("SDN_BIND_HOST") or "127.0.0.1"
         protected = is_token_protected_path(request.path, request.method)
-        # Token required when configured; also strongly recommended when LAN-bound.
+        # Hosted demo must not accept traffic without a token (startup also validates).
+        if hosted_demo_flag() and not expected:
+            return jsonify(
+                {
+                    "error": "misconfigured_hosted_demo",
+                    "detail": "SDN_HOSTED_DEMO=1 requires SDN_API_TOKEN. Refusing protected requests.",
+                }
+            ), 503
         if not expected:
             if require_api_token_for_lan(str(host)) and is_mutating_path(request.path, request.method):
-                # Soft-allow but stamp header so operators notice in status/logs once.
+                # Soft-allow on non-hosted LAN lab only — stamp warning header.
                 g.lan_token_missing = True
             return None
         if not protected:
@@ -40,6 +49,7 @@ def register_middleware(app: Flask) -> None:
         provided = extract_request_token(request.headers)
         if token_ok(provided, expected):
             return None
+        # Do not echo provided tokens or Authorization headers in the response.
         return jsonify(
             {
                 "error": "unauthorized",

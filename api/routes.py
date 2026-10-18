@@ -151,7 +151,11 @@ def register_routes(app: Flask) -> None:
     @app.route("/api/v1/hackathon/capabilities", methods=["GET"])
     def hackathon_capabilities():
         """Non-secret capability flags for the product UI (never returns API keys)."""
-        from sdn_its.llm.hackathon_guard import get_inference_guard, hosted_demo_enforced
+        from sdn_its.llm.hackathon_guard import (
+            get_inference_guard,
+            hosted_demo_enforced,
+            legacy_model_routes_disabled,
+        )
         from sdn_its.utils.env import nebius_config_summary
         from sdn_its.utils.security import api_token
 
@@ -167,16 +171,22 @@ def register_routes(app: Flask) -> None:
                 "modes": ["offline", "real"],
                 "api_token_required": bool(api_token()),
                 "hosted_demo_enforced": hosted_demo_enforced(),
+                "legacy_model_routes_disabled": legacy_model_routes_disabled(),
                 "budget": {
-                    "daily_budget_usd": guard["daily_budget_usd"],
-                    "spent_usd": guard["spent_usd"],
-                    "rate_limit_per_min": guard["rate_limit_per_min"],
-                    "max_concurrent_real": guard["max_concurrent_real"],
+                    "daily_budget_usd": guard.get("daily_budget_usd"),
+                    "reserved_usd": guard.get("reserved_usd"),
+                    "estimated_spent_usd": guard.get("estimated_spent_usd"),
+                    "confirmed_spent_usd": guard.get("confirmed_spent_usd"),
+                    "committed_usd": guard.get("committed_usd"),
+                    "rate_limit_per_min": guard.get("rate_limit_per_min"),
+                    "max_concurrent_real": guard.get("max_concurrent_real"),
+                    "note": guard.get("note"),
                 },
                 "note": (
                     "Offline uses a deterministic planner. Real mode calls Nebius Token Factory "
                     "only when NEBIUS_API_KEY is configured server-side. "
-                    "NEBIUS_API_KEY is never sent to the browser."
+                    "NEBIUS_API_KEY is never sent to the browser. "
+                    "Budget is an application quota, not a Nebius provider hard cap."
                 ),
             }
         ), 200
@@ -619,17 +629,32 @@ def register_routes(app: Flask) -> None:
     def hackathon_investigate():
         """Nemotron investigation vertical slice (Nebius Token Factory).
 
-        Requires NEBIUS_API_KEY for real_api evidence. Never fabricates success.
-        Demo mode blocks containment intentions by default.
+        Hosted demo: disabled (410) — use /multistep. Local research preserved.
+        Real calls share the same quota/rate guard as /multistep.
         """
+        from api.hackathon_enforce import (
+            begin_real_if_needed,
+            finish_real,
+            legacy_disabled_response,
+            safety_from_body,
+        )
+        from sdn_its.llm.hackathon_guard import legacy_model_routes_disabled
         from sdn_its.llm.investigation import IncidentContext, investigate_incident
         from sdn_its.llm.audit_log import record_audit
         from sdn_its.utils.env import ensure_repo_env
 
+        if legacy_model_routes_disabled():
+            return legacy_disabled_response()
+
         ensure_repo_env()
         data = request.get_json(force=True, silent=True) or {}
-        demo_mode = bool(data.get("demo_mode", True))
-        allow_containment = bool(data.get("allow_containment_in_demo", False))
+        safety = safety_from_body(data)
+        demo_mode = safety["demo_mode"]
+        allow_containment = safety["allow_containment_in_demo"]
+        # investigate always hits the model path when credentials exist
+        decision, reject = begin_real_if_needed(request, "real")
+        if reject is not None:
+            return reject
         ctx = IncidentContext(
             network_prediction=str(data.get("network_prediction") or "Normal"),
             telemetry=dict(data.get("telemetry") or {}),
@@ -638,14 +663,24 @@ def register_routes(app: Flask) -> None:
             dpid=str(data.get("dpid") or "1"),
             src_ip=str(data.get("src_ip") or "10.0.0.15"),
         )
-        result = investigate_incident(
-            ctx,
-            demo_mode=demo_mode,
-            allow_containment_in_demo=allow_containment,
-            model=data.get("model"),
-        )
+        failed = False
+        try:
+            result = investigate_incident(
+                ctx,
+                demo_mode=demo_mode,
+                allow_containment_in_demo=allow_containment,
+                model=data.get("model"),
+            )
+        except Exception:
+            failed = True
+            finish_real(decision, failed=True)
+            raise
+        finish_real(decision, estimated_usd=getattr(result, "estimated_cost_usd", None), failed=failed)
         payload = result.to_dict()
         payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
+        payload["demo_mode"] = demo_mode
+        payload["allow_containment_in_demo"] = allow_containment
+        payload["server_policy_notes"] = safety["server_policy_notes"]
         payload["note"] = (
             "Advisory investigation only. Deterministic PolicyEngine remains authoritative; "
             "default OF backend is mock unless SDN_OF_BACKEND is set."
@@ -664,20 +699,23 @@ def register_routes(app: Flask) -> None:
             return jsonify(payload), 503
         if not result.ok:
             return jsonify(payload), 502
-        # Optionally map through policy without claiming switch evidence
-        if data.get("apply_policy") and result.fusion_for_policy is not None:
+        # Hosted disables apply_policy; local may map through policy only when allowed
+        if safety["apply_policy"] and result.fusion_for_policy is not None:
             controller = app.extensions["sdn_controller"]
-            mit = controller.policy.apply(
-                attack_type=ctx.network_prediction,
-                dpid=ctx.dpid,
-                src_ip=ctx.src_ip,
-                fusion=result.fusion_for_policy,
-            )
-            payload["policy"] = {
-                "mitigation_status": mit.mitigation_status,
-                "applied_rules_count": len(mit.applied_rules),
-                "network_evidence": bool(controller.stats.get("network_evidence")),
-            }
+            if (controller.of_backend_name or "mock") != "mock":
+                payload["policy"] = {"rejected": True, "reason": "non_mock_of_blocked"}
+            else:
+                mit = controller.policy.apply(
+                    attack_type=ctx.network_prediction,
+                    dpid=ctx.dpid,
+                    src_ip=ctx.src_ip,
+                    fusion=result.fusion_for_policy,
+                )
+                payload["policy"] = {
+                    "mitigation_status": mit.mitigation_status,
+                    "applied_rules_count": len(mit.applied_rules),
+                    "network_evidence": bool(controller.stats.get("network_evidence")),
+                }
         return jsonify(payload), 200
 
     @app.route("/api/v1/hackathon/incidents", methods=["GET"])
@@ -696,15 +734,30 @@ def register_routes(app: Flask) -> None:
 
     @app.route("/api/v1/hackathon/run", methods=["POST"])
     def hackathon_run_incident():
-        """Run rule-only + Nemotron-assisted paths for a fixture/scenario id or inline body."""
+        """Run rule-only + Nemotron-assisted paths for a fixture/scenario id or inline body.
+
+        Hosted demo: disabled (410) — use /multistep. Local research preserved.
+        Real mode shares the same quota/rate guard as /multistep.
+        """
+        from api.hackathon_enforce import (
+            begin_real_if_needed,
+            finish_real,
+            legacy_disabled_response,
+            safety_from_body,
+        )
         from sdn_its.llm.agent import investigate_case
         from sdn_its.llm.fixtures import load_incident
+        from sdn_its.llm.hackathon_guard import legacy_model_routes_disabled
+
+        if legacy_model_routes_disabled():
+            return legacy_disabled_response()
 
         data = request.get_json(force=True, silent=True) or {}
         mode = str(data.get("mode") or "offline")
         if mode not in {"offline", "real"}:
             return jsonify({"error": "mode must be offline|real"}), 400
-        demo_mode = bool(data.get("demo_mode", True))
+        safety = safety_from_body(data)
+        demo_mode = safety["demo_mode"]
         multi_step = bool(data.get("multi_step", False))
         if data.get("scenario_id"):
             from sdn_its.llm.scenarios import load_scenario
@@ -718,12 +771,10 @@ def register_routes(app: Flask) -> None:
             try:
                 incident = load_incident(f"{data['incident_id']}.json")
             except FileNotFoundError:
-                # allow bare id match
                 from sdn_its.llm.fixtures import load_all_incidents
 
                 hits = [i for i in load_all_incidents() if i["id"] == data["incident_id"]]
                 if not hits:
-                    # try scenario id
                     from sdn_its.llm.scenarios import load_scenario
 
                     try:
@@ -747,16 +798,30 @@ def register_routes(app: Flask) -> None:
                 "synthetic_model_output_raw": data.get("synthetic_model_output_raw"),
                 "expected": data.get("expected") or {},
             }
-        case = investigate_case(
-            incident,
-            mode=mode,  # type: ignore[arg-type]
-            demo_mode=demo_mode,
-            allow_containment_in_demo=bool(data.get("allow_containment_in_demo", False)),
-            multi_step=multi_step,
-        )
+        decision, reject = begin_real_if_needed(request, mode)
+        if reject is not None:
+            return reject
+        try:
+            case = investigate_case(
+                incident,
+                mode=mode,  # type: ignore[arg-type]
+                demo_mode=demo_mode,
+                allow_containment_in_demo=safety["allow_containment_in_demo"],
+                multi_step=multi_step,
+            )
+        except Exception:
+            finish_real(decision, failed=True)
+            raise
+        case_cost = None
+        if getattr(case, "metrics", None):
+            case_cost = case.metrics.get("estimated_cost_usd")
+        finish_real(decision, estimated_usd=case_cost)
         payload = case.to_dict()
         payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
         payload["multi_step"] = multi_step
+        payload["demo_mode"] = demo_mode
+        payload["allow_containment_in_demo"] = safety["allow_containment_in_demo"]
+        payload["server_policy_notes"] = safety["server_policy_notes"]
         if multi_step and isinstance((payload.get("nemotron") or {}).get("fusion"), dict):
             payload["investigation_trace"] = payload["nemotron"]["fusion"].get("trace")
         return jsonify(payload), 200
@@ -764,9 +829,10 @@ def register_routes(app: Flask) -> None:
     @app.route("/api/v1/hackathon/multistep", methods=["POST"])
     def hackathon_multistep():
         """Explicit multi-step investigation with full trace (mock OF)."""
+        from api.hackathon_enforce import begin_real_if_needed, finish_real, safety_from_body
         from sdn_its.llm.agent import run_rule_only
         from sdn_its.llm.audit_log import record_audit
-        from sdn_its.llm.hackathon_guard import get_inference_guard, resolve_demo_policy
+        from sdn_its.llm.hackathon_guard import get_inference_guard
         from sdn_its.llm.multi_step import run_multi_step_investigation
         from sdn_its.llm.scenarios import load_scenario
 
@@ -775,14 +841,11 @@ def register_routes(app: Flask) -> None:
         if mode not in {"offline", "real"}:
             return jsonify({"error": "mode must be offline|real", "detail": "malformed_mode"}), 400
 
-        # Server-enforced demo safety — client cannot disable on hosted/token deployments
-        demo_mode, allow_containment, policy_notes = resolve_demo_policy(
-            bool(data.get("demo_mode", True)),
-            bool(data.get("allow_containment_in_demo", False)),
-        )
-        apply_gate = True if policy_notes else bool(data.get("apply_gate", True))
-        if policy_notes:
-            apply_gate = True  # never skip gate when hosted policy is on
+        safety = safety_from_body(data)
+        demo_mode = safety["demo_mode"]
+        allow_containment = safety["allow_containment_in_demo"]
+        apply_gate = safety["apply_gate"]
+        policy_notes = safety["server_policy_notes"]
 
         sid = data.get("scenario_id") or data.get("incident_id")
         if sid is not None and not isinstance(sid, (str, int)):
@@ -811,26 +874,12 @@ def register_routes(app: Flask) -> None:
                 "camera": cam or {},
             }
 
-        guard = get_inference_guard()
-        client_key = request.headers.get("X-Forwarded-For") or request.remote_addr or "local"
-        reserved = False
-        if mode == "real":
-            decision = guard.check_real_allowed(str(client_key).split(",")[0].strip())
-            if not decision.ok:
-                resp = jsonify(
-                    {
-                        "error": decision.error,
-                        "detail": decision.detail,
-                        "ok": False,
-                        "evidence_class": "blocked_guard",
-                    }
-                )
-                resp.status_code = decision.status
-                for hk, hv in (decision.headers or {}).items():
-                    resp.headers[hk] = hv
-                return resp
-            reserved = True
+        decision, reject = begin_real_if_needed(request, mode)
+        if reject is not None:
+            return reject
 
+        guard = get_inference_guard()
+        ms = None
         try:
             rule = run_rule_only(incident)
             try:
@@ -842,8 +891,10 @@ def register_routes(app: Flask) -> None:
                     demo_mode=demo_mode,
                     allow_containment_in_demo=allow_containment,
                     rule_fusion=rule.fusion,
+                    max_model_calls=guard.max_model_calls(),
                 )
             except TimeoutError as exc:
+                finish_real(decision, failed=True)
                 return jsonify(
                     {
                         "ok": False,
@@ -860,12 +911,11 @@ def register_routes(app: Flask) -> None:
                         "server_policy_notes": policy_notes,
                     }
                 ), 502
-        finally:
-            if reserved:
-                guard.release_slot()
-
-        if mode == "real":
-            guard.record_spend(ms.estimated_cost_usd)
+        except Exception:
+            finish_real(decision, failed=True)
+            raise
+        else:
+            finish_real(decision, estimated_usd=ms.estimated_cost_usd if ms else None)
 
         payload = ms.to_dict()
         payload["rule"] = rule.to_dict()
@@ -873,11 +923,14 @@ def register_routes(app: Flask) -> None:
         payload["server_policy_notes"] = policy_notes
         payload["demo_mode"] = demo_mode
         payload["allow_containment_in_demo"] = allow_containment
+        payload["quota"] = {
+            "estimated_cost_usd": ms.estimated_cost_usd,
+            "note": "Application estimated spend; not provider-confirmed billing.",
+        }
         payload["product_story"] = (
             "A network traffic surge is not always an attack. "
             "Investigate physical context before making disruptive decisions."
         )
-        # Redact oversized traces in audit; keep operator summary
         record_audit(
             {
                 "source": "api_multistep",
@@ -889,8 +942,6 @@ def register_routes(app: Flask) -> None:
                 "mode": mode,
                 "pre_gate_source": ms.pre_gate_source,
                 "conclusion_kind": ms.conclusion_kind,
-                # Full tool/model traces stay in the response for the caller that already authed;
-                # audit store keeps a compact record to limit sensitive retention.
                 "trace_phases": [t.phase for t in ms.trace],
             }
         )

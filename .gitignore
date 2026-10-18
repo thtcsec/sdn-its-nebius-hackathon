@@ -108,6 +108,9 @@ Thumbs.db
 
 # Hackathon local evidence (regenerate with scripts)
 artifacts/hackathon/*_last.json
+artifacts/hackathon/quota/*.sqlite
+artifacts/hackathon/quota/*.sqlite-*
+!artifacts/hackathon/quota/.gitkeep
 
 
 .venv-judge/

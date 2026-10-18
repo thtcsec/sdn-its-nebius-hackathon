@@ -7,6 +7,7 @@ from flask import Flask
 from api.middleware import register_middleware
 from api.routes import register_routes
 from sdn_its.controller.rest_api import ResilienceSDNController
+from sdn_its.llm.hackathon_guard import HostedConfigError, validate_hosted_startup
 from sdn_its.utils.config import load_config
 from sdn_its.utils.env import ensure_repo_env
 from sdn_its.utils.paths import PROJECT_ROOT
@@ -28,6 +29,19 @@ def create_app(controller: ResilienceSDNController | None = None) -> Flask:
         controller = ResilienceSDNController(create_flask=False)
     controller.app = app
     app.extensions["sdn_controller"] = controller
+
+    # Fail closed before accepting traffic when SDN_HOSTED_DEMO=1
+    bind_host = getattr(controller, "host", None) or resolve_bind_host(None)
+    of_backend = getattr(controller, "of_backend_name", None) or "mock"
+    try:
+        validate_hosted_startup(bind_host=str(bind_host), of_backend=str(of_backend))
+    except HostedConfigError:
+        # Ensure lab threads are stopped if controller was created here
+        try:
+            controller.flow_mgr.stop()
+        except Exception:
+            pass
+        raise
 
     register_middleware(app)
     register_routes(app)

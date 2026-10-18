@@ -1,5 +1,5 @@
 {
-  "ts_utc": "2026-10-18T01:31:12.151113+00:00",
+  "ts_utc": "2026-10-18T01:41:39.695950+00:00",
   "base": "http://127.0.0.1:8080",
   "credentials_present": true,
   "checks": [
@@ -88,7 +88,7 @@
       "status": "PASS",
       "passed": true,
       "skipped": false,
-      "detail": "ec=real_api action=observe tools=['inspect_camera_metadata', 'compare_temporal_windows', 'identify_contradictions']",
+      "detail": "ec=real_api action=observe tools=['retrieve_network_telemetry', 'inspect_camera_metadata', 'compare_temporal_windows']",
       "bucket": "real_api"
     },
     {
