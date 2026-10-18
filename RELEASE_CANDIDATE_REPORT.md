@@ -26,13 +26,13 @@
 
 ---
 
-## 2. Remote / CI (fill after push)
+## 2. Remote / CI
 
 | Item | Value |
 |------|-------|
-| Remote commit SHA | _pending push_ |
-| GitHub Actions | _pending_ — job `hackathon-light` must be green |
-| Security pytest | 25 passed locally (`test_hackathon_security` + `test_product_ui` + `test_security`) |
+| Remote commit SHA | `b09799ab9195c9060bafd2713415d5ad36ddbb37` |
+| GitHub Actions | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39086866676 — **success** (`hackathon-light`, credential-free) |
+| Security pytest | 25 passed locally (`test_hackathon_security` + `test_product_ui` + `test_security`); included in CI |
 
 ---
 
