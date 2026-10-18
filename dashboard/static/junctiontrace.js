@@ -1,6 +1,7 @@
 /**
  * JunctionTrace product UI — Nebius × NVIDIA hackathon.
  * Never exposes NEBIUS_API_KEY. Never labels offline planner as live Nemotron.
+ * Untrusted API strings are applied via textContent only (no HTML interpolation).
  */
 (() => {
   const PRODUCT_SCENARIOS = [
@@ -14,9 +15,10 @@
     {
       id: "scenario_loft_stable",
       letter: "B",
-      title: "Credible cyberattack",
-      blurb: "Low-rate anomaly with a quiet, stable physical zone — proportionate response may be justified.",
-      why: "Quiet roads weaken the “just congestion” explanation.",
+      title: "Quiet zone + low-rate anomaly",
+      blurb:
+        "Rule-only often rate-limits. Investigation may still observe if evidence is thin — watch the full trace; model outcomes vary.",
+      why: "Quiet roads weaken a pure-congestion story, but uncertainty can still justify caution over hard contain.",
     },
     {
       id: "scenario_missing_camera",
@@ -48,32 +50,52 @@
     scenarioId: PRODUCT_SCENARIOS[0].id,
     capabilities: null,
     running: false,
+    judgeToken: "", // session memory only — never localStorage
   };
 
   const $ = (id) => document.getElementById(id);
 
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = String(text);
+    return node;
+  }
+
+  function clearChildren(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
   function setError(msg) {
-    const el = $("error-banner");
+    const banner = $("error-banner");
     if (!msg) {
-      el.classList.remove("show");
-      el.textContent = "";
+      banner.classList.remove("show");
+      banner.textContent = "";
       return;
     }
-    el.textContent = msg;
-    el.classList.add("show");
+    banner.textContent = msg;
+    banner.classList.add("show");
+  }
+
+  function authHeaders() {
+    const headers = { "Content-Type": "application/json" };
+    const tok = (state.judgeToken || "").trim();
+    if (tok) headers["X-API-Token"] = tok;
+    return headers;
   }
 
   function renderScenarios() {
     const grid = $("scenario-grid");
-    grid.innerHTML = "";
+    clearChildren(grid);
     for (const s of PRODUCT_SCENARIOS) {
-      const btn = document.createElement("button");
+      const btn = el("button", "scenario-card" + (s.id === state.scenarioId ? " selected" : ""));
       btn.type = "button";
-      btn.className = "scenario-card" + (s.id === state.scenarioId ? " selected" : "");
       btn.setAttribute("role", "option");
       btn.setAttribute("aria-selected", s.id === state.scenarioId ? "true" : "false");
       btn.dataset.id = s.id;
-      btn.innerHTML = `<div class="letter">Scenario ${s.letter}</div><h3>${s.title}</h3><p>${s.blurb}</p>`;
+      btn.appendChild(el("div", "letter", `Scenario ${s.letter}`));
+      btn.appendChild(el("h3", null, s.title));
+      btn.appendChild(el("p", null, s.blurb));
       btn.addEventListener("click", () => {
         state.scenarioId = s.id;
         renderScenarios();
@@ -89,7 +111,7 @@
     const realReady = Boolean(state.capabilities?.nebius_api_key_present);
     if (mode === "real" && !realReady) {
       $("mode-hint").textContent =
-        "Real Nebius requires a server-side NEBIUS_API_KEY. Credentials are not present — switch stays available but the call will fail closed.";
+        "Real Nebius requires a server-side NEBIUS_API_KEY. Credentials are not present — Real mode cannot produce live inference.";
     } else if (mode === "real") {
       $("mode-hint").textContent =
         "Real mode calls NVIDIA Nemotron via Nebius Token Factory. Offline planner results are never shown as live inference.";
@@ -114,6 +136,10 @@
       }
       $("cap-model").textContent = `Model: ${data.nebius_model || "Nemotron"}`;
       $("cap-of").textContent = `OpenFlow: ${data.of_backend_default || "mock"}`;
+      const tokenRow = $("token-row");
+      if (tokenRow) {
+        tokenRow.hidden = !data.api_token_required;
+      }
       setMode(state.mode);
     } catch (e) {
       $("cap-mode").textContent = "Capabilities unavailable";
@@ -122,8 +148,8 @@
   }
 
   function resetTimeline() {
-    document.querySelectorAll(".step").forEach((el) => {
-      el.classList.remove("active", "done");
+    document.querySelectorAll(".step").forEach((node) => {
+      node.classList.remove("active", "done");
     });
     for (let i = 1; i <= 7; i++) {
       const d = $(`d${i}`);
@@ -132,10 +158,10 @@
   }
 
   function activateStep(n, detail) {
-    document.querySelectorAll(".step").forEach((el) => {
-      const sn = Number(el.dataset.step);
-      el.classList.toggle("active", sn === n);
-      el.classList.toggle("done", sn < n);
+    document.querySelectorAll(".step").forEach((node) => {
+      const sn = Number(node.dataset.step);
+      node.classList.toggle("active", sn === n);
+      node.classList.toggle("done", sn < n);
     });
     const d = $(`d${n}`);
     if (d && detail != null) d.textContent = detail;
@@ -196,12 +222,22 @@
     return { label: "PASS", cls: "pass", detail: notes.length ? notes.join("; ") : "No policy clamp — advisory unchanged." };
   }
 
-  function evidenceClassBadge(ec) {
-    if (ec === "real_api") return '<span class="badge live">LIVE Nebius / real_api</span>';
-    if (ec === "deterministic_planner") return '<span class="badge offline">deterministic planner (offline)</span>';
-    if (ec === "validation_error") return '<span class="badge err">validation_error</span>';
-    if (ec === "blocked_no_credentials") return '<span class="badge err">blocked_no_credentials</span>';
-    return `<span class="badge">${ec || "unknown"}</span>`;
+  function appendBadge(parent, className, text) {
+    parent.appendChild(el("span", `badge ${className || ""}`.trim(), text));
+  }
+
+  function evidenceClassLabel(ec) {
+    if (ec === "real_api") return { cls: "live", text: "LIVE Nebius / real_api" };
+    if (ec === "deterministic_planner") return { cls: "offline", text: "deterministic planner (offline)" };
+    if (ec === "validation_error") return { cls: "err", text: "validation_error" };
+    if (ec === "blocked_no_credentials") return { cls: "err", text: "blocked_no_credentials" };
+    if (ec === "blocked_guard") return { cls: "err", text: "blocked_guard" };
+    return { cls: "", text: ec || "unknown" };
+  }
+
+  function addKv(dl, dtText, ddText) {
+    dl.appendChild(el("dt", null, dtText));
+    dl.appendChild(el("dd", null, ddText));
   }
 
   function renderResult(payload, scenarioMeta) {
@@ -218,42 +254,109 @@
     const usage = payload.usage || {};
     const tokens = usage.total_tokens != null ? `${usage.total_tokens} tokens` : "";
 
-    $("result-body").innerHTML = `
-      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.75rem">
-        ${evidenceClassBadge(payload.evidence_class)}
-        <span class="badge synth">synthetic camera metadata</span>
-        <span class="badge">OF ${payload.of_backend || "mock"}</span>
-        <span class="badge ${gate.cls}">gate ${gate.label}</span>
-      </div>
-      <dl class="kv">
-        <dt>Scenario</dt><dd>${scenarioMeta.title} (${scenarioMeta.id})</dd>
-        <dt>Network alarm</dt><dd>${bundle.network_prediction || "—"}</dd>
-        <dt>RSU / DPID</dt><dd>zone demo · dpid mock</dd>
-        <dt>Telemetry ΔPIN</dt><dd>${tel.packet_in_delta_pct ?? "—"} · dominance ${tel.source_dominance ?? "—"}</dd>
-        <dt>Camera</dt><dd>${cam.physical_label || "—"} / ${cam.activity_band || "—"} · tracks ${cam.visible_vehicle_tracks ?? "—"} · stale=${cam.stale}</dd>
-        <dt>Conclusion source</dt><dd>${source}</dd>
-        <dt>Latency / cost</dt><dd>${latency} · ${cost} ${tokens}</dd>
-      </dl>
-      <div class="outcome">
-        <div class="mode-hint">Recommended next action</div>
-        <p class="action">${rec.recommended_action || (payload.ok ? "—" : "fail-closed")}</p>
-        <p style="color:var(--muted);font-size:0.9rem;margin:0">${rec.rationale || payload.error || "No rationale."}</p>
-      </div>
-      <div class="compare">
-        <div class="mini">
-          <h4>Rule-only baseline</h4>
-          <strong>${rule.recommended_action || "—"}</strong>
-          <p style="margin:0.35rem 0 0;color:var(--muted);font-size:0.78rem">${rule.rationale || rule.evidence_class || ""}</p>
-        </div>
-        <div class="mini">
-          <h4>Investigation + gate</h4>
-          <strong>${rec.recommended_action || "—"}</strong>
-          <p style="margin:0.35rem 0 0;color:var(--muted);font-size:0.78rem">kind=${payload.conclusion_kind || "—"}</p>
-        </div>
-      </div>
-      <p style="margin:1rem 0 0;color:var(--muted);font-size:0.82rem"><strong>Why it matters:</strong> ${scenarioMeta.why}</p>
-      <p style="margin:0.5rem 0 0;color:var(--muted);font-size:0.78rem">Remaining uncertainty is recorded in the audit trail. No live switch containment is performed.</p>
-    `;
+    const root = $("result-body");
+    clearChildren(root);
+
+    const badges = el("div", "badge-row");
+    badges.style.display = "flex";
+    badges.style.flexWrap = "wrap";
+    badges.style.gap = "0.4rem";
+    badges.style.marginBottom = "0.75rem";
+    const ec = evidenceClassLabel(payload.evidence_class);
+    appendBadge(badges, ec.cls, ec.text);
+    appendBadge(badges, "synth", "synthetic camera metadata");
+    appendBadge(badges, "", `OF ${payload.of_backend || "mock"}`);
+    appendBadge(badges, gate.cls, `gate ${gate.label}`);
+    root.appendChild(badges);
+
+    const dl = el("dl", "kv");
+    addKv(dl, "Scenario", `${scenarioMeta.title} (${scenarioMeta.id})`);
+    addKv(dl, "Network alarm", String(bundle.network_prediction || "—"));
+    addKv(dl, "RSU / DPID", "zone demo · dpid mock");
+    addKv(
+      dl,
+      "Telemetry ΔPIN",
+      `${tel.packet_in_delta_pct ?? "—"} · dominance ${tel.source_dominance ?? "—"}`,
+    );
+    addKv(
+      dl,
+      "Camera",
+      `${cam.physical_label || "—"} / ${cam.activity_band || "—"} · tracks ${cam.visible_vehicle_tracks ?? "—"} · stale=${cam.stale}`,
+    );
+    addKv(dl, "Conclusion source", String(source));
+    addKv(dl, "Latency / cost", `${latency} · ${cost} ${tokens}`.trim());
+    root.appendChild(dl);
+
+    const outcome = el("div", "outcome");
+    outcome.appendChild(el("div", "mode-hint", "Recommended next action"));
+    outcome.appendChild(
+      el("p", "action", rec.recommended_action || (payload.ok ? "—" : "fail-closed")),
+    );
+    const rationale = el("p", "rationale");
+    rationale.style.color = "var(--muted)";
+    rationale.style.fontSize = "0.9rem";
+    rationale.style.margin = "0";
+    rationale.textContent = rec.rationale || payload.error || "No rationale.";
+    outcome.appendChild(rationale);
+    root.appendChild(outcome);
+
+    const compare = el("div", "compare");
+    const miniRule = el("div", "mini");
+    miniRule.appendChild(el("h4", null, "Rule-only baseline"));
+    miniRule.appendChild(el("strong", null, rule.recommended_action || "—"));
+    const ruleP = el("p", null, rule.rationale || rule.evidence_class || "");
+    ruleP.style.margin = "0.35rem 0 0";
+    ruleP.style.color = "var(--muted)";
+    ruleP.style.fontSize = "0.78rem";
+    miniRule.appendChild(ruleP);
+
+    const miniInv = el("div", "mini");
+    miniInv.appendChild(el("h4", null, "Investigation + gate"));
+    miniInv.appendChild(el("strong", null, rec.recommended_action || "—"));
+    const invP = el("p", null, `kind=${payload.conclusion_kind || "—"}`);
+    invP.style.margin = "0.35rem 0 0";
+    invP.style.color = "var(--muted)";
+    invP.style.fontSize = "0.78rem";
+    miniInv.appendChild(invP);
+
+    compare.appendChild(miniRule);
+    compare.appendChild(miniInv);
+    root.appendChild(compare);
+
+    const why = el("p", null, "");
+    why.style.margin = "1rem 0 0";
+    why.style.color = "var(--muted)";
+    why.style.fontSize = "0.82rem";
+    const whyStrong = el("strong", null, "Why it matters: ");
+    why.appendChild(whyStrong);
+    why.appendChild(document.createTextNode(scenarioMeta.why));
+    root.appendChild(why);
+
+    const foot = el(
+      "p",
+      null,
+      "Remaining uncertainty is recorded in the audit trail. No live switch containment is performed.",
+    );
+    foot.style.margin = "0.5rem 0 0";
+    foot.style.color = "var(--muted)";
+    foot.style.fontSize = "0.78rem";
+    root.appendChild(foot);
+  }
+
+  function renderErrorBody(msg) {
+    const root = $("result-body");
+    clearChildren(root);
+    appendBadge(root, "err", "error");
+    const p = el("p", null, msg);
+    p.style.marginTop = "0.75rem";
+    root.appendChild(p);
+    root.appendChild(
+      el(
+        "p",
+        "mode-hint",
+        "Offline planner or Real Nebius may fail closed on malformed output, missing credentials, rate limits, or budget exhaustion. No live containment is applied.",
+      ),
+    );
   }
 
   async function animateFromPayload(payload, scenarioMeta) {
@@ -298,7 +401,8 @@
 
     const rec = payload.recommendation || {};
     const src = payload.pre_gate_source || "—";
-    const fallback = src === "deterministic_fallback" ? "FALLBACK (not model conclude)" : "model/planner conclude path";
+    const fallback =
+      src === "deterministic_fallback" ? "FALLBACK (not model conclude)" : "model/planner conclude path";
     activateStep(
       5,
       `action=${rec.recommended_action || "none"}\nsource=${src}\n${fallback}\nlatency=${payload.latency_ms != null ? Math.round(payload.latency_ms) + " ms" : "—"}\n${rec.rationale || payload.error || ""}`,
@@ -313,9 +417,9 @@
       7,
       `advise=${rec.recommended_action || "fail-closed"}\nOF=${payload.of_backend || "mock"} (no live containment)\naudit recorded`,
     );
-    document.querySelectorAll(".step").forEach((el) => {
-      el.classList.add("done");
-      el.classList.remove("active");
+    document.querySelectorAll(".step").forEach((node) => {
+      node.classList.add("done");
+      node.classList.remove("active");
     });
     renderResult(payload, scenarioMeta);
   }
@@ -326,31 +430,46 @@
     state.running = true;
     $("btn-investigate").disabled = true;
     $("loading-state").hidden = false;
-    $("result-body").innerHTML = "";
+    clearChildren($("result-body"));
     resetTimeline();
     activateStep(1, "Starting…");
     document.getElementById("investigation-board").scrollIntoView({ behavior: "smooth", block: "start" });
 
     const scenarioMeta = PRODUCT_SCENARIOS.find((s) => s.id === state.scenarioId) || PRODUCT_SCENARIOS[0];
+    const tokInput = $("judge-token");
+    if (tokInput) state.judgeToken = tokInput.value || "";
 
     try {
       const r = await fetch("/api/v1/hackathon/multistep", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           scenario_id: state.scenarioId,
           mode: state.mode,
           demo_mode: true,
           apply_gate: true,
           include_camera: true,
-          allow_containment_in_demo: true,
+          // Hosted servers ignore client containment overrides; product UI never requests contain.
+          allow_containment_in_demo: false,
         }),
       });
       const payload = await r.json();
       $("loading-state").hidden = true;
 
+      if (r.status === 401) {
+        setError("Unauthorized — provide the judge API token when the server requires SDN_API_TOKEN.");
+        renderErrorBody(payload.detail || payload.error || "unauthorized");
+        return;
+      }
+      if (r.status === 429) {
+        setError(payload.detail || payload.error || "Rate limit or budget exhausted.");
+        renderErrorBody(payload.detail || payload.error || "rate_limited");
+        return;
+      }
+
       if (!r.ok && !payload.trace) {
         const msg =
+          payload.detail ||
           payload.error ||
           (r.status === 502
             ? "Investigation failed closed (validation / API). See details below."
@@ -358,15 +477,10 @@
         setError(msg);
         activateStep(5, msg);
         activateStep(7, "Operator: treat as fail-closed observe / escalate to human.");
-        $("result-body").innerHTML = `
-          <span class="badge err">error</span>
-          <p style="margin-top:0.75rem">${msg}</p>
-          <p class="mode-hint">Offline planner or Real Nebius may fail closed on malformed model output or missing credentials. No live containment is applied.</p>
-        `;
+        renderErrorBody(msg);
         return;
       }
 
-      // Honesty: if offline, never claim live
       if (state.mode === "offline" && payload.evidence_class === "real_api") {
         setError("Inconsistent labeling: offline mode returned real_api — treating display as error.");
       }
@@ -374,7 +488,9 @@
         setError("Real mode did not reach Nebius; showing labeled deterministic/fallback path.");
       }
       if (payload.evidence_class === "blocked_no_credentials") {
-        setError("NEBIUS_API_KEY unavailable on server — fail closed. Use Safe offline, or configure credentials server-side.");
+        setError(
+          "NEBIUS_API_KEY unavailable on server — fail closed. Use Safe offline, or configure credentials server-side.",
+        );
       }
       if (payload.evidence_class === "validation_error") {
         setError(`Model/schema validation failed: ${payload.error || "invalid recommendation"}`);

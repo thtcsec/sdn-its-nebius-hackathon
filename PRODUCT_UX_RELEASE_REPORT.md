@@ -64,7 +64,7 @@ Visual QA: landing and investigation boards inspected; mobile header chips compa
 
 1. Open `/` — state hero + Nebius/Nemotron chips + mock OF.  
 2. Select **C Missing / stale evidence** → **Safe offline** → Investigate — show tools + observe vs rule-only `rate_limit`.  
-3. Select **B Credible cyberattack** → **Real Nebius** → Investigate — show `LIVE Nebius / real_api`, tools, `nemotron_conclude`, latency/cost.  
+3. Select **B Quiet zone + low-rate anomaly** → **Real Nebius** → Investigate — show full trace (`LIVE Nebius / real_api` when credentials exist); do not overclaim a certain cyberattack — model may observe while rule-only rate-limits.  
 4. Optional: open `/research` once to show preserved lab (not the product).  
 5. Close: OpenFlow remains mock; camera synthetic; gate authoritative.
 

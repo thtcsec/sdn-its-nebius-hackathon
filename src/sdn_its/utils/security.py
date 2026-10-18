@@ -8,7 +8,8 @@ import socket
 from typing import Any
 from urllib.parse import urlparse
 
-# Mutating REST paths that can install rules / change lab settings.
+# Mutating REST paths that can install rules / change lab settings /
+# invoke Nebius (expensive) investigation.
 MUTATING_API_PREFIXES: tuple[str, ...] = (
     "/api/v1/anomaly_alert",
     "/api/v1/settings",
@@ -19,6 +20,14 @@ MUTATING_API_PREFIXES: tuple[str, ...] = (
     "/api/v1/flow",
     "/api/v1/rollback",
     "/api/v1/webhook",
+    "/api/v1/hackathon/multistep",
+    "/api/v1/hackathon/run",
+    "/api/v1/hackathon/investigate",
+)
+
+# Sensitive read paths — require SDN_API_TOKEN when configured.
+TOKEN_PROTECTED_GET_PREFIXES: tuple[str, ...] = (
+    "/api/v1/hackathon/audit",
 )
 
 
@@ -75,12 +84,26 @@ def token_ok(provided: str | None, expected: str | None) -> bool:
     return acc == 0
 
 
+def _path_matches(path: str, prefixes: tuple[str, ...]) -> bool:
+    p = path or ""
+    return any(p == pref or p.startswith(pref.rstrip("/") + "/") or p.startswith(pref) for pref in prefixes)
+
+
 def is_mutating_path(path: str, method: str) -> bool:
     m = (method or "GET").upper()
     if m in {"GET", "HEAD", "OPTIONS"}:
         return False
-    p = path or ""
-    return any(p == pref or p.startswith(pref.rstrip("/") + "/") or p.startswith(pref) for pref in MUTATING_API_PREFIXES)
+    return _path_matches(path, MUTATING_API_PREFIXES)
+
+
+def is_token_protected_path(path: str, method: str) -> bool:
+    """True when this request must present SDN_API_TOKEN if one is configured."""
+    m = (method or "GET").upper()
+    if is_mutating_path(path, method):
+        return True
+    if m in {"GET", "HEAD"} and _path_matches(path or "", TOKEN_PROTECTED_GET_PREFIXES):
+        return True
+    return False
 
 
 def _host_is_safe_webhook_target(hostname: str) -> bool:

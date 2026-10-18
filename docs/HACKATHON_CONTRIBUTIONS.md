@@ -21,7 +21,9 @@
 | Held-out oracle eval + fair ablation A/B/C/D | `scripts/run_heldout_eval.py`, `run_ablation_study.py` |
 | Judge / multi-step demo scripts | `scripts/run_judge_demo.py`, `run_multistep_demo.py` |
 | API: incidents / run / multistep / audit | `api/routes.py` (`/api/v1/hackathon/*`) |
-| Console investigation board + traces | `dashboard/templates/index.html` |
+| JunctionTrace product UI at `/` (research at `/research`) | `dashboard/templates/junctiontrace.html`, `static/junctiontrace.*` |
+| Hosted guards: token, rate, concurrency, daily budget, demo policy | `hackathon_guard.py`, `security.py`, middleware |
+| Console investigation board + traces | `dashboard/templates/index.html` (research) |
 | Evidence / audit docs | `HACKATHON_AUDIT.md`, `docs/JUDGE_DEMO.md`, `COMPETITION_DELTA_REPORT.md`, `artifacts/hackathon/` |
 
 ## Honesty constraints

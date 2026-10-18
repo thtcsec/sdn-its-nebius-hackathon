@@ -61,7 +61,7 @@ a:hover {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 @media (max-width: 640px) {
@@ -147,11 +147,11 @@ a:hover {
 /* —— Hero —— */
 .hero {
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 2rem;
-  align-items: end;
-  min-height: calc(900px - 220px);
-  padding-bottom: 1.5rem;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.25rem 1.75rem;
+  align-items: start;
+  min-height: 0;
+  padding-bottom: 0.75rem;
 }
 
 @media (max-width: 900px) {
@@ -173,25 +173,36 @@ a:hover {
 .hero h1 {
   font-family: var(--display);
   font-weight: 650;
-  font-size: clamp(2.1rem, 4vw, 3.25rem);
+  font-size: clamp(1.85rem, 3.4vw, 2.75rem);
   line-height: 1.12;
   letter-spacing: -0.03em;
-  margin: 0 0 1rem;
-  max-width: 16ch;
+  margin: 0 0 0.65rem;
+  max-width: 18ch;
 }
 
 .hero-lead {
   color: var(--muted);
-  font-size: 1.05rem;
-  max-width: 42ch;
-  margin: 0 0 1.5rem;
+  font-size: 0.98rem;
+  max-width: 48ch;
+  margin: 0 0 1rem;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.token-input {
+  width: min(420px, 100%);
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  font-size: 0.85rem;
 }
 
 .btn {
@@ -287,7 +298,7 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.85rem;
-  margin: 0.5rem 0 2rem;
+  margin: 0.35rem 0 1.25rem;
 }
 
 @media (max-width: 960px) {

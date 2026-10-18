@@ -1,61 +1,127 @@
 {
-  "ts_utc": "2026-10-15T16:43:31.292947+00:00",
+  "ts_utc": "2026-10-18T01:31:12.151113+00:00",
   "base": "http://127.0.0.1:8080",
+  "credentials_present": true,
   "checks": [
     {
       "name": "fresh_root_product",
+      "status": "PASS",
       "passed": true,
-      "detail": "JunctionTrace \u2014 Incident Investigator"
+      "skipped": false,
+      "detail": "JunctionTrace \u2014 Incident Investigator",
+      "bucket": "deterministic"
     },
     {
       "name": "hero_problem",
+      "status": "PASS",
       "passed": true,
-      "detail": "A traffic surge is not always an attack."
+      "skipped": false,
+      "detail": "A traffic surge is not always an attack.",
+      "bucket": "deterministic"
     },
     {
       "name": "cta_present",
+      "status": "PASS",
       "passed": true,
-      "detail": ""
+      "skipped": false,
+      "detail": "",
+      "bucket": "deterministic"
     },
     {
       "name": "scenario_selector",
+      "status": "PASS",
       "passed": true,
-      "detail": ""
+      "skipped": false,
+      "detail": "count=4",
+      "bucket": "deterministic"
     },
     {
       "name": "no_tsinghua_iede",
+      "status": "PASS",
       "passed": true,
-      "detail": ""
+      "skipped": false,
+      "detail": "",
+      "bucket": "deterministic"
+    },
+    {
+      "name": "scenarios_in_first_viewport",
+      "status": "PASS",
+      "passed": true,
+      "skipped": false,
+      "detail": "y=528.5",
+      "bucket": "deterministic"
+    },
+    {
+      "name": "scenario_b_honest_label",
+      "status": "PASS",
+      "passed": true,
+      "skipped": false,
+      "detail": "Quiet zone + low-rate anomaly",
+      "bucket": "deterministic"
     },
     {
       "name": "offline_not_labeled_live",
+      "status": "PASS",
       "passed": true,
-      "detail": "deterministic planner (offline)\nsynthetic camera metadata\nOF mock\ngate PASS\nScenario\nMissing / stale evidence (scenario_missing_camera)\nNetwork alarm\nDDoS_PacketIn_Flood\nRSU / DPID\nzone demo \u00b7 dpid mo"
+      "skipped": false,
+      "detail": "deterministic planner (offline)\nsynthetic camera metadata\nOF mock\ngate PASS\nScenario\nMissing / stale evidence (scenario_missing_camera)\nNetwork alarm\nDDoS_PacketIn_Flood\nRSU / DPID\nzone demo \u00b7 dpid mo",
+      "bucket": "deterministic"
     },
     {
       "name": "timeline_has_detail",
+      "status": "PASS",
       "passed": true,
-      "detail": ""
+      "skipped": false,
+      "detail": "",
+      "bucket": "deterministic"
+    },
+    {
+      "name": "congestion_case_offline",
+      "status": "PASS",
+      "passed": true,
+      "skipped": false,
+      "detail": "deterministic planner (offline)\nsynthetic camera metadata\nOF mock\ngate PASS\nScenario\nLegitimate congestion (scenario_rush_vs_attack)\nNetwork alarm\nDDoS_PacketIn_Flood\nRSU / DPID\nzo",
+      "bucket": "deterministic"
     },
     {
       "name": "real_nebius_path",
+      "status": "PASS",
       "passed": true,
-      "detail": "LIVE Nebius / real_api\nsynthetic camera metadata\nOF mock\ngate PASS\nScenario\nCredible cyberattack (scenario_loft_stable)\nNetwork alarm\nLOFT_LowRate_Attack\nRSU / DPID\nzone demo \u00b7 dpid mock\nTelemetry \u0394PIN\n38 \u00b7 dominance 0.7"
+      "skipped": false,
+      "detail": "ec=real_api action=observe tools=['inspect_camera_metadata', 'compare_temporal_windows', 'identify_contradictions']",
+      "bucket": "real_api"
     },
     {
       "name": "research_preserved",
+      "status": "PASS",
       "passed": true,
-      "detail": ""
+      "skipped": false,
+      "detail": "",
+      "bucket": "deterministic"
     },
     {
       "name": "mobile_cta_visible",
+      "status": "PASS",
       "passed": true,
-      "detail": ""
+      "skipped": false,
+      "detail": "box={'x': 10, 'y': 430.984375, 'width': 190, 'height': 53.1875}",
+      "bucket": "deterministic"
     },
     {
       "name": "malformed_fail_closed_api",
+      "status": "PASS",
       "passed": true,
-      "detail": "{'status': 502, 'body': {'apply_gate': True, 'bundle': {'camera': {'activity_band': 'low', 'analytics_valid': True, 'context_source': 'synthetic_fixture', 'incident': False, 'is_vehicle_count': True, 'pedestrian_present': False, 'physical_l"
+      "skipped": false,
+      "detail": "{'status': 502, 'body': {'allow_containment_in_demo': False, 'apply_gate': True, 'bundle': {'camera': {'activity_band': 'low', 'analytics_valid': True, 'context_source': 'synthetic_fixture', 'incident': False, 'is_vehicle_count': True, 'ped",
+      "bucket": "mocked"
+    },
+    {
+      "name": "dom_xss_textcontent_safe",
+      "status": "PASS",
+      "passed": true,
+      "skipped": false,
+      "detail": "no_innerHTML=True probe={'hasScriptChild': False, 'hasImg': False, 'textHas': True, 'execFlag': False}",
+      "bucket": "mocked"
     }
   ],
   "screenshots": [
@@ -66,7 +132,35 @@
     "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\05_research_1440x900.png",
     "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\hackathon\\product_screens\\06_mobile_390x844.png"
   ],
+  "summary": {
+    "mandatory_pass": 15,
+    "mandatory_fail": 0,
+    "skipped_or_not_run": 0,
+    "total": 15,
+    "by_bucket": {
+      "deterministic": {
+        "PASS": 12,
+        "FAIL": 0,
+        "SKIPPED": 0,
+        "NOT_RUN": 0
+      },
+      "real_api": {
+        "PASS": 1,
+        "FAIL": 0,
+        "SKIPPED": 0,
+        "NOT_RUN": 0
+      },
+      "mocked": {
+        "PASS": 2,
+        "FAIL": 0,
+        "SKIPPED": 0,
+        "NOT_RUN": 0
+      }
+    }
+  },
   "passed": true,
-  "pass_count": 11,
-  "total": 11
+  "pass_count": 15,
+  "fail_count": 0,
+  "skip_count": 0,
+  "total": 15
 }

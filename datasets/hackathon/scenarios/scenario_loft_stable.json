@@ -1,7 +1,7 @@
 {
   "id": "scenario_loft_stable",
-  "title": "Low-rate anomaly with stable physical zone",
-  "story": "Stable camera metadata supports soft rate-limit after tools corroborate quiet roadway.",
+  "title": "Quiet zone + low-rate anomaly (investigate before contain)",
+  "story": "Quiet physical context weakens a congestion excuse, but evidence may still be thin — rule-only often rate-limits; investigation can observe or soft-contain. Model outcomes vary; read the full trace.",
   "network_prediction": "LOFT_LowRate_Attack",
   "dpid": "1",
   "src_ip": "10.0.9.31",

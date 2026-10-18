@@ -151,9 +151,12 @@ def register_routes(app: Flask) -> None:
     @app.route("/api/v1/hackathon/capabilities", methods=["GET"])
     def hackathon_capabilities():
         """Non-secret capability flags for the product UI (never returns API keys)."""
+        from sdn_its.llm.hackathon_guard import get_inference_guard, hosted_demo_enforced
         from sdn_its.utils.env import nebius_config_summary
+        from sdn_its.utils.security import api_token
 
         cfg = nebius_config_summary()
+        guard = get_inference_guard().snapshot()
         return jsonify(
             {
                 "product": "JunctionTrace",
@@ -162,9 +165,18 @@ def register_routes(app: Flask) -> None:
                 "of_backend_default": "mock",
                 "camera_label": "synthetic_metadata_only",
                 "modes": ["offline", "real"],
+                "api_token_required": bool(api_token()),
+                "hosted_demo_enforced": hosted_demo_enforced(),
+                "budget": {
+                    "daily_budget_usd": guard["daily_budget_usd"],
+                    "spent_usd": guard["spent_usd"],
+                    "rate_limit_per_min": guard["rate_limit_per_min"],
+                    "max_concurrent_real": guard["max_concurrent_real"],
+                },
                 "note": (
                     "Offline uses a deterministic planner. Real mode calls Nebius Token Factory "
-                    "only when NEBIUS_API_KEY is configured server-side."
+                    "only when NEBIUS_API_KEY is configured server-side. "
+                    "NEBIUS_API_KEY is never sent to the browser."
                 ),
             }
         ), 200
@@ -754,14 +766,27 @@ def register_routes(app: Flask) -> None:
         """Explicit multi-step investigation with full trace (mock OF)."""
         from sdn_its.llm.agent import run_rule_only
         from sdn_its.llm.audit_log import record_audit
+        from sdn_its.llm.hackathon_guard import get_inference_guard, resolve_demo_policy
         from sdn_its.llm.multi_step import run_multi_step_investigation
         from sdn_its.llm.scenarios import load_scenario
 
         data = request.get_json(force=True, silent=True) or {}
         mode = str(data.get("mode") or "offline")
         if mode not in {"offline", "real"}:
-            return jsonify({"error": "mode must be offline|real"}), 400
+            return jsonify({"error": "mode must be offline|real", "detail": "malformed_mode"}), 400
+
+        # Server-enforced demo safety — client cannot disable on hosted/token deployments
+        demo_mode, allow_containment, policy_notes = resolve_demo_policy(
+            bool(data.get("demo_mode", True)),
+            bool(data.get("allow_containment_in_demo", False)),
+        )
+        apply_gate = True if policy_notes else bool(data.get("apply_gate", True))
+        if policy_notes:
+            apply_gate = True  # never skip gate when hosted policy is on
+
         sid = data.get("scenario_id") or data.get("incident_id")
+        if sid is not None and not isinstance(sid, (str, int)):
+            return jsonify({"error": "malformed_input", "detail": "scenario_id must be a string"}), 400
         if sid:
             try:
                 incident = load_scenario(str(sid))
@@ -773,29 +798,86 @@ def register_routes(app: Flask) -> None:
                     return jsonify({"error": f"unknown id {sid}"}), 404
                 incident = hits[0]
         else:
+            tel = data.get("telemetry")
+            cam = data.get("camera")
+            if tel is not None and not isinstance(tel, dict):
+                return jsonify({"error": "malformed_input", "detail": "telemetry must be an object"}), 400
+            if cam is not None and not isinstance(cam, dict):
+                return jsonify({"error": "malformed_input", "detail": "camera must be an object"}), 400
             incident = {
                 "id": data.get("id") or "inline",
                 "network_prediction": data.get("network_prediction") or "Normal",
-                "telemetry": data.get("telemetry") or {},
-                "camera": data.get("camera") or {},
+                "telemetry": tel or {},
+                "camera": cam or {},
             }
-        rule = run_rule_only(incident)
-        ms = run_multi_step_investigation(
-            incident,
-            mode=mode,  # type: ignore[arg-type]
-            include_camera=bool(data.get("include_camera", True)),
-            apply_gate=bool(data.get("apply_gate", True)),
-            demo_mode=bool(data.get("demo_mode", True)),
-            allow_containment_in_demo=bool(data.get("allow_containment_in_demo", False)),
-            rule_fusion=rule.fusion,
-        )
+
+        guard = get_inference_guard()
+        client_key = request.headers.get("X-Forwarded-For") or request.remote_addr or "local"
+        reserved = False
+        if mode == "real":
+            decision = guard.check_real_allowed(str(client_key).split(",")[0].strip())
+            if not decision.ok:
+                resp = jsonify(
+                    {
+                        "error": decision.error,
+                        "detail": decision.detail,
+                        "ok": False,
+                        "evidence_class": "blocked_guard",
+                    }
+                )
+                resp.status_code = decision.status
+                for hk, hv in (decision.headers or {}).items():
+                    resp.headers[hk] = hv
+                return resp
+            reserved = True
+
+        try:
+            rule = run_rule_only(incident)
+            try:
+                ms = run_multi_step_investigation(
+                    incident,
+                    mode=mode,  # type: ignore[arg-type]
+                    include_camera=bool(data.get("include_camera", True)),
+                    apply_gate=apply_gate,
+                    demo_mode=demo_mode,
+                    allow_containment_in_demo=allow_containment,
+                    rule_fusion=rule.fusion,
+                )
+            except TimeoutError as exc:
+                return jsonify(
+                    {
+                        "ok": False,
+                        "error": "timeout",
+                        "detail": str(exc) or "Investigation timed out before model completion.",
+                        "evidence_class": "validation_error",
+                        "recommendation": {
+                            "recommended_action": "observe",
+                            "rationale": "Fail-closed: investigation timed out; no containment advised.",
+                        },
+                        "of_backend": getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
+                        or "mock",
+                        "demo_mode": demo_mode,
+                        "server_policy_notes": policy_notes,
+                    }
+                ), 502
+        finally:
+            if reserved:
+                guard.release_slot()
+
+        if mode == "real":
+            guard.record_spend(ms.estimated_cost_usd)
+
         payload = ms.to_dict()
         payload["rule"] = rule.to_dict()
-        payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock")
+        payload["of_backend"] = getattr(app.extensions["sdn_controller"], "of_backend_name", "mock") or "mock"
+        payload["server_policy_notes"] = policy_notes
+        payload["demo_mode"] = demo_mode
+        payload["allow_containment_in_demo"] = allow_containment
         payload["product_story"] = (
             "A network traffic surge is not always an attack. "
             "Investigate physical context before making disruptive decisions."
         )
+        # Redact oversized traces in audit; keep operator summary
         record_audit(
             {
                 "source": "api_multistep",
@@ -804,7 +886,12 @@ def register_routes(app: Flask) -> None:
                 "evidence_class": ms.evidence_class,
                 "tool_calls": ms.tool_calls,
                 "gated_notes": ms.gated_notes,
-                "trace": [t.to_dict() for t in ms.trace],
+                "mode": mode,
+                "pre_gate_source": ms.pre_gate_source,
+                "conclusion_kind": ms.conclusion_kind,
+                # Full tool/model traces stay in the response for the caller that already authed;
+                # audit store keeps a compact record to limit sensitive retention.
+                "trace_phases": [t.phase for t in ms.trace],
             }
         )
         return jsonify(payload), 200 if ms.ok else 502
@@ -814,5 +901,6 @@ def register_routes(app: Flask) -> None:
         from sdn_its.llm.audit_log import list_audit
 
         limit = request.args.get("limit", 40, type=int)
-        return jsonify({"audit": list_audit(limit=limit or 40)}), 200
+        # Compact audit only (no full model transcripts). Token enforced by middleware when configured.
+        return jsonify({"audit": list_audit(limit=min(limit or 40, 100))}), 200
 

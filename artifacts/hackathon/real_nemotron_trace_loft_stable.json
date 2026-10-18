@@ -1,0 +1,229 @@
+{
+  "incident_id": "scenario_loft_stable",
+  "evidence_class": "real_api",
+  "conclusion_kind": "nemotron_conclude",
+  "pre_gate_source": "nemotron_conclude",
+  "recommendation": {
+    "recommended_action": "observe",
+    "final_risk": "low",
+    "rationale": "Telemetry shows a surge but camera metadata indicates stable, low-activity conditions with no safety-critical events; no contradictions or safety concerns are evident, so monitoring is appropriate.",
+    "policy_attack_type": null,
+    "cooldown_seconds": 30.0,
+    "false_positive_corrected": false,
+    "safety_critical": false,
+    "confidence": 0.7,
+    "evidence_notes": [
+      "Telemetry: packet_in_delta_pct=38.0, source_dominance=0.78, distributed_sources=False",
+      "Camera: physical_label=stable, activity_band=low, visible_vehicle_tracks=2, queue_length_proxy_m=4.0, pedestrian_present=False, incident=False",
+      "Temporal compare: surge_vs_baseline=True, delta_packet_in_pct_points=28.5"
+    ],
+    "schema_version": "hackathon_mitigation_v1"
+  },
+  "rule": {
+    "recommended_action": "rate_limit",
+    "evidence_class": "deterministic_rules"
+  },
+  "tool_calls": 3,
+  "gated_notes": [],
+  "latency_ms": 10368.886700000076,
+  "estimated_cost_usd": 0.00112524,
+  "usage": {
+    "prompt_tokens": 10134,
+    "completion_tokens": 2155,
+    "total_tokens": 12289
+  },
+  "of_backend": "mock",
+  "trace": [
+    {
+      "phase": "detect",
+      "detail": {
+        "network_prediction": "LOFT_LowRate_Attack",
+        "incident_id": "scenario_loft_stable",
+        "include_camera": true
+      }
+    },
+    {
+      "phase": "identify_uncertainty",
+      "detail": {
+        "uncertainties": [
+          "anomaly_requires_physical_context",
+          "no_temporal_baseline_yet"
+        ]
+      }
+    },
+    {
+      "phase": "select_evidence_tool",
+      "detail": {
+        "tool": "retrieve_network_telemetry",
+        "tool_model_round": 1,
+        "max_tool_model_calls": 3
+      }
+    },
+    {
+      "phase": "retrieve_validate",
+      "detail": {
+        "tool": "retrieve_network_telemetry",
+        "ok": true,
+        "summary": "Telemetry window retrieved for LOFT_LowRate_Attack: \u0394PacketIn=38.0% dominance=0.78 distributed=False",
+        "data": {
+          "telemetry": {
+            "context_source": "scenario_synthetic",
+            "packet_in_delta_pct": 38.0,
+            "source_dominance": 0.78,
+            "distributed_sources": false,
+            "window_id": "scen-loft-1"
+          },
+          "network_prediction": "LOFT_LowRate_Attack",
+          "sanitize_issues": []
+        },
+        "evidence_notes": [
+          "window=scen-loft-1",
+          "packet_in_delta_pct=38.0",
+          "source_dominance=0.78",
+          "distributed_sources=False",
+          "network_prediction=LOFT_LowRate_Attack"
+        ]
+      }
+    },
+    {
+      "phase": "select_evidence_tool",
+      "detail": {
+        "tool": "inspect_camera_metadata",
+        "tool_model_round": 2,
+        "max_tool_model_calls": 3
+      }
+    },
+    {
+      "phase": "retrieve_validate",
+      "detail": {
+        "tool": "inspect_camera_metadata",
+        "ok": true,
+        "summary": "Same-zone camera metadata: label=stable band=low tracks=2 (metadata only; not live RTSP inference)",
+        "data": {
+          "camera": {
+            "context_source": "scenario_synthetic_metadata",
+            "physical_label": "stable",
+            "activity_band": "low",
+            "visible_vehicle_tracks": 2,
+            "queue_length_proxy_m": 4.0,
+            "is_vehicle_count": true,
+            "vehicle_count_is_real": true,
+            "stream_available": true,
+            "analytics_valid": true,
+            "stale": false,
+            "pedestrian_present": false,
+            "incident": false
+          }
+        },
+        "evidence_notes": [
+          "physical_label=stable",
+          "activity_band=low",
+          "tracks=2",
+          "queue_m=4.0",
+          "context_source=scenario_synthetic_metadata",
+          "not_live_rtsp_claim"
+        ]
+      }
+    },
+    {
+      "phase": "select_evidence_tool",
+      "detail": {
+        "tool": "compare_temporal_windows",
+        "tool_model_round": 3,
+        "max_tool_model_calls": 3
+      }
+    },
+    {
+      "phase": "retrieve_validate",
+      "detail": {
+        "tool": "compare_temporal_windows",
+        "ok": true,
+        "summary": "Temporal compare: \u0394PacketIn vs prior = 28.5 pp; surge=True",
+        "data": {
+          "current": {
+            "context_source": "scenario_synthetic",
+            "packet_in_delta_pct": 38.0,
+            "source_dominance": 0.78,
+            "distributed_sources": false,
+            "window_id": "scen-loft-1"
+          },
+          "prior": {
+            "window_id": "prior_synthetic_baseline",
+            "packet_in_delta_pct": 9.5,
+            "source_dominance": 0.35,
+            "distributed_sources": true,
+            "context_source": "synthetic_temporal_baseline"
+          },
+          "delta_packet_in_pct_points": 28.5,
+          "surge_vs_baseline": true,
+          "baseline_note": "Prior window may be fixture-synthesized when history absent.",
+          "sanitize_issues": []
+        },
+        "evidence_notes": [
+          "temporal_delta_pp=28.5",
+          "surge=True"
+        ]
+      }
+    },
+    {
+      "phase": "final_reason_prompt",
+      "detail": {
+        "reserved_conclude": true,
+        "tool_calls": 3
+      }
+    },
+    {
+      "phase": "reason",
+      "detail": {
+        "conclude_parse_error": "could not parse JSON object: Expecting value: line 1 column 1 (char 0)",
+        "attempt": 0,
+        "preview": "We need to produce a JSON with action=conclude and recommendation fields as specified. Must include recommended_action exactly one of the allowed strings, final"
+      }
+    },
+    {
+      "phase": "reason",
+      "detail": {
+        "source": "nemotron_conclude",
+        "phase": "reserved_final_reason",
+        "preview": {
+          "recommended_action": "observe",
+          "final_risk": "low",
+          "rationale": "Telemetry shows a surge but camera metadata indicates stable, low-activity conditions with no safety-critical events; no contradictions or safety concerns are evident, so monitoring is appropriate.",
+          "policy_attack_type": null,
+          "cooldown_seconds": 30.0,
+          "false_positive_corrected": false,
+          "safety_critical": false,
+          "confidence": 0.7,
+          "evidence_notes": [
+            "Telemetry: packet_in_delta_pct=38.0, source_dominance=0.78, distributed_sources=False",
+            "Camera: physical_label=stable, activity_band=low, visible_vehicle_tracks=2, queue_length_proxy_m=4.0, pedestrian_present=False, incident=False",
+            "Temporal compare: surge_vs_baseline=True, delta_packet_in_pct_points=28.5"
+          ],
+          "schema_version": "hackathon_mitigation_v1"
+        },
+        "tool_calls_before_conclude": 3,
+        "repair_attempt": 1
+      }
+    },
+    {
+      "phase": "policy_gate",
+      "detail": {
+        "gated_notes": [],
+        "apply_gate": true,
+        "pre_gate_action": "observe",
+        "action": "observe",
+        "conclusion_kind": "nemotron_conclude"
+      }
+    },
+    {
+      "phase": "audit",
+      "detail": {
+        "evidence_class": "real_api",
+        "tool_calls": 3,
+        "conclusion_kind": "nemotron_conclude",
+        "pre_gate_source": "nemotron_conclude"
+      }
+    }
+  ],
+  "ok": true
+}

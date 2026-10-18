@@ -21,9 +21,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install "python-dotenv>=1.0" "requests>=2.31" "pyyaml>=6" "Flask>=2.3" "pytest>=7"
-      - name: Hackathon light regression
+      - name: Hackathon light regression (credential-free)
         env:
           PYTHONPATH: src:.
+          # Ensure CI never treats missing Nebius keys as success for real_api paths
+          NEBIUS_API_KEY: ""
         run: |
           pytest -q \
             tests/test_hackathon_agent.py \
@@ -33,4 +35,11 @@ jobs:
             tests/test_paired_gate.py \
             tests/test_input_sanitize.py \
             tests/test_schema_repair.py \
-            tests/test_product_ui.py
+            tests/test_product_ui.py \
+            tests/test_hackathon_security.py \
+            tests/test_security.py
+      - name: Note on credential-dependent checks
+        run: |
+          echo "Credential-free CI: pytest security + offline planner paths."
+          echo "Credential-dependent: scripts/e2e_product_ui.py real_nebius_path → SKIPPED without NEBIUS_API_KEY."
+          echo "Do not treat SKIPPED real_api as PASS."

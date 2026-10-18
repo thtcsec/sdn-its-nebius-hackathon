@@ -11,6 +11,7 @@ from sdn_its.utils.security import (
     api_token,
     extract_request_token,
     is_mutating_path,
+    is_token_protected_path,
     require_api_token_for_lan,
     security_headers,
     token_ok,
@@ -27,13 +28,14 @@ def register_middleware(app: Flask) -> None:
         expected = api_token()
         ctrl = app.extensions.get("sdn_controller")
         host = getattr(ctrl, "host", None) or os.environ.get("SDN_BIND_HOST") or "127.0.0.1"
+        protected = is_token_protected_path(request.path, request.method)
         # Token required when configured; also strongly recommended when LAN-bound.
         if not expected:
             if require_api_token_for_lan(str(host)) and is_mutating_path(request.path, request.method):
                 # Soft-allow but stamp header so operators notice in status/logs once.
                 g.lan_token_missing = True
             return None
-        if not is_mutating_path(request.path, request.method):
+        if not protected:
             return None
         provided = extract_request_token(request.headers)
         if token_ok(provided, expected):
@@ -41,7 +43,10 @@ def register_middleware(app: Flask) -> None:
         return jsonify(
             {
                 "error": "unauthorized",
-                "detail": "Set Authorization: Bearer <SDN_API_TOKEN> or X-API-Token for mutating API calls.",
+                "detail": (
+                    "Set Authorization: Bearer <SDN_API_TOKEN> or X-API-Token for "
+                    "protected hackathon / mutating API calls."
+                ),
             }
         ), 401
 
