@@ -8,11 +8,13 @@
 
 | Field | Value |
 |-------|--------|
-| MP4 | `artifacts/demo_video/junctiontrace_judge_demo.mp4` |
-| WebM | `artifacts/demo_video/junctiontrace_judge_demo.webm` |
-| Duration | **~167.8 s** (~2:48) |
-| Meta | `artifacts/demo_video/junctiontrace_judge_demo_meta.json` |
+| MP4 (with English VO) | `artifacts/demo_video/junctiontrace_judge_demo_with_audio.mp4` |
+| WAV voiceover | `artifacts/demo_video/junctiontrace_voiceover.wav` |
+| Media verify | `artifacts/demo_video/media_verify.json` — A/V present, **~167.8 s**, names NVIDIA Nemotron + Nebius Token Factory |
+| WebM / silent intermediate | `junctiontrace_judge_demo.webm` / `.mp4` (do not publish silent file) |
 | YouTube package | `artifacts/demo_video/YOUTUBE_PACKAGE.md` |
+
+Mux: `python scripts/mux_demo_voiceover.py` (Windows SAPI English VO; no ffmpeg `-an` on final).
 
 ## How it was recorded
 

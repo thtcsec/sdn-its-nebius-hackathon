@@ -50,9 +50,11 @@ def _duration_seconds(path: Path) -> float | None:
 
 
 def _to_mp4(webm: Path, mp4: Path) -> bool:
+    """Video-only intermediate. Final competition file must use mux_demo_voiceover.py (with audio)."""
     if not shutil.which("ffmpeg"):
         return False
     try:
+        # Keep any source audio if present; do NOT force -an.
         subprocess.check_call(
             [
                 "ffmpeg",
@@ -63,7 +65,10 @@ def _to_mp4(webm: Path, mp4: Path) -> bool:
                 "libx264",
                 "-pix_fmt",
                 "yuv420p",
-                "-an",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "128k",
                 "-movflags",
                 "+faststart",
                 str(mp4),
@@ -73,7 +78,28 @@ def _to_mp4(webm: Path, mp4: Path) -> bool:
         )
         return mp4.is_file()
     except Exception:
-        return False
+        # Playwright webm often has no audio stream — fall back to video-only encode.
+        try:
+            subprocess.check_call(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    str(webm),
+                    "-c:v",
+                    "libx264",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-movflags",
+                    "+faststart",
+                    str(mp4),
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return mp4.is_file()
+        except Exception:
+            return False
 
 
 def main() -> int:

@@ -79,9 +79,37 @@ class TestHostedStartup(unittest.TestCase):
         with self.assertRaises(HostedConfigError):
             validate_hosted_startup(bind_host="0.0.0.0", of_backend="mock")
 
+    def test_env_example_placeholder_token_rejected(self):
+        """P0: literal from deploy/judge/.env.example must never pass."""
+        placeholder = "replace-with-32plus-char-random-token"
+        self.assertFalse(token_is_secure(placeholder))
+        os.environ["SDN_HOSTED_DEMO"] = "1"
+        os.environ["SDN_API_TOKEN"] = placeholder
+        with self.assertRaises(HostedConfigError) as ctx:
+            validate_hosted_startup(bind_host="0.0.0.0", of_backend="mock")
+        self.assertIn("strong SDN_API_TOKEN", str(ctx.exception))
+
+    def test_template_fragment_tokens_rejected(self):
+        for bad in (
+            "replace-with-32plus-char-random-token",
+            "your-sdn-api-token-here-XXXX",
+            "this-is-an-example-token-99",
+            "placeholder-secret-value1",
+            "aaaaaaaaaaaaaaaa",  # low entropy
+        ):
+            self.assertFalse(token_is_secure(bad), bad)
+
+    def test_strong_random_token_accepted(self):
+        good = "Jt7kQ9mX2pL4vN8wR3sY6zA1bC5dE0fH"
+        self.assertTrue(token_is_secure(good))
+        os.environ["SDN_HOSTED_DEMO"] = "1"
+        os.environ["SDN_API_TOKEN"] = good
+        os.environ["SDN_OF_BACKEND"] = "mock"
+        validate_hosted_startup(bind_host="0.0.0.0", of_backend="mock")
+
     def test_non_mock_of_refuses_start(self):
         os.environ["SDN_HOSTED_DEMO"] = "1"
-        os.environ["SDN_API_TOKEN"] = "judge-token-secure-01"
+        os.environ["SDN_API_TOKEN"] = "Jt7kQ9mX2pL4vN8wR3sY6zA1bC5dE0fH"
         with self.assertRaises(HostedConfigError):
             validate_hosted_startup(bind_host="0.0.0.0", of_backend="ryu")
 

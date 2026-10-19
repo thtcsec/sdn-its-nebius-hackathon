@@ -37,7 +37,29 @@ _INSECURE_TOKENS = frozenset(
         "junctiontrace",
         "jt",
         "1234567890123456",
+        # Exact copy-paste values from deploy/judge/.env.example (and cousins)
+        "replace-with-32plus-char-random-token",
+        "replace-with-a-strong-random-token",
+        "your-sdn-api-token-here",
+        "changeme-changeme-12",
     }
+)
+
+# Substrings that mark documentation / template secrets (case-insensitive)
+_INSECURE_TOKEN_FRAGMENTS = (
+    "replace-with",
+    "replace_with",
+    "your-",
+    "your_",
+    "example",
+    "placeholder",
+    "changeme",
+    "todo",
+    "xxx",
+    "dummy",
+    "notasecret",
+    "insert-",
+    "paste-",
 )
 
 
@@ -92,13 +114,21 @@ def legacy_model_routes_disabled() -> bool:
 
 
 def token_is_secure(token: str | None) -> bool:
+    """Return True only for non-placeholder judge tokens.
+
+    Explicitly rejects values copied from .env.example (e.g.
+    ``replace-with-32plus-char-random-token``) and other template patterns.
+    """
     tok = (token or "").strip()
     if len(tok) < 16:
         return False
-    if tok.lower() in _INSECURE_TOKENS:
+    low = tok.lower()
+    if low in _INSECURE_TOKENS:
         return False
-    # Reject all-same-character tokens
-    if len(set(tok)) < 4:
+    if any(frag in low for frag in _INSECURE_TOKEN_FRAGMENTS):
+        return False
+    # Reject all-same-character / very low-entropy tokens
+    if len(set(tok)) < 8:
         return False
     return True
 

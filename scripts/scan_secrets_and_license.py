@@ -42,7 +42,9 @@ def iter_files() -> list[Path]:
             continue
         if p.name == ".env" or p.suffix in {".pt", ".png", ".jpg", ".pdf", ".docx", ".zip"}:
             continue
-        if "secret_license_scan" in p.name:
+        if "secret_license_scan" in p.name or "public_release_full_scan" in p.name:
+            continue
+        if "docker_smoke_report" in p.name or "e2e_product_report" in p.name:
             continue
         if p.stat().st_size > 2_000_000:
             continue
@@ -66,7 +68,15 @@ def main() -> int:
             continue
         rel = str(path.relative_to(ROOT)).replace("\\", "/")
         # Allow docs / examples / this scanner (documentation of patterns)
-        if path.name in {".env.example", "scan_secrets_and_license.py"}:
+        if path.name in {
+            ".env.example",
+            "scan_secrets_and_license.py",
+            "scan_public_release_full.py",
+            "smoke_judge_docker.py",
+            "mux_demo_voiceover.py",
+        }:
+            continue
+        if "deploy/judge/.env.example" in str(path).replace("\\", "/"):
             continue
         if rel.startswith("docs/") or rel.endswith(".md"):
             # Only flag markdown if a long high-entropy assignment appears

@@ -1,0 +1,40 @@
+# Local smoke — hostname-based sites avoid Caddy catch-all Issuer conflicts.
+
+{
+	auto_https disable_redirects
+	local_certs
+}
+
+http://localhost:8088 {
+	encode gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+	reverse_proxy app:8080 {
+		header_up X-Real-IP {remote_host}
+		transport http {
+			read_timeout 120s
+			write_timeout 120s
+		}
+	}
+}
+
+https://localhost:8443 {
+	tls internal
+	encode gzip
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		-Server
+	}
+	reverse_proxy app:8080 {
+		header_up X-Forwarded-Proto https
+		header_up X-Real-IP {remote_host}
+		transport http {
+			read_timeout 120s
+			write_timeout 120s
+		}
+	}
+}

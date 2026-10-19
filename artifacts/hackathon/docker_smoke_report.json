@@ -1,0 +1,75 @@
+{
+  "ts_utc": "2026-10-19T13:10:24.858839+00:00",
+  "checks": [
+    {
+      "name": "placeholder_token_rejected_at_startup",
+      "passed": true,
+      "detail": "http=0 up_rc=1 logs_snip==1 requires a strong SDN_API_TOKEN (\u226516 chars, not a common placeholder). Refusing to start.\napp-1  | [2026-10-19 13:09:26 +0000] [7] [INFO] Worker exiting (pid: 7)\napp-1  | [2026-10-19 13:09:27 +0000] [1] [ERROR] Worker (pid:7) exited with code 3.\napp-1  | [2026-10-19 13:09:27 +0000] [1] [ERROR] Shutting down: Master\napp-1  | [2026-10-19 13:09:27 +0000] [1] [ERROR] Reason: Worker failed to boot.\n"
+    },
+    {
+      "name": "stack_healthy_with_generated_secrets",
+      "passed": true,
+      "detail": "up_rc=0 status=200"
+    },
+    {
+      "name": "openflow_mock_and_hosted_flags",
+      "passed": true,
+      "detail": "{'of_backend_default': 'mock', 'hosted_demo_enforced': True, 'api_token_required': True}"
+    },
+    {
+      "name": "unauthorized_real_401",
+      "passed": true,
+      "detail": "status=401 body=b'{\"detail\":\"Set Authorization: Bearer <SDN_API_TOKEN> or X-API-Token for protected hackathon / mutating API calls.\",\"erro'"
+    },
+    {
+      "name": "authorized_offline_ok_mock_of",
+      "passed": true,
+      "detail": "status=200 ec=deterministic_planner of=mock"
+    },
+    {
+      "name": "caddy_proxy_health",
+      "passed": true,
+      "detail": {
+        "http_proxy": 200,
+        "https_proxy": 200,
+        "curl_out": "200",
+        "curl_err": "",
+        "caddy_ps": "  IMAGE              COMMAND                  SERVICE   CREATED          STATUS          PORTS\njt-judge-smoke-caddy-1   caddy:2.8-alpine   \"caddy run --config \u2026\"   caddy     17 seconds ago   Up 10 seconds   0.0.0.0:18088->8088/tcp, [::]:18088->8088/tcp, 0.0.0.0:18443->8443/tcp, [::]:18443->8443/tcp\n",
+        "caddy_logs": "fier\":\"localhost\"}\ncaddy-1  | {\"level\":\"info\",\"ts\":1792415391.1905649,\"logger\":\"tls.obtain\",\"msg\":\"certificate obtained successfully\",\"identifier\":\"localhost\",\"issuer\":\"local\"}\ncaddy-1  | {\"level\":\"info\",\"ts\":1792415391.1908026,\"logger\":\"tls.obtain\",\"msg\":\"releasing lock\",\"identifier\":\"localhost\"}\ncaddy-1  | {\"level\":\"warn\",\"ts\":1792415391.1929178,\"logger\":\"tls\",\"msg\":\"stapling OCSP\",\"error\":\"no OCSP stapling for [localhost]: no OCSP server specified in certificate\",\"identifiers\":[\"localhost\"]}\n"
+      }
+    },
+    {
+      "name": "quota_volume_persists_after_restart",
+      "passed": true,
+      "detail": {
+        "status": 200,
+        "budget_before": {
+          "committed_usd": 0.0,
+          "confirmed_spent_usd": 0.0,
+          "daily_budget_usd": 1.0,
+          "estimated_spent_usd": 0.0,
+          "max_concurrent_real": 2,
+          "note": "Application-enforced estimated quota for single-worker hosted demo. Not a Nebius provider hard spending cap.",
+          "rate_limit_per_min": 8,
+          "reserved_usd": 0.0
+        },
+        "budget_after": {
+          "committed_usd": 0.0,
+          "confirmed_spent_usd": 0.0,
+          "daily_budget_usd": 1.0,
+          "estimated_spent_usd": 0.0,
+          "max_concurrent_real": 2,
+          "note": "Application-enforced estimated quota for single-worker hosted demo. Not a Nebius provider hard spending cap.",
+          "rate_limit_per_min": 8,
+          "reserved_usd": 0.0
+        },
+        "sha_before": "c2442fcf5b6a1890b72a77d833ec13cb95c8d0a7ed35dcf275c0d74e3f33d353  /data/quota/ne",
+        "sha_after": "520a4df5009cb89c575f8b2d60bc101a38470eacb42f1429c91a93669e7d7586  /data/quota/ne"
+      }
+    }
+  ],
+  "passed": true,
+  "pass_count": 7,
+  "total": 7,
+  "note": "Local Docker smoke only \u2014 not a public/cloud deployment."
+}

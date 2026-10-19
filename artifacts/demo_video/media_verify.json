@@ -1,0 +1,24 @@
+{
+  "ts_utc": "2026-10-19T13:01:33.963296+00:00",
+  "ok": true,
+  "mp4": "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\demo_video\\junctiontrace_judge_demo_with_audio.mp4",
+  "wav": "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\demo_video\\junctiontrace_voiceover.wav",
+  "duration_s": 167.84,
+  "has_audio": true,
+  "has_video": true,
+  "streams": [
+    {
+      "index": 0,
+      "codec_name": "h264",
+      "codec_type": "video"
+    },
+    {
+      "index": 1,
+      "codec_name": "aac",
+      "codec_type": "audio"
+    }
+  ],
+  "names_nemotron": true,
+  "names_nebius_token_factory": true,
+  "note": "Final competition media with English VO. Do not upload without owner approval."
+}

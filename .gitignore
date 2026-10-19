@@ -67,6 +67,9 @@ temp_dummy_dataset.csv
 .env
 **/.env
 deploy/judge/.env
+deploy/judge/.env.smoke
+artifacts/demo_video/*with_audio*
+artifacts/demo_video/*voiceover*
 artifacts/demo_video/*.webm
 artifacts/demo_video/*.mp4
 artifacts/demo_video/raw_*/

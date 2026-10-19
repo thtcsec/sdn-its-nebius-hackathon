@@ -1,0 +1,51 @@
+# Local smoke stack — do not use for public hosting.
+# Ports: app 18080, Caddy HTTPS 18443 (internal cert).
+#
+#   python scripts/smoke_judge_docker.py
+
+name: jt-judge-smoke
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.judge
+    restart: "no"
+    env_file:
+      - .env.smoke
+    environment:
+      SDN_HOSTED_DEMO: "1"
+      SDN_OF_BACKEND: mock
+      SDN_BIND_HOST: "0.0.0.0"
+      JT_TRUSTED_PROXY: "1"
+      JT_QUOTA_DB_PATH: /data/quota/nebius_daily_quota.sqlite
+      PYTHONPATH: /app/src:/app
+    volumes:
+      - jt_smoke_quota:/data/quota
+    ports:
+      - "18080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/v1/status"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 20s
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: "no"
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "18443:8443"
+      - "18088:8088"
+    volumes:
+      - ./Caddyfile.smoke:/etc/caddy/Caddyfile:ro
+      - jt_smoke_caddy_data:/data
+      - jt_smoke_caddy_config:/config
+
+volumes:
+  jt_smoke_quota:
+  jt_smoke_caddy_data:
+  jt_smoke_caddy_config:
