@@ -42,7 +42,7 @@
 
 | Item | Value |
 |------|-------|
-| Commit SHA | _updated after this fix push_ |
-| GitHub Actions | _updated after this fix push_ |
+| Commit SHA | `000354720adb422659e5a11cbf9603f49951bcbd` |
+| GitHub Actions | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39257990678 — **success** |
 
-**Do not claim the host or public release is complete.**
+**Do not claim the host or public release is complete.** Local Docker smoke ≠ cloud host.
