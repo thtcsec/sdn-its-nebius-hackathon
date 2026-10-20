@@ -1,6 +1,7 @@
 # Public-release checklist (do NOT flip visibility without approval)
 
-Repository is currently **private**. Changing GitHub visibility requires explicit human approval.
+Repository is currently **private**. Changing GitHub visibility requires explicit human approval.  
+**Current competition status:** **BLOCKED** — see `CURRENT_SUBMISSION_STATUS.md` (tip `d85fb6f`). Engineering hosted **GO** ≠ public release.
 
 ## Automated scans (run before asking)
 
@@ -22,8 +23,8 @@ Record results in `artifacts/hackathon/secret_license_scan.json` and `artifacts/
 - [ ] Screenshots in `artifacts/hackathon/product_screens/` contain no tokens/keys
 - [ ] `docs/HACKATHON_CONTRIBUTIONS.md` separates research vs hackathon
 - [ ] `SUBMISSION_DEVPOST.md` reviewed
-- [ ] Demo video recorded locally; YouTube URL only after approval
-- [ ] Hosted judge URL only after approved deploy (`docs/JUDGE_HOSTING.md`)
+- [ ] Canonical demo video is `junctiontrace_REAL_APP_DEMO.mp4` (75.6 s); YouTube URL only after approval
+- [ ] Hosted judge URL is the **next milestone** (`docs/JUDGE_HOSTING.md`) — do not iterate the video
 - [ ] LICENSE (MIT) present
 - [ ] README matches reality: mock OF, synthetic camera, no fabricated Nebius accuracy
 - [ ] Competition rules re-checked the day of submit

@@ -1,10 +1,10 @@
 {
-  "ts_utc": "2026-10-19T13:10:24.858839+00:00",
+  "ts_utc": "2026-10-20T14:03:27.268727+00:00",
   "checks": [
     {
       "name": "placeholder_token_rejected_at_startup",
       "passed": true,
-      "detail": "http=0 up_rc=1 logs_snip==1 requires a strong SDN_API_TOKEN (\u226516 chars, not a common placeholder). Refusing to start.\napp-1  | [2026-10-19 13:09:26 +0000] [7] [INFO] Worker exiting (pid: 7)\napp-1  | [2026-10-19 13:09:27 +0000] [1] [ERROR] Worker (pid:7) exited with code 3.\napp-1  | [2026-10-19 13:09:27 +0000] [1] [ERROR] Shutting down: Master\napp-1  | [2026-10-19 13:09:27 +0000] [1] [ERROR] Reason: Worker failed to boot.\n"
+      "detail": "http=0 up_rc=1 logs_snip==1 requires a strong SDN_API_TOKEN (\u226516 chars, not a common placeholder). Refusing to start.\napp-1  | [2026-10-20 14:02:28 +0000] [7] [INFO] Worker exiting (pid: 7)\napp-1  | [2026-10-20 14:02:28 +0000] [1] [ERROR] Worker (pid:7) exited with code 3.\napp-1  | [2026-10-20 14:02:28 +0000] [1] [ERROR] Shutting down: Master\napp-1  | [2026-10-20 14:02:28 +0000] [1] [ERROR] Reason: Worker failed to boot.\n"
     },
     {
       "name": "stack_healthy_with_generated_secrets",
@@ -35,7 +35,7 @@
         "curl_out": "200",
         "curl_err": "",
         "caddy_ps": "  IMAGE              COMMAND                  SERVICE   CREATED          STATUS          PORTS\njt-judge-smoke-caddy-1   caddy:2.8-alpine   \"caddy run --config \u2026\"   caddy     17 seconds ago   Up 10 seconds   0.0.0.0:18088->8088/tcp, [::]:18088->8088/tcp, 0.0.0.0:18443->8443/tcp, [::]:18443->8443/tcp\n",
-        "caddy_logs": "fier\":\"localhost\"}\ncaddy-1  | {\"level\":\"info\",\"ts\":1792415391.1905649,\"logger\":\"tls.obtain\",\"msg\":\"certificate obtained successfully\",\"identifier\":\"localhost\",\"issuer\":\"local\"}\ncaddy-1  | {\"level\":\"info\",\"ts\":1792415391.1908026,\"logger\":\"tls.obtain\",\"msg\":\"releasing lock\",\"identifier\":\"localhost\"}\ncaddy-1  | {\"level\":\"warn\",\"ts\":1792415391.1929178,\"logger\":\"tls\",\"msg\":\"stapling OCSP\",\"error\":\"no OCSP stapling for [localhost]: no OCSP server specified in certificate\",\"identifiers\":[\"localhost\"]}\n"
+        "caddy_logs": "ifier\":\"localhost\"}\ncaddy-1  | {\"level\":\"info\",\"ts\":1792504974.404129,\"logger\":\"tls.obtain\",\"msg\":\"certificate obtained successfully\",\"identifier\":\"localhost\",\"issuer\":\"local\"}\ncaddy-1  | {\"level\":\"info\",\"ts\":1792504974.4042513,\"logger\":\"tls.obtain\",\"msg\":\"releasing lock\",\"identifier\":\"localhost\"}\ncaddy-1  | {\"level\":\"warn\",\"ts\":1792504974.4046326,\"logger\":\"tls\",\"msg\":\"stapling OCSP\",\"error\":\"no OCSP stapling for [localhost]: no OCSP server specified in certificate\",\"identifiers\":[\"localhost\"]}\n"
       }
     },
     {
@@ -63,8 +63,8 @@
           "rate_limit_per_min": 8,
           "reserved_usd": 0.0
         },
-        "sha_before": "c2442fcf5b6a1890b72a77d833ec13cb95c8d0a7ed35dcf275c0d74e3f33d353  /data/quota/ne",
-        "sha_after": "520a4df5009cb89c575f8b2d60bc101a38470eacb42f1429c91a93669e7d7586  /data/quota/ne"
+        "sha_before": "60209b19fe1f67785754648975f5e50b526ef4b921c1b4345aa316e934d1966a  /data/quota/ne",
+        "sha_after": "1526476bcfa45f5c7b702b1313261fcfd25b8b19149887fc060ac24e5e662665  /data/quota/ne"
       }
     }
   ],

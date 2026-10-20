@@ -1,24 +1,28 @@
 {
-  "ts_utc": "2026-10-19T13:01:33.963296+00:00",
+  "ts_utc": "2026-10-20T14:05:00Z",
   "ok": true,
-  "mp4": "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\demo_video\\junctiontrace_judge_demo_with_audio.mp4",
-  "wav": "D:\\tu_projects\\sdn-its-nebius-hackathon\\artifacts\\demo_video\\junctiontrace_voiceover.wav",
-  "duration_s": 167.84,
+  "canonical": true,
+  "mp4": "artifacts/demo_video/junctiontrace_REAL_APP_DEMO.mp4",
+  "duration_s": 75.567,
+  "width": 1920,
+  "height": 1080,
+  "fps": "30/1",
   "has_audio": true,
   "has_video": true,
-  "streams": [
-    {
-      "index": 0,
-      "codec_name": "h264",
-      "codec_type": "video"
-    },
-    {
-      "index": 1,
-      "codec_name": "aac",
-      "codec_type": "audio"
-    }
-  ],
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "capture": "ffmpeg_gdigrab_headed_chrome",
+  "source_recording": "artifacts/demo_video/real_app_raw_20261020T132522Z/gdigrab_source.mp4",
+  "voice_engine": "Windows SAPI System.Speech.Synthesis.SpeechSynthesizer",
+  "voice_id": "Microsoft David Desktop",
+  "speaker_count": 1,
+  "speech_total_s": 30.88,
   "names_nemotron": true,
   "names_nebius_token_factory": true,
-  "note": "Final competition media with English VO. Do not upload without owner approval."
+  "openflow": "mock",
+  "live_switch_containment": false,
+  "youtube_url": null,
+  "archive_do_not_upload": "artifacts/demo_video/junctiontrace_judge_demo_with_audio.mp4",
+  "qa": "artifacts/demo_video/REAL_APP_VIDEO_QA.md",
+  "note": "Canonical competition video is REAL_APP_DEMO. Do not upload the 94s pitch. Do not upload without owner approval."
 }

@@ -68,11 +68,17 @@ temp_dummy_dataset.csv
 **/.env
 deploy/judge/.env
 deploy/judge/.env.smoke
+.tmp_judge_token.txt
 artifacts/demo_video/*with_audio*
 artifacts/demo_video/*voiceover*
 artifacts/demo_video/*.webm
 artifacts/demo_video/*.mp4
 artifacts/demo_video/raw_*/
+artifacts/demo_video/_pitch_work/
+artifacts/demo_video/_pitch_extract.wav
+artifacts/demo_video/preview/golive/
+artifacts/demo_video/real_app_raw_*/
+artifacts/demo_video/real_app_qa/
 
 # Ephemeral console reports (keep paper metrics under results/*/)
 results/console/

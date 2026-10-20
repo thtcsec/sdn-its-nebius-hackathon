@@ -1,8 +1,10 @@
 # Devpost submission package — JunctionTrace
 
 **Track:** Best Apps and Agents  
-**Status:** Ready to paste. Do **not** submit without owner approval.  
-**Re-confirm official Nebius × NVIDIA hackathon rules immediately before release.**
+**Paste readiness:** Draft text below is ready to paste into Devpost fields.  
+**Competition status:** **BLOCKED** until owner completes public repo + visible license, working demo URL, public YouTube &lt;3 min, feedback form, and final Devpost submit.  
+**Authority:** `CURRENT_SUBMISSION_STATUS.md` (tip `d85fb6f`).  
+**Rules:** https://nebiusglobalaihackathon.devpost.com/rules — re-confirm immediately before release.
 
 ---
 
@@ -26,16 +28,20 @@ Intelligent Transportation System (ITS) and SOC operators often receive network 
 
 ## What it does (product functionality)
 
+**Operator problem:** Network anomaly labels can look like DDoS. Immediate containment can harm legitimate mobility (rush hour, events). Operators need evidence-backed investigation before disruptive action.
+
 **JunctionTrace** is a standalone hackathon product UI (`/`) that:
 
 1. Presents four operator scenarios (legitimate congestion, quiet-zone anomaly, missing/stale evidence, contradictory signals).
 2. Runs **Safe offline** (deterministic planner + real tool logic) or **Real Nebius** (live NVIDIA Nemotron via Token Factory).
-3. Shows a multi-step investigation timeline: incident → uncertainties → tool selection → retrieved evidence → recommendation → **policy gate** → operator outcome.
+3. Runs a **multi-step tool-selection loop**: incident → uncertainties → model chooses evidence tools → tools return telemetry / synthetic camera metadata / quality checks → model conclude → **deterministic policy gate** (authoritative) → operator outcome.
 4. Compares **rule-only baseline** vs investigation + gate side-by-side.
-5. Keeps OpenFlow **mock**, camera fields as **synthetic metadata**, and demo mode containment-safe on hosted deployments.
+5. Keeps OpenFlow **mock** (does **not** control a real traffic switch), camera fields as **synthetic metadata**, and demo mode containment-safe on hosted deployments.
 6. Preserves the pre-existing research lab console at `/research`.
 
-Hosted demos enforce a strong API token, daily application spend quota, rate/concurrency limits, and disable legacy model routes.
+**Physical-context example:** A quiet-zone or LOFT-like surge may look like an attack on network features alone; inspecting same-zone synthetic camera metadata / contradictions can change the recommendation (e.g. soft containment vs observe/preserve) — see matched traces in `WINNING_EVIDENCE.md` and product Scenario B.
+
+**Roles:** Nemotron = tool-mediated investigation + labeled `real_api` conclude. Deterministic gate / offline planner = policy and fail-closed controls. Hosted demos add token auth, application spend quota, rate/concurrency limits.
 
 ---
 
@@ -46,7 +52,7 @@ Hosted demos enforce a strong API token, daily application spend quota, rate/con
 - **Agent:** Multi-step tool loop (`retrieve_network_telemetry`, `inspect_camera_metadata`, `check_physical_evidence_quality`, `compare_temporal_windows`, `identify_contradictions`, …) → conclude → deterministic safety gate.
 - **Model path:** Nebius Token Factory OpenAI-compatible chat completions → `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`.
 - **Safety:** Schema validation / repair, evidence-sufficiency gate, hosted fail-closed config, SQLite-backed application quota with crash-conservative accounting.
-- **Actuation:** Mock OpenFlow only in judge path (no live switch containment).
+- **Actuation:** Mock OpenFlow only in the judge path. The demo does **not** install flows on a real traffic switch. Recommendations are advisory.
 
 ---
 
@@ -64,14 +70,17 @@ Credentials never leave the server; the browser only receives capability flags a
 
 ## Evidence and benchmark limitations (honest)
 
-- Offline / planner accuracy must **not** be advertised as Nemotron accuracy.
-- Held-out and ablation studies show the deterministic planner is often competitive; Nemotron value is **tool-mediated investigation**, labeled live conclude, and operator-trace transparency — not a blanket accuracy win on every synthetic case.
-- Camera inputs in the judge path are **synthetic metadata**, not live RTSP.
-- OpenFlow is **mock** — advisory demo, not production ITS deployment.
+- **OpenFlow is mock** in the competition demo; recommendations are advisory.
+- **Camera fields are synthetic metadata**, not a live production camera / RTSP pipeline.
+- Offline ablation arm D ≈ **92%** (`ablation_offline.json`, n=25, deterministic planner) must **never** be presented as Nemotron accuracy.
+- **Matched live** Nemotron studies (small curated set) and the **blind** study are separate; do not merge rates.
+- Blind live Nemotron arm C (`blind_redteam_eval.json`): **n=4**, **3/4** vs assumption-labeled oracle, mean latency **~17.2 s**, fallback rate **0.25**, `of_backend=mock`, `camera_label=synthetic_metadata_only`. This does **not** establish real-world ITS incident accuracy.
+- Paired gate study: **no accuracy improvement attributable to the gate** on the matched live C→D sample; adversarial synthetic tests show policy enforcement separately.
+- Some live runs use **deterministic_fallback**; latency is seconds-scale advisory investigation, not real-time control-loop latency.
 - Application daily budget is **not** a Nebius provider hard spending cap.
 - Model outcomes vary; Scenario B may `observe` while rule-only `rate_limit` — the full trace is the product.
 
-Artifacts: `artifacts/hackathon/`, `COMPETITION_DELTA_REPORT.md`, `JUDGE_ACCEPTANCE_REPORT.md`.
+Artifacts: `artifacts/hackathon/`, `CURRENT_SUBMISSION_STATUS.md`, `JUDGE_ACCEPTANCE_REPORT.md` (historical SHA `dcc7ac0`), `WINNING_EVIDENCE.md`, `FINAL_RELEASE_GATE.md`.
 
 ---
 
@@ -129,7 +138,7 @@ Python, Flask, Nebius Token Factory, NVIDIA Nemotron, Playwright, Docker, Caddy,
 
 - Local: instructions above  
 - Hosted URL: _TBD after owner-approved deploy_  
-- Demo video: _TBD after owner-approved YouTube upload_  
+- Demo video: local canonical file `junctiontrace_REAL_APP_DEMO.mp4` (75.6 s real-app recording) — YouTube URL _TBD after owner-approved upload_  
 
 ---
 

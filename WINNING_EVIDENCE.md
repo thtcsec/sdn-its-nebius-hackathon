@@ -141,10 +141,11 @@ Docs: `docs/JUDGE_DEMO.md`, `COMPETITION_DELTA_REPORT.md`, `docs/NEBIUS_NVIDIA_F
 | Submission item | Status | Notes |
 |-----------------|--------|-------|
 | Public GitHub + MIT | **BLOCKED** | MIT present; visibility private until owner approval (`docs/PUBLIC_RELEASE_CHECKLIST.md`) |
-| Working demo / test-build URL | **LOCAL READY** | `http://127.0.0.1:8080/` via `.\scripts\dev.ps1`. Hosted URL not deployed (no paid deploy without approval) |
-| YouTube &lt;3 min | **SCRIPT READY / URL TBD** | `docs/DEMO_VIDEO.md` |
+| Working demo / test-build URL | **LOCAL READY / HOSTED ABSENT** | Loopback / local Docker. Engineering hosted package **GO** ≠ deployed URL (`HOSTED_GO_NO_GO.md`, `CURRENT_SUBMISSION_STATUS.md`) |
+| YouTube &lt;3 min | **LOCAL MP4 READY / URL TBD** | Canonical `junctiontrace_REAL_APP_DEMO.mp4` **75.6 s** h264+aac (gitignored); no public YouTube |
 | Token Factory + Nemotron disclosure | **READY** | README + this file + feedback draft |
 | Pre-existing project explanation | **READY** | `docs/HACKATHON_CONTRIBUTIONS.md` |
+| Branch tip / CI (re-audit 2026-10-19) | **tip `d85fb6f`** | Light CI [39258073978](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978) — 78 passed, **credential-free** (no live Nemotron in CI) |
 | Nebius/NVIDIA feedback text | **DRAFT** | `docs/NEBIUS_NVIDIA_FEEDBACK.md` — do not submit without approval |
 | English materials | **PASS** | |
 

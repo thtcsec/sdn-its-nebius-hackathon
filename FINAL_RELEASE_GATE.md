@@ -1,9 +1,14 @@
 # FINAL_RELEASE_GATE — Nebius × NVIDIA Hackathon
 
+> **HISTORICAL FREEZE DOCUMENT** for paired-gate / product freeze work.  
+> SHAs below are the freeze/study commits examined then — **not** the current branch tip.  
+> **Current tip / CI / submission:** `CURRENT_SUBMISSION_STATUS.md` (`d85fb6f`, CI 39258073978).  
+> Evidence honesty in this file (mock OF, synthetic camera, C→D no accuracy win, offline ≠ Nemotron) still applies.
+
 **Branch:** `hackathon/nebius-nvidia`  
 **Base verified:** `65ec05b`  
 **This freeze tip:** `e332cc65c0457ae3aca18e71bcbeb64a4f754537`  
-**Study commit:** `5fc3df247ecd6f2fd5ec47d8551b4d7b90e37ac3`
+**Study commit:** `5fc3df247ecd6f2fd5ec47d8551b4d7b90e37ac3`  
 **Visibility:** PRIVATE — do not flip or submit without owner approval.
 
 **Narrative:** A traffic surge is not always an attack. Before disrupting a cyber-physical system, investigate the evidence.  

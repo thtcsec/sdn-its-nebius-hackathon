@@ -1,14 +1,17 @@
 # JunctionTrace — Hosted Security Gate — GO / NO-GO
 
 **Branch:** `hackathon/nebius-nvidia`  
-**Date (UTC):** 2026-10-19  
-**Verdict:** **GO** for single-worker, token-gated, mock-OF hosted judge demo (engineering gate)  
+**Date (UTC):** 2026-10-20 (rehearsal re-run; same engineering GO)  
+**Engineering verdict:** **GO** for single-worker, token-gated, mock-OF hosted judge demo  
 
-**Explicitly NOT done / NOT authorized:** cloud host live, public visibility flip, YouTube publish, Devpost submit.
+**Competition / Devpost verdict:** **BLOCKED** — see `CURRENT_SUBMISSION_STATUS.md`.  
+Engineering GO is **not** proof of public host, public repo, YouTube, or Devpost readiness.
+
+**Explicitly NOT done / NOT authorized:** cloud host live, public visibility flip, YouTube publish, Devpost submit, API key creation/exposure.
 
 ---
 
-## Acceptance checklist (P0)
+## Acceptance checklist (P0) — engineering gate
 
 | # | Criterion | Result |
 |---|-----------|--------|
@@ -21,9 +24,9 @@
 | 7 | Process restart does not reset daily quota | **PASS** (incl. crash orphans charged) |
 | 8 | Concurrent requests cannot bypass reserve/inflight | **PASS** |
 | 9 | Spoofed X-Forwarded-For does not bypass rate limits | **PASS** |
-| 10 | Authorized offline + live judge flows work | **PASS** |
+| 10 | Authorized offline + live judge flows work | **PASS** (live requires server-side key; not CI) |
 | 11 | Research accessible locally | **PASS** |
-| 12 | CI / browser tests continue | **PASS** |
+| 12 | CI / browser tests continue | **PASS** (credential-free light CI) |
 | 13 | `.env.example` placeholder tokens rejected | **PASS** (`token_is_secure`) |
 
 ---
@@ -31,18 +34,24 @@
 ## Remaining blockers (not security-gate failures)
 
 1. **Hosted URL not deployed** — local Docker smoke ≠ public host  
-2. **YouTube not uploaded** — local MP4+VO only  
+2. **YouTube not uploaded** — canonical local file `junctiontrace_REAL_APP_DEMO.mp4` (75.6 s, gitignored)  
 3. **Repo still private** — visibility needs owner approval  
 4. **Devpost not submitted**  
-5. Multi-worker quota replication unsupported (by design)
+5. Multi-worker quota replication unsupported (by design)  
+6. Application daily quota is **not** a Nebius provider hard spending cap  
 
 ---
 
-## Remote / CI
+## Remote / CI (verified)
 
 | Item | Value |
 |------|-------|
-| Commit SHA | `000354720adb422659e5a11cbf9603f49951bcbd` |
-| GitHub Actions | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39257990678 — **success** |
+| **Branch tip SHA** | `d85fb6fb542f6fb22bc5fc20667377739e279396` |
+| **Security-fix SHA** (in ancestry) | `000354720adb422659e5a11cbf9603f49951bcbd` |
+| Tip CI run | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978 — **success**, **78 passed**, SHA = tip |
+| Fix CI run | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39257990678 — **success** on `0003547` |
+| Workflow | `hackathon-light` → branch `hackathon/nebius-nvidia`; `NEBIUS_API_KEY=""` |
+
+**CI does not execute live Nemotron / Token Factory inference.** Credential-dependent e2e remains local/owner-run.
 
 **Do not claim the host or public release is complete.** Local Docker smoke ≠ cloud host.

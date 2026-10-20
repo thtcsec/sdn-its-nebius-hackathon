@@ -29,5 +29,9 @@
 ## Honesty constraints
 
 - Demo mode blocks containment intentions by default (mock OF).
-- Offline benchmark uses **labeled synthetic** model JSON — not claimed as live Nebius.
+- Offline benchmark uses **labeled synthetic** / deterministic planner paths — **not** live Nebius; offline ~92% ≠ Nemotron accuracy.
+- Camera context in the judge path is **synthetic metadata**; OpenFlow is **mock**.
+- Blind live Nemotron sample is small (n=4 in `blind_redteam_eval.json`); matched and blind studies stay separate.
+- Paired gate C→D did not show an accuracy win on the matched live sample; adversarial synthetics prove enforcement.
 - No fabricated accuracy gains: read `summary.honesty_note` in benchmark JSON.
+- Submission blockers / tip SHA / CI: `CURRENT_SUBMISSION_STATUS.md`.

@@ -14,6 +14,32 @@ Extend **SDN-ITS Resilience AI** (network anomaly detection + reversible mitigat
 
 ---
 
+## For judges (60-second path)
+
+**JunctionTrace** helps an ITS/SOC operator investigate a traffic surge **before** disruptive containment. Immediate drop/rate-limit on a DDoS-looking label can harm legitimate rush-hour mobility.
+
+1. Open the product UI (`/` — not `/research`).
+2. Pick a scenario. **Safe offline** uses a deterministic planner + real tools (never labeled as live Nemotron). **Real Nebius** calls **NVIDIA Nemotron** on **Nebius Token Factory**.
+3. Watch the journey: incident → uncertainty → **tool selection** → evidence returned → conclusion → **policy gate** → operator action.
+4. Compare rule-only vs investigation. Example: quiet-zone / camera context can change `rate_limit` into `observe`.
+
+**Honesty:** OpenFlow is **mock** — JunctionTrace does **not** push rules onto a real traffic switch. Camera fields are **synthetic metadata**. Offline ~92% is the planner, not Nemotron. Live Nemotron samples are small; latency is ~10–20 s advisory, not real-time control. Hosted demos need the Judge API token field.
+
+Local demo video (gitignored): `artifacts/demo_video/junctiontrace_REAL_APP_DEMO.mp4` (**75.6 s**, real app screen recording). YouTube URL is an owner action.
+
+Quick local run (no torch):
+
+```powershell
+pip install "python-dotenv>=1.0" "requests>=2.31" "pyyaml>=6" "Flask>=2.3"
+$env:PYTHONPATH="$PWD\src;$PWD"
+python -m api.app --host 127.0.0.1 --port 8080
+# http://127.0.0.1:8080/
+```
+
+Hosted package: `docs/JUDGE_HOSTING.md`. Status: `CURRENT_SUBMISSION_STATUS.md` (public URL / YouTube still owner actions).
+
+---
+
 ## What this repo is
 
 | This repo | Not this repo |
@@ -21,7 +47,7 @@ Extend **SDN-ITS Resilience AI** (network anomaly detection + reversible mitigat
 | Hackathon working copy + public-facing submission target (starts **private**) | The IEDE research tree (`sdn-its-resilience-ai`) |
 | Base: Detect → temporary contain → rollback (+ optional camera fusion) | A claim that Nebius/Nemotron is already integrated |
 | Real Nebius inference only — no fake API calls or invented gains | Simulated model output presented as production evidence |
-| Demo mode keeps destructive OpenFlow disabled by default (`of_backend: mock`) | Proof of live switch PacketIn reduction out of the box |
+| Demo mode keeps OpenFlow **mock** — no real traffic-switch control | Proof of live switch PacketIn reduction out of the box |
 
 Research / IEDE source of truth (separate folder, do not mix edits):  
 `D:\tu_projects\sdn-its-resilience-ai` · upstream: [thtcsec/sdn-its-resilience-ai](https://github.com/thtcsec/sdn-its-resilience-ai)
@@ -43,6 +69,8 @@ Local note: [HACKATHON.md](HACKATHON.md)
 
 ### Status (honest)
 
+**Competition submission: BLOCKED** until public repo, hosted demo URL, public YouTube &lt;3 min, and Devpost — see [`CURRENT_SUBMISSION_STATUS.md`](CURRENT_SUBMISSION_STATUS.md). Tip `d85fb6f`; light CI [39258073978](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978) (78 passed, **no live Nemotron in CI**).
+
 | Milestone | Status |
 |-----------|--------|
 | Private hackathon repo + isolated working tree | Done |
@@ -51,7 +79,8 @@ Local note: [HACKATHON.md](HACKATHON.md)
 | Multi-step evidence investigation (tools + gate + audit) | Done |
 | Validated structured mitigation + policy gates | Done |
 | Fair ablation A/B/C/D on held-out set | Done (offline planner + optional budgeted real) |
-| Public docs + &lt;3 min YouTube demo | **Pending** (script in `docs/DEMO_VIDEO.md`; URL TBD) |
+| Local demo video &lt;3 min (h264+aac) | Done locally: `junctiontrace_REAL_APP_DEMO.mp4` 75.6 s (gitignored); **YouTube URL TBD** |
+| Public docs + YouTube + hosted demo URL | **Pending owner** |
 | Public GitHub visibility | **Pending owner approval** (still private) |
 
 Default model: `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`  

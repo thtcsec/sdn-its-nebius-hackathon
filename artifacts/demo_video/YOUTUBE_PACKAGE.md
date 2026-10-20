@@ -1,23 +1,28 @@
 # YouTube package (local only — do not upload without owner approval)
 
+**Upload this file only:**
+
+`artifacts/demo_video/junctiontrace_REAL_APP_DEMO.mp4`
+
+**75.6 s**, H.264 + AAC, 1920×1080@30. Do **not** upload `junctiontrace_judge_demo_with_audio.mp4`.
+
 ## Title
 
-JunctionTrace: Investigate Before You Contain — Nebius × NVIDIA Nemotron Hackathon
+JunctionTrace — investigate before you contain
 
 ## Description (paste)
 
 A traffic surge is not always a cyberattack. JunctionTrace helps ITS / SOC operators gather physical context before disruptive containment.
 
-This demo runs NVIDIA Nemotron (Nano) via Nebius Token Factory:
-• Scenario A — legitimate congestion (deterministic planner + rule-only comparison)
-• Scenario B — real multi-step Nemotron investigation with evidence tools
-• Authoritative policy gate remains in charge; OpenFlow stays mock; camera metadata is synthetic
+This screen recording is the running JunctionTrace application (not a slideshow):
+• Scenario A — legitimate congestion (deterministic planner + real tools; not live Nemotron)
+• Scenario B — NVIDIA Nemotron via Nebius Token Factory selects evidence tools, then concludes
+• Policy gate stays deterministic; recommended action observe vs rule-only rate_limit
+
+Limitations: OpenFlow is mock — this demo does not control a real traffic switch. Camera fields are synthetic metadata. Operation is advisory only.
 
 Product: JunctionTrace (hackathon UI)
-Research console preserved at /research
 Repo: thtcsec/sdn-its-nebius-hackathon (private until approved)
-
-Limitations shown honestly: synthetic camera metadata, mock OpenFlow, advisory-only operation. Offline planner baselines can be competitive on some synthetic tests — Nemotron adds tool-mediated investigation and labeled live conclude paths.
 
 #Nebius #NVIDIA #Nemotron #SDN #Hackathon
 
@@ -27,12 +32,13 @@ Limitations shown honestly: synthetic camera metadata, mock OpenFlow, advisory-o
 - Large wordmark: **JunctionTrace**
 - One line: “A surge ≠ an attack”
 - Small badges: NVIDIA Nemotron · Nebius Token Factory · OF mock
-- No fake “100% accuracy” claims; no secret UI
+- No fake accuracy claims; no secret UI
 
 ## Upload checklist (owner)
 
-- [ ] Trim to 2:30–2:50 if needed
-- [ ] Confirm real_api segment is visible (or honest blocked/budget error)
+- [ ] File is `junctiontrace_REAL_APP_DEMO.mp4` (75.6 s)
+- [ ] `real_api` / `nemotron_conclude` segment is visible
 - [ ] No `.env` / tokens visible
+- [ ] Description says OpenFlow is mock (no live switch)
 - [ ] Owner approval before public upload
-- [ ] Paste URL into `docs/DEMO_VIDEO.md`
+- [ ] Paste URL into `docs/DEMO_VIDEO.md` and Devpost

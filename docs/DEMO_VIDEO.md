@@ -1,36 +1,38 @@
 # Demo video — JunctionTrace
 
-**Status:** Local MP4 recorded from live UI. **Do not upload without owner approval.**
+**Status:** Local competition file. **Do not upload without owner approval.**  
+**Public YouTube URL:** _TBD_  
+**GitHub:** `*.mp4` is gitignored.
 
-**YouTube URL:** _TBD_
+Canonical file (this is what to upload):  
+`artifacts/demo_video/junctiontrace_REAL_APP_DEMO.mp4`
 
-## Local file
+The older 94 s pitch (`junctiontrace_judge_demo_with_audio.mp4`) is an archive only. Do not upload it.
+
+## Final file
 
 | Field | Value |
 |-------|--------|
-| MP4 (with English VO) | `artifacts/demo_video/junctiontrace_judge_demo_with_audio.mp4` |
-| WAV voiceover | `artifacts/demo_video/junctiontrace_voiceover.wav` |
-| Media verify | `artifacts/demo_video/media_verify.json` — A/V present, **~167.8 s**, names NVIDIA Nemotron + Nebius Token Factory |
-| WebM / silent intermediate | `junctiontrace_judge_demo.webm` / `.mp4` (do not publish silent file) |
-| YouTube package | `artifacts/demo_video/YOUTUBE_PACKAGE.md` |
+| MP4 | `artifacts/demo_video/junctiontrace_REAL_APP_DEMO.mp4` |
+| Capture | Headed Chrome + FFmpeg `gdigrab` of the running app at `http://127.0.0.1:8080/` |
+| Duration / codecs | **75.6 s**, H.264 + AAC, 1920×1080, 30 fps |
+| Voice | One speaker: Windows SAPI **Microsoft David Desktop** (~31 s) |
+| QA | `artifacts/demo_video/REAL_APP_VIDEO_QA.md` |
+| Rebuild | `python scripts/record_real_app_demo.py` then `python scripts/edit_real_app_demo.py` (do not iterate unless a critical QA fail) |
 
-Mux: `python scripts/mux_demo_voiceover.py` (Windows SAPI English VO; no ffmpeg `-an` on final).
+**Spoken names (verified):** cue 3 names **NVIDIA Nemotron** and **Nebius Token Factory**.
 
-## How it was recorded
+**On screen (actual product, not fabricated):** landing → Scenario A Safe offline tools + `preserve_rush_hour` / `deterministic planner` → Scenario B Real Nebius wait (shortened in edit, latency still shown as 21813 ms) → live `real_api` / `nemotron_conclude` / tools / `observe` vs rule `rate_limit` / gate PASS.
 
-```powershell
-# App running at http://127.0.0.1:8080 with server-side NEBIUS_API_KEY
-python scripts/record_junctiontrace_demo.py
-```
+## Honesty (must stay true on YouTube)
 
-Captures actual product flow: landing → Scenario A offline → Scenario B real Nemotron → `/research` → limitations footer. Does not fabricate success; if Real mode fails, the failure is visible.
+- Offline planner is labeled **deterministic planner (offline)** — never live Nemotron.
+- Live path shows **LIVE Nebius / real_api** and **nemotron_conclude**.
+- OpenFlow is **mock**. The demo does **not** control a real traffic switch. No live PacketIn containment.
+- Camera fields are **synthetic metadata**, not RTSP.
+- Recommendations are advisory. The policy gate stays deterministic.
 
-## Voiceover cues (for human narration / edit)
+## YouTube (owner only)
 
-See `voiceover_cues` in the meta JSON / `YOUTUBE_PACKAGE.md`. Explicitly name **NVIDIA Nemotron** and **Nebius Token Factory**.
-
-## Honesty
-
-- Synthetic camera metadata, mock OpenFlow, advisory-only  
-- Offline planner can be competitive on synthetic tests; Nemotron value is tool-mediated investigation + labeled `real_api` conclude  
-- Model may use deterministic_fallback — show the trace honestly
+Title: `JunctionTrace — investigate before you contain`  
+Length: 75.6 s (under 3 minutes). Public, English. No endorsement claim.

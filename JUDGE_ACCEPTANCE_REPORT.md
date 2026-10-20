@@ -1,5 +1,11 @@
 # JUDGE ACCEPTANCE REPORT — Independent Red-Team
 
+> **HISTORICAL AUDIT — do not treat as tip status.**  
+> Examined HEAD: `dcc7ac0f1f896df5308800b796cb05b60517dd71` (2026-10-13).  
+> Blind JSON and technical findings below remain valid evidence for that snapshot.  
+> **Current tip / CI / video / submission blockers:** see `CURRENT_SUBMISSION_STATUS.md` (tip `d85fb6f`, tip CI [39258073978](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978), **78 passed**, credential-free).  
+> Competition eligibility was **NO-GO** here and remains **BLOCKED** until public repo, demo URL, YouTube, and Devpost are done — but the “CI absent / no MP4” rows below are **stale relative to tip** (local MP4 now exists; branch light CI exists).
+
 **Evaluator role:** Independent AI agent evaluator / SOC analyst / hackathon judge  
 **Repository:** `thtcsec/sdn-its-nebius-hackathon`  
 **Branch:** `hackathon/nebius-nvidia`  
@@ -7,7 +13,7 @@
 **Clone path:** `D:\tu_projects\sdn-its-nebius-hackathon-redteam`  
 **Evaluation UTC:** 2026-10-13  
 
-**Verdict: NO-GO** for competition submission as currently packaged.  
+**Verdict (at examined SHA): NO-GO** for competition submission as then packaged.  
 **Technical substatus: CONDITIONAL** — multi-step + gate path works on curated and some blind cases, but live Nemotron is not yet competitive beyond the four held-out fixtures, and mandatory Devpost artifacts are missing.
 
 This report does **not** optimize benchmarks to look impressive. Failures are recorded as observed.
@@ -206,9 +212,9 @@ Official sources checked: [Devpost rules](https://nebiusglobalaihackathon.devpos
 | Public GitHub/GitLab/Bitbucket + visible OSS license | **FAIL** | Repo **private**; MIT `LICENSE` present locally / detectable via API as MIT but About visibility needs public flip |
 | README + runnable instructions | **PASS** (docs) | `docs/JUDGE_DEMO.md`, `README.md` |
 | Working demo URL / hosted test build | **FAIL** | Local `127.0.0.1:8080` only; no public hosted URL |
-| YouTube demo &lt; 3 min, public | **FAIL** | `docs/DEMO_VIDEO.md` YouTube URL **TBD**; `artifacts/demo_video/` has scripts/captions, **no recorded `.mp4`** |
+| YouTube demo &lt; 3 min, public | **FAIL** | YouTube URL **TBD**. At `dcc7ac0`: no local MP4. **Current canonical local file:** `junctiontrace_REAL_APP_DEMO.mp4` (75.6 s, gitignored) — still **no public YouTube** (`CURRENT_SUBMISSION_STATUS.md`) |
 | Safe publication scan | **PASS (local)** | `scripts/scan_secrets_and_license.py` → `ok: true`, no secret findings, license present |
-| Independent CI on this branch | **FAIL / absent** | GitHub Actions `total_count=0`; `.github/workflows/test.yml` triggers on `main`/`master` push + PRs — **default branch is `hackathon/nebius-nvidia`**, so push CI does not run on the working tip |
+| Independent CI on this branch | **FAIL / absent at `dcc7ac0`** | As of 2026-10-13: Actions `total_count=0`; `test.yml` did not target this branch. **Superseded at tip:** `hackathon-light.yml` now runs on `hackathon/nebius-nvidia` — see `CURRENT_SUBMISSION_STATUS.md` |
 | New vs pre-existing code | Documented | Hackathon delta commits from ~`e796329` / `5f793d4` / `a0f5853` / `06b8bd7` / `65ec05b` / `5fc3df2` atop research fork; camera/SDN stack largely pre-existing |
 
 ### Known limitations (must disclose)

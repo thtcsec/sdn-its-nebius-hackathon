@@ -16,6 +16,10 @@ temp_dummy_dataset.csv
 *.log
 logs
 .env
+**/.env
+deploy/judge/.env
+deploy/judge/.env.smoke
+*.pt
 1.cameras.json
 **/cameras.local.json
 *.docx

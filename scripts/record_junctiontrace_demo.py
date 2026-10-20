@@ -124,7 +124,7 @@ def main() -> int:
             "0:15 JunctionTrace homepage — NVIDIA Nemotron via Nebius Token Factory",
             "0:40 Scenario A offline congestion vs rule-only",
             "1:10 Scenario B real Nemotron tools + evidence + gate",
-            "2:10 Limitations: synthetic camera, mock OF, advisory; research at /research",
+            "2:10 Limitations: synthetic camera, mock OF, advisory (product footer only)",,
         ],
     }
 
@@ -203,10 +203,8 @@ def main() -> int:
             dwell(12)
             meta["segments"].append("scenario_b_skipped_no_credentials")
 
-        # —— limitations + research ——
-        page.goto(f"{BASE}/research", wait_until="networkidle")
-        dwell(10)
-        meta["segments"].append("research_preserved")
+        # Limitations on the product page only. Do not record /research:
+        # that console still shows inherited "TSINGHUA IEDE" chrome.
         page.goto(f"{BASE}/", wait_until="networkidle")
         page.locator(".footer-note").scroll_into_view_if_needed()
         dwell(14)
