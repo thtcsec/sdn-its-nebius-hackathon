@@ -3,7 +3,7 @@
 **Track:** Best Apps and Agents  
 **Paste readiness:** Draft text below is ready to paste into Devpost fields.  
 **Competition status:** **BLOCKED** until owner completes public repo + visible license, working demo URL, public YouTube &lt;3 min, feedback form, and final Devpost submit.  
-**Authority:** `CURRENT_SUBMISSION_STATUS.md` (tip `d85fb6f`).  
+**Authority:** `SUBMISSION_READY.md`.  
 **Rules:** https://nebiusglobalaihackathon.devpost.com/rules — re-confirm immediately before release.
 
 ---

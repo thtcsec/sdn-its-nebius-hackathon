@@ -3,7 +3,7 @@
 > **HISTORICAL AUDIT — do not treat as tip status.**  
 > Examined HEAD: `dcc7ac0f1f896df5308800b796cb05b60517dd71` (2026-10-13).  
 > Blind JSON and technical findings below remain valid evidence for that snapshot.  
-> **Current tip / CI / video / submission blockers:** see `CURRENT_SUBMISSION_STATUS.md` (tip `d85fb6f`, tip CI [39258073978](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978), **78 passed**, credential-free).  
+> **Current tip / CI / video / submission blockers:** see `SUBMISSION_READY.md`. This report is a historical audit.  
 > Competition eligibility was **NO-GO** here and remains **BLOCKED** until public repo, demo URL, YouTube, and Devpost are done — but the “CI absent / no MP4” rows below are **stale relative to tip** (local MP4 now exists; branch light CI exists).
 
 **Evaluator role:** Independent AI agent evaluator / SOC analyst / hackathon judge  

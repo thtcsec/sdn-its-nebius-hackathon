@@ -1,7 +1,7 @@
 # Public-release checklist (do NOT flip visibility without approval)
 
 Repository is currently **private**. Changing GitHub visibility requires explicit human approval.  
-**Current competition status:** **BLOCKED** — see `CURRENT_SUBMISSION_STATUS.md` (tip `d85fb6f`). Engineering hosted **GO** ≠ public release.
+**Current competition status:** **BLOCKED** — see `SUBMISSION_READY.md` (application tip `47dc614`). Engineering hosted **GO** ≠ public release.
 
 ## Automated scans (run before asking)
 

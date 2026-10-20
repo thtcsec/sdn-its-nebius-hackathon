@@ -25,7 +25,7 @@ Extend **SDN-ITS Resilience AI** (network anomaly detection + reversible mitigat
 
 **Honesty:** OpenFlow is **mock** — JunctionTrace does **not** push rules onto a real traffic switch. Camera fields are **synthetic metadata**. Offline ~92% is the planner, not Nemotron. Live Nemotron samples are small; latency is ~10–20 s advisory, not real-time control. Hosted demos need the Judge API token field.
 
-Local demo video (gitignored): `artifacts/demo_video/junctiontrace_REAL_APP_DEMO.mp4` (**75.6 s**, real app screen recording). YouTube URL is an owner action.
+Local demo video (gitignored): `artifacts/demo_video/junctiontrace_REAL_APP_DEMO.mp4` (**75.6 s**, real app screen recording). YouTube URL is an owner action. Current status: [`SUBMISSION_READY.md`](SUBMISSION_READY.md).
 
 Quick local run (no torch):
 
@@ -36,7 +36,7 @@ python -m api.app --host 127.0.0.1 --port 8080
 # http://127.0.0.1:8080/
 ```
 
-Hosted package: `docs/JUDGE_HOSTING.md`. Status: `CURRENT_SUBMISSION_STATUS.md` (public URL / YouTube still owner actions).
+Hosted package: `docs/JUDGE_HOSTING.md`. Status: [`SUBMISSION_READY.md`](SUBMISSION_READY.md) (public URL / YouTube still owner actions).
 
 ---
 
@@ -45,8 +45,8 @@ Hosted package: `docs/JUDGE_HOSTING.md`. Status: `CURRENT_SUBMISSION_STATUS.md` 
 | This repo | Not this repo |
 |-----------|----------------|
 | Hackathon working copy + public-facing submission target (starts **private**) | The IEDE research tree (`sdn-its-resilience-ai`) |
-| Base: Detect → temporary contain → rollback (+ optional camera fusion) | A claim that Nebius/Nemotron is already integrated |
-| Real Nebius inference only — no fake API calls or invented gains | Simulated model output presented as production evidence |
+| Real NVIDIA Nemotron via Nebius Token Factory when `NEBIUS_API_KEY` is set | Fake live-Nemotron responses or invented accuracy |
+| Offline deterministic planner labeled as planner, not as Nebius | Treating offline 92% as live Nemotron accuracy |
 | Demo mode keeps OpenFlow **mock** — no real traffic-switch control | Proof of live switch PacketIn reduction out of the box |
 
 Research / IEDE source of truth (separate folder, do not mix edits):  
@@ -69,7 +69,7 @@ Local note: [HACKATHON.md](HACKATHON.md)
 
 ### Status (honest)
 
-**Competition submission: BLOCKED** until public repo, hosted demo URL, public YouTube &lt;3 min, and Devpost — see [`CURRENT_SUBMISSION_STATUS.md`](CURRENT_SUBMISSION_STATUS.md). Tip `d85fb6f`; light CI [39258073978](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978) (78 passed, **no live Nemotron in CI**).
+**Competition submission: BLOCKED** until public repo, hosted demo URL, public YouTube &lt;3 min, and Devpost — see [`SUBMISSION_READY.md`](SUBMISSION_READY.md). Application tip `47dc614`; light CI [39440953197](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39440953197) (78 passed, **no live Nemotron in CI**).
 
 | Milestone | Status |
 |-----------|--------|

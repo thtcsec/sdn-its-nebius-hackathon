@@ -4,7 +4,7 @@
 **Date (UTC):** 2026-10-20 (rehearsal re-run; same engineering GO)  
 **Engineering verdict:** **GO** for single-worker, token-gated, mock-OF hosted judge demo  
 
-**Competition / Devpost verdict:** **BLOCKED** — see `CURRENT_SUBMISSION_STATUS.md`.  
+**Competition / Devpost verdict:** **BLOCKED** — see `SUBMISSION_READY.md`.  
 Engineering GO is **not** proof of public host, public repo, YouTube, or Devpost readiness.
 
 **Explicitly NOT done / NOT authorized:** cloud host live, public visibility flip, YouTube publish, Devpost submit, API key creation/exposure.
@@ -46,9 +46,9 @@ Engineering GO is **not** proof of public host, public repo, YouTube, or Devpost
 
 | Item | Value |
 |------|-------|
-| **Branch tip SHA** | `d85fb6fb542f6fb22bc5fc20667377739e279396` |
+| **Application SHA** | `47dc614d52ab89f37518821006d07bfb85bcd71e` |
 | **Security-fix SHA** (in ancestry) | `000354720adb422659e5a11cbf9603f49951bcbd` |
-| Tip CI run | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978 — **success**, **78 passed**, SHA = tip |
+| CI on `47dc614` | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39440953197 — **success**, **78 passed** |
 | Fix CI run | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39257990678 — **success** on `0003547` |
 | Workflow | `hackathon-light` → branch `hackathon/nebius-nvidia`; `NEBIUS_API_KEY=""` |
 

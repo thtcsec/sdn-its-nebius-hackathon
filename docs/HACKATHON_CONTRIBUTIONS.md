@@ -34,4 +34,4 @@
 - Blind live Nemotron sample is small (n=4 in `blind_redteam_eval.json`); matched and blind studies stay separate.
 - Paired gate C→D did not show an accuracy win on the matched live sample; adversarial synthetics prove enforcement.
 - No fabricated accuracy gains: read `summary.honesty_note` in benchmark JSON.
-- Submission blockers / tip SHA / CI: `CURRENT_SUBMISSION_STATUS.md`.
+- Submission blockers / tip SHA / CI: `SUBMISSION_READY.md`.

@@ -1,7 +1,7 @@
 # Feedback for Nebius Token Factory + NVIDIA Nemotron (submission form draft)
 
 **Do not submit without owner approval.** Paste into the Devpost feedback field when ready.  
-Competition entry remains **BLOCKED** until public artifacts are complete (`CURRENT_SUBMISSION_STATUS.md`).
+Competition entry remains **BLOCKED** until public artifacts are complete (`SUBMISSION_READY.md`).
 
 ## What worked
 

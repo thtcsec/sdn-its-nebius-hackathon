@@ -2,7 +2,7 @@
 
 > **HISTORICAL FREEZE DOCUMENT** for paired-gate / product freeze work.  
 > SHAs below are the freeze/study commits examined then — **not** the current branch tip.  
-> **Current tip / CI / submission:** `CURRENT_SUBMISSION_STATUS.md` (`d85fb6f`, CI 39258073978).  
+> **Current tip / CI / submission:** `SUBMISSION_READY.md`. This gate file is historical evidence honesty, not the live SHA stamp.  
 > Evidence honesty in this file (mock OF, synthetic camera, C→D no accuracy win, offline ≠ Nemotron) still applies.
 
 **Branch:** `hackathon/nebius-nvidia`  

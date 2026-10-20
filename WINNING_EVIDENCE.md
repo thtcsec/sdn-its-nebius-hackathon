@@ -145,7 +145,7 @@ Docs: `docs/JUDGE_DEMO.md`, `COMPETITION_DELTA_REPORT.md`, `docs/NEBIUS_NVIDIA_F
 | YouTube &lt;3 min | **LOCAL MP4 READY / URL TBD** | Canonical `junctiontrace_REAL_APP_DEMO.mp4` **75.6 s** h264+aac (gitignored); no public YouTube |
 | Token Factory + Nemotron disclosure | **READY** | README + this file + feedback draft |
 | Pre-existing project explanation | **READY** | `docs/HACKATHON_CONTRIBUTIONS.md` |
-| Branch tip / CI (re-audit 2026-10-19) | **tip `d85fb6f`** | Light CI [39258073978](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39258073978) — 78 passed, **credential-free** (no live Nemotron in CI) |
+| Branch tip / CI | **see `SUBMISSION_READY.md`** | Application SHA `47dc614`; light CI [39440953197](https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39440953197) — 78 passed, **credential-free** (no live Nemotron in CI) |
 | Nebius/NVIDIA feedback text | **DRAFT** | `docs/NEBIUS_NVIDIA_FEEDBACK.md` — do not submit without approval |
 | English materials | **PASS** | |
 
