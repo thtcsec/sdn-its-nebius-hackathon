@@ -12,11 +12,10 @@ This file is the current status authority. Older gates remain dated audits.
 
 | Item | Value |
 |---|---|
-| **Current tip** | `47dc614d52ab89f37518821006d07bfb85bcd71e` (until a docs-cleanup commit moves `HEAD`) |
-| **Application / product tree** | same as tip `47dc614` — `api/`, `dashboard/`, `src/` were not changed in this packaging pass |
+| **Current release-docs SHA** | `bb95d5c8403694b3ec846770d7544c681fc43738` |
+| **Application / product tree** | `47dc614` — `api/`, `dashboard/`, `src/` unchanged in this packaging pass |
 | **CI workflow** | `.github/workflows/hackathon-light.yml` on `hackathon/nebius-nvidia` only |
-| **CI on `47dc614`** | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39440953197 — **success**, 78 passed, `NEBIUS_API_KEY` unset |
-| **CI on this docs tip** | pending until pushed — do not reuse older run IDs as this SHA |
+| **CI on `bb95d5c`** | https://github.com/thtcsec/sdn-its-nebius-hackathon/actions/runs/39459887568 — **success**, 78 passed, `NEBIUS_API_KEY` unset |
 
 CI is credential-free. **CI did not run live Nemotron.**
 
